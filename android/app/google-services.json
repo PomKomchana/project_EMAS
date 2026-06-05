@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "873554694706",
+    "project_id": "planalert",
+    "storage_bucket": "planalert.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:873554694706:android:a6f43c9d906c43f9fe222b",
+        "android_client_info": {
+          "package_name": "com.example.plan_alert"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFfaW9VT2cYcgN54Qo6tPlpUPb2ovValY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
