@@ -35,6 +35,7 @@ class _ReportFormState extends State<ReportForm> {
     'อาคาร 9',
     'อาคาร 10',
     'อาคาร 11',
+    'อาคาร 12',
   ];
 
   // ===== Floor List =====
