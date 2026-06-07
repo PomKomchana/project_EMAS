@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+
+import 'screens/main_page.dart';
 import 'screens/report_form.dart';
 
 void main() async {
@@ -42,7 +44,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const ReportForm(),
+      home: const MainPage(),
     );
   }
 }
