@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+const _appColor = Color(0xFFe85d6a);
 
 const _appColor = Color(0xFFe85d6a);
 const _appColorLight = Color(0xFFff8a94);
@@ -1179,5 +1182,16 @@ class _SheetOption extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold));
   }
 }

@@ -48,8 +48,9 @@ dependencies:
   # Pick images from gallery/camera
   image_picker: ^1.1.2
 
-  # Google Maps 
-  google_maps_flutter: ^2.12.3
+  # Map
+  flutter_map: ^8.1.1
+  latlong2: ^0.9.1
   geolocator: ^14.0.1
 
 dev_dependencies:
