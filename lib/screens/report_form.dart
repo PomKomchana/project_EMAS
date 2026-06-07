@@ -58,8 +58,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   File? _image;
   bool _isSubmitting = false;
 
-  static final _buildings = List.generate(10, (i) => 'อาคาร ${i + 1}');
-  static final _floors = List.generate(6, (i) => 'ชั้น ${i + 1}');
+  static final _buildings = ['อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5', 'อาคาร 6', 'อาคาร 7', 'อาคาร 8', 'อาคาร 9', 'อาคาร 10',];
+  static final _floors = ['ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5', 'ชั้น 6',
+  ];
 
   @override
   void initState() {
