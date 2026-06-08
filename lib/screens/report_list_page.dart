@@ -49,7 +49,12 @@ class _ReportListPageState extends State<ReportListPage>
         } else {
           final docs = (snapshot.data?.docs ?? []).where((doc) {
             final d = doc.data() as Map<String, dynamic>;
-            return (d['building'] as String?)?.isNotEmpty == true;
+            final building = d['building'];
+            final floor = d['floor'];
+            return building is String &&
+                RegExp(r'^อาคาร \d+$').hasMatch(building) &&
+                floor is String &&
+                RegExp(r'^ชั้น \d+$').hasMatch(floor);
           }).toList();
           child = docs.isEmpty
               ? const _EmptyState(key: ValueKey('empty'))
