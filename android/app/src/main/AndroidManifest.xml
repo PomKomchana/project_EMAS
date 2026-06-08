@@ -39,7 +39,7 @@
         // add google map api for android
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDQnq--FGetMNtd-bNXcXPu1JDvn50TE1o"/>
+            android:value="${MAP_API_KEY}"/>
 
     </application>
     <!-- Required to query activities that can process text, see:
