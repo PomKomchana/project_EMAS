@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
+import 'screens/loading.dart';
 import 'screens/main_page.dart';
 import 'screens/report_form.dart';
 
@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFe85d6a)),
       ),
-      home: const MainPage(),
+      home: const LoadingScreen(),
     );
   }
 }
