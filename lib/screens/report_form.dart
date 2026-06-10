@@ -1,3 +1,4 @@
+/// <<<<< [1. Import] Import >>>>>
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -7,9 +8,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 // ====================================================================================================
-/// <<<<< Const Variable >>>>>
+
+/// <<<<< [2. Constants] Const Variable >>>>>
 // Theme colors [_appColor, _appColorDark]
 const _appColor = Color(0xFFe85d6a);
 const _appColorDark = Color(0xFFc4394a);
@@ -26,12 +27,14 @@ const _tileNormal = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
 const _tileHybrid = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
 const _tileSatellite = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
 const _tileTerrain   = 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}';
+// ====================================================================================================
 
+/// <<<<< [3. Enum] Enum >>>>>
 // Map mode [_MapMod]
 enum _MapMode {normal, hybrid, satellite, terrain,}
 // ====================================================================================================
 
-/// <<<<< ReportForm >>>>>
+/// <<<<< [4. Widget Class] ReportForm >>>>>
 class ReportForm extends StatefulWidget {
   const ReportForm({super.key});
 
@@ -40,16 +43,18 @@ class ReportForm extends StatefulWidget {
 }
 // ====================================================================================================
 
-/// <<<<< _ReportFormStatue >>>>>
+/// <<<<< [5. State Class] _ReportFormState >>>>>
 // State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
+// ----------------------------------------------------------------------------------------------------
 
-  // CONTROLLERS [_descControllere, _mapController, _imagePicker]
+  /// [5.1 Controllers]
+  // Controllers [_descControllere, _mapController, _imagePicker]
   final _descController = TextEditingController();
   final _mapController = MapController();
   final _imagePicker = ImagePicker();
 
-  // ANIMATION CONTROLLERS
+  // Animation Controllers
     // Map expansion animation [_mapAnimController, _mapHeightAnimation]
     late final AnimationController _mapAnimController;
     late final Animation<double> _mapHeightAnimation;
@@ -58,20 +63,22 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     late final AnimationController _sectionFadeController;
     late final List<Animation<double>> _sectionFadeList;
     late final List<Animation<Offset>> _sectionSlideList;
+  // ----------------------------------------------------------------------------------------------------
 
-  // MAP STATE [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
+  /// [5.2 State Variable]
+  // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
   bool _isMapExpanded = false;         // Whether the map is currently expanded
   bool _isPickingMode = false;         // Whether the user is in pin selection mode (waiting for map tap)
   _MapMode _mapMode = _MapMode.normal; // Current map display mode
   LatLng? _pickedLocation;             // Selected pinned location on the map
 
-  // FORM STATE [_selecetedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
+  // Form State [_selecetedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
   String? _selectedBuilding;
   String? _selectedFloor;
   File? _selectedImage;
   bool _isSubmitting = false;
 
-  // DROPDOWN OPTIONS [_buildingOptions, _floorOptions]
+  // Dropdown Options [_buildingOptions, _floorOptions]
   static const _buildingOptions = [
     'อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5',
     'อาคาร 6', 'อาคาร 7', 'อาคาร 8', 'อาคาร 9', 'อาคาร 10',
@@ -79,17 +86,19 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   static const _floorOptions = [
     'ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5', 'ชั้น 6',
   ];
+  // ----------------------------------------------------------------------------------------------------
 
-  // initState — เรียกครั้งเดียวตอน widget ถูกสร้าง
+  /// [5.3 Lifecycle Methods]
+  // InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _sectionFadeController.forward(); // เริ่ม animation ทันที
-    _requestLocationAndMove();        // ขอ GPS แล้วย้ายกล้องไป
+    _sectionFadeController.forward(); // Start animation
+    _requestLocationAndMove();        // Request GPS and move the camera
   }
 
-  // DISPOSE — คืน resource เมื่อออกจากหน้านี้
+  // Dispose (Return resource when you leave this page)
   @override
   void dispose() {
     _mapAnimController.dispose();
@@ -99,56 +108,56 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // setup animations แยกออกมาเพื่อให้ initState อ่านง่าย [_mapAnimController, _mapHeightAnimation]
-  void _setupAnimations() {
-    // Map Animation 200 → 520
-    _mapAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    )..addListener(() => setState(() {}));
+    // Setup Animations [_setupAnimations]
+    void _setupAnimations() {
+      // Map Animation 200 → 520
+      _mapAnimController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 500),
+      )..addListener(() => setState(() {}));
 
-    _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
-      CurvedAnimation(
-        parent: _mapAnimController,
-        curve: Curves.easeInOutCubic,
-      ),
-    );
-
-    // animation fade+slide ของ 5 sections (stagger ทีละ section)
-    _sectionFadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-
-    _sectionFadeList = List.generate(5, (index) {
-      final startTime = index * 0.15;
-      final endTime = (startTime + 0.5).clamp(0.0, 1.0);
-      return Tween<double>(begin: 0.0, end: 1.0).animate(
+      _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
         CurvedAnimation(
-          parent: _sectionFadeController,
-          curve: Interval(startTime, endTime, curve: Curves.easeOut),
+          parent: _mapAnimController,
+          curve: Curves.easeInOutCubic,
         ),
       );
-    });
 
-    _sectionSlideList = List.generate(5, (index) {
-      final startTime = index * 0.15;
-      final endTime = (startTime + 0.5).clamp(0.0, 1.0);
-      return Tween<Offset>(
-        begin: const Offset(0, 0.3),
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(
-          parent: _sectionFadeController,
-          curve: Interval(startTime, endTime, curve: Curves.easeOutCubic),
-        ),
+      // Fade + slide animation for 5 sections (Stagger per section)
+      _sectionFadeController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 900),
       );
-    });
-  }
 
-  // =============================================================
-  // ขอสิทธิ์ GPS แล้วย้ายกล้องไปตำแหน่ง user
-  // =============================================================
+      _sectionFadeList = List.generate(5, (index) {
+        final startTime = index * 0.15;
+        final endTime = (startTime + 0.5).clamp(0.0, 1.0);
+        return Tween<double>(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(
+            parent: _sectionFadeController,
+            curve: Interval(startTime, endTime, curve: Curves.easeOut),
+          ),
+        );
+      });
+
+      _sectionSlideList = List.generate(5, (index) {
+        final startTime = index * 0.15;
+        final endTime = (startTime + 0.5).clamp(0.0, 1.0);
+        return Tween<Offset>(
+          begin: const Offset(0, 0.3),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _sectionFadeController,
+            curve: Interval(startTime, endTime, curve: Curves.easeOutCubic),
+          ),
+        );
+      });
+    }
+  // ----------------------------------------------------------------------------------------------------
+
+  /// [5.4 Helper / Logic Methods]
+  // Request GPS permission and move map to user location
   Future<void> _requestLocationAndMove() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -167,18 +176,16 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
       final userLatLng = LatLng(position.latitude, position.longitude);
 
-      // ย้ายกล้องเฉพาะเมื่ออยู่ในพื้นที่ มศว เท่านั้น
+      // GPS can move only in _mapBounds area
       if (_mapBounds.contains(userLatLng)) {
         _mapController.move(userLatLng, 16);
       }
     } catch (_) {
-      // ถ้าหา GPS ไม่ได้ก็ใช้ center ของ มศว แทน (ตั้งไว้แล้วใน initialCenter)
+      // if can't find GPS then use initialCenter location
     }
   }
 
-  // =============================================================
-  // ขยาย/ย่อแผนที่ — ใช้ร่วมกันทั้ง "เลือกตำแหน่ง" และ "ปิด"
-  // =============================================================
+  // Expand / collapse map and optionally enter picking mode
   void _toggleMapExpand({bool enterPickingMode = false}) {
     HapticFeedback.lightImpact();
     setState(() {
@@ -186,7 +193,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
       if (_isMapExpanded) {
         _mapAnimController.forward();
         if (enterPickingMode) _isPickingMode = true;
-        // zoom ให้เห็นทั้ง มศว
+        // coom out to full map
         _mapController.fitCamera(
           CameraFit.bounds(
             bounds: _mapBounds,
@@ -200,9 +207,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     });
   }
 
-  // =============================================================
-  // รับ tap บนแผนที่ — ปักหมุดถ้าอยู่ใน picking mode
-  // =============================================================
+  // Handle map tap and set pin location
   void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
     if (!_isPickingMode) return;
 
@@ -222,17 +227,17 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     _mapController.move(tappedPosition, 18);
   }
 
-  // =============================================================
-  // ยืนยันการปักหมุด — ปิดแผนที่กลับ
-  // =============================================================
+  // Confirm selected pin location
   void _confirmPin() {
     HapticFeedback.mediumImpact();
     _toggleMapExpand(); // ย่อแผนที่กลับ
     _showSnackBar('ปักหมุดสำเร็จ ✓', Colors.green.shade600,
         Icons.check_circle_outline);
   }
+  // ====================================================================================================
 
-  // คืน tile URL ตาม mode ปัจจุบัน
+/// >>>>> [6.Getters] <<<<<
+// Get current tile URL from selected map mode [_currentTileUrl]
 String get _currentTileUrl {
   switch (_mapMode) {
     case _MapMode.normal:    return _tileNormal;
@@ -242,7 +247,7 @@ String get _currentTileUrl {
   }
 }
 
-// คืนชื่อโหมด
+// Get current map mode label [_mapModeLabel]
 String get _mapModeLabel {
   switch (_mapMode) {
     case _MapMode.normal:    return 'ปกติ';
@@ -252,7 +257,7 @@ String get _mapModeLabel {
   }
 }
 
-// คืน icon ของโหมด
+// Get current map mode icon [_mapModeIcon]
 IconData get _mapModeIcon {
   switch (_mapMode) {
     case _MapMode.normal:    return Icons.map_outlined;
@@ -262,7 +267,7 @@ IconData get _mapModeIcon {
   }
 }
 
-// วนโหมดไปเรื่อยๆ
+// Switch to next map mode [_cycleMapMode]
 void _cycleMapMode() {
   HapticFeedback.selectionClick();
   setState(() {
@@ -272,9 +277,7 @@ void _cycleMapMode() {
   });
 }
 
-  // =============================================================
-  // เปิด bottom sheet เลือกแหล่งรูปภาพ
-  // =============================================================
+  // Show image picker bottom sheet [_showImagePickerSheet]
   void _showImagePickerSheet() {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
@@ -284,9 +287,7 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // ถ่ายหรือเลือกรูปจาก source ที่กำหนด
-  // =============================================================
+  // Pick image from selected source [_pickImageForm]
   Future<void> _pickImageFrom(ImageSource source) async {
     final picked = await _imagePicker.pickImage(source: source);
     if (picked != null) {
@@ -294,12 +295,10 @@ void _cycleMapMode() {
     }
   }
 
-  // =============================================================
-  // ส่งข้อมูลไป Firestore
-  // =============================================================
+  // Submit report to Firestore [_submitReport]
   Future<void> _submitReport() async {
 
-    // ตรวจสอบข้อมูลที่จำเป็น
+    // Check the necessary information
     if (_selectedBuilding == null || _selectedFloor == null) {
       _showSnackBar(
         'กรุณาเลือกอาคารและชั้น',
@@ -340,9 +339,7 @@ void _cycleMapMode() {
     }
   }
 
-  // =============================================================
-  // helper: แสดง snackbar
-  // =============================================================
+  // Show snackbar message  [_showSnackBar]
   void _showSnackBar(String message, Color color, IconData icon) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -361,9 +358,7 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // helper: ห่อ widget ด้วย fade + slide animation ของ section นั้น
-  // =============================================================
+  // Apply fade + slide animation to section [_withSectionAnimation]
   Widget _withSectionAnimation(int sectionIndex, Widget child) {
     return FadeTransition(
       opacity: _sectionFadeList[sectionIndex],
@@ -373,10 +368,9 @@ void _cycleMapMode() {
       ),
     );
   }
+  // =============================================================
 
-  // =============================================================
-  // BUILD
-  // =============================================================
+  /// >>>>> [7.Build] <<<<<
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -385,10 +379,10 @@ void _cycleMapMode() {
       // ----- AppBar -----
       appBar: _buildAppBar(),
 
-      // ----- ปุ่มส่งแจ้งซ่อม ติดด้านล่าง -----
+      // ----- Submit Bar at bottom -----
       bottomNavigationBar: _withSectionAnimation(4, _buildSubmitBar()),
 
-      // ----- เนื้อหาหลัก -----
+      // ----- Main -----
       body: SingleChildScrollView(
         physics: _isMapExpanded
             ? const NeverScrollableScrollPhysics()
@@ -410,9 +404,7 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // AppBar — gradient สีแดง
-  // =============================================================
+  // ----- App Bar -----
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -442,9 +434,7 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // ปุ่มส่งด้านล่าง
-  // =============================================================
+  // ----- Submit Bar -----
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -487,21 +477,19 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // Section 1 — แผนที่ .
-  // =============================================================
+  // ----- Map -----
   Widget _buildMapSection() {
     return _buildGlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          // หัว section
+          // Card Header (ตำแหน่งที่เกิดเหตุ)
           _buildCardHeader(
               icon: Icons.location_on_rounded, title: 'ตำแหน่งที่เกิดเหตุ'),
           const SizedBox(height: 12),
 
-          // แผนที่ — ความสูงเปลี่ยนตาม animation
+          // Map Altitude changes with animation.
           AnimatedBuilder(
             animation: _mapAnimController,
             builder: (_, child) => SizedBox(
@@ -513,7 +501,7 @@ void _cycleMapMode() {
               child: Stack(
                 children: [
 
-                  // ---- แผนที่จริง ----
+                  // Flutter Map
                   FlutterMap(
                     mapController: _mapController,
                     options: MapOptions(
@@ -552,9 +540,9 @@ void _cycleMapMode() {
                       ],
                     ),
 
-                  // ---- ปุ่มสลับโหมดแผนที่ (มุมซ้ายบน) ----
+                  // Map Mode Bottom
                   Positioned(
-                    top: _isMapExpanded ? 50 : 10, // ขยาย = เลื่อนลง, ย่อ = ขึ้นบน
+                    top: _isMapExpanded ? 50 : 10, // Expand = scroll down, Reduce = scroll up
                     left: 10,
                     child: _buildGlassMapButton(
                       icon: _mapModeIcon,
@@ -563,7 +551,7 @@ void _cycleMapMode() {
                     ),
                   ),
 
-                  // ---- banner แนะนำให้แตะแผนที่ ----
+                  // Banner (แตะเพื่อปักหมุดจุดเกิดเหตุ)
                   if (_isPickingMode)
                     Positioned(
                       top: 10,
@@ -572,7 +560,7 @@ void _cycleMapMode() {
                       child: Center(child: _buildPickingBanner()),
                     ),
 
-                  // ---- ปุ่มยืนยันตำแหน่ง (ล่างสุด) ----
+                  // Confirm Picking Location
                   if (_isPickingMode && _pickedLocation != null)
                     Positioned(
                       bottom: 12,
@@ -595,7 +583,7 @@ void _cycleMapMode() {
                       ),
                     ),
 
-                  // ---- ปุ่มปิดแผนที่ (มุมขวาบน) ----
+                  // Close Map
                   if (_isMapExpanded && !_isPickingMode)
                     Positioned(
                       top: 10,
@@ -609,7 +597,7 @@ void _cycleMapMode() {
 
           const SizedBox(height: 12),
 
-          // ปุ่มใต้แผนที่ (เลือกตำแหน่ง / ปักหมุดแล้ว)
+          // Button Below Map (ปักหมุดแล้ว)
           if (!_isMapExpanded)
             Row(
               children: [
@@ -634,9 +622,8 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // Section 2 — รูปภาพ
-  // =============================================================
+  /// >>>>> [8. UI Builder Method] <<<<<
+  /// [8.1 Image Section] (_buildImageSection)
   Widget _buildImageSection() {
     return _buildGlassCard(
       child: Column(
@@ -646,7 +633,7 @@ void _cycleMapMode() {
               icon: Icons.camera_alt_rounded, title: 'รูปภาพ'),
           const SizedBox(height: 12),
 
-          // ถ้ามีรูปแล้ว — แสดงรูป พร้อมปุ่มเปลี่ยน
+          // If an image is already present → display the image with a change button
           if (_selectedImage != null) ...[
             Stack(
               children: [
@@ -669,7 +656,7 @@ void _cycleMapMode() {
             const SizedBox(height: 10),
           ],
 
-          // ถ้ายังไม่มีรูป — แสดงกล่อง placeholder
+          // But if an image not present → show Placeholder box
           if (_selectedImage == null)
             _buildImagePlaceholder(),
         ],
@@ -677,9 +664,7 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // Section 3 — เลือกอาคารและชั้น
-  // =============================================================
+  /// [8.2 Location Section] (_buildLocationSection)
   Widget _buildLocationSection() {
     return _buildGlassCard(
       child: Column(
@@ -709,9 +694,7 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // Section 4 — รายละเอียดปัญหา
-  // =============================================================
+  /// [8.3 Description Section] (_buildDescriptionSection)
   Widget _buildDescriptionSection() {
     return _buildGlassCard(
       child: Column(
@@ -753,11 +736,8 @@ void _cycleMapMode() {
     );
   }
 
-  // =============================================================
-  // UI Builders — widget เล็กๆ ที่ใช้ซ้ำในหน้านี้
-  // =============================================================
-
-  // glass card พื้นหลังขาวใส
+  /// [8.4 Glass Card]
+  // Glass card with a clear white background (_buildGlassCard)
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -785,7 +765,8 @@ void _cycleMapMode() {
     );
   }
 
-  // หัว section (icon + ชื่อ)
+  /// [8.5 Section Header]
+  // Section Header (icon + name) (_buildCardHeader)
   Widget _buildCardHeader({required IconData icon, required String title}) {
     return Row(
       children: [
@@ -811,7 +792,8 @@ void _cycleMapMode() {
     );
   }
 
-  // ปุ่ม gradient — ใช้กับปุ่มส่งและปุ่มยืนยันหมุด
+  /// [8.6 Gradiant Button]
+  // Gradient Button (Used with the submit button and confirm pin button) (_buildGradientButton)
   Widget _buildGradientButton({
     required VoidCallback onTap,
     required Widget child,
@@ -850,7 +832,8 @@ void _cycleMapMode() {
     );
   }
 
-  // ปุ่ม outline สีแดง
+  /// [8.7 Red Outline Button]
+  // Red Outline Button (_buildOutlineButton)
   Widget _buildOutlineButton({
     required IconData icon,
     required String label,
@@ -885,7 +868,8 @@ void _cycleMapMode() {
     );
   }
 
-  // badge "ปักหมุดแล้ว" สีเขียว
+  /// [8.8 Green Badge]
+  // Green Badge "ปักหมุดแล้ว" (_buildPinBadge)
   Widget _buildPinBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -912,7 +896,8 @@ void _cycleMapMode() {
     );
   }
 
-  // ปุ่ม glass บนแผนที่ (สลับโหมด)
+  /// [8.9 Glass Map Botton]
+  // Glass Button on the map (Map Mode) (_buildGlassMapButton)
   Widget _buildGlassMapButton({
     required IconData icon,
     required String label,
@@ -954,7 +939,8 @@ void _cycleMapMode() {
     );
   }
 
-  // banner "แตะเพื่อปักหมุด"
+  /// [8.10 Picking Banner]
+  // Banner "แตะเพื่อปักหมุด" (_buildPickingBanner)
   Widget _buildPickingBanner() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -980,7 +966,8 @@ void _cycleMapMode() {
     );
   }
 
-  // ปุ่ม X ปิดแผนที่ glass
+  /// [8.11 Close Map Button]
+  // The X Button closes the Glass Map (_buildCloseMapButton)
   Widget _buildCloseMapButton() {
     return GestureDetector(
       onTap: _toggleMapExpand,
@@ -1002,7 +989,8 @@ void _cycleMapMode() {
     );
   }
 
-  // ปุ่ม "เปลี่ยน" บนรูปภาพ
+  /// [8.12 Change Image Button]
+  // Button "เปลี่ยน" on Image (_buildChangeImageButton)
   Widget _buildChangeImageButton() {
     return GestureDetector(
       onTap: _showImagePickerSheet,
@@ -1035,7 +1023,8 @@ void _cycleMapMode() {
     );
   }
 
-  // กล่อง placeholder เมื่อยังไม่มีรูป
+  /// [8.13 Image Placeholder]
+  // Placeholder Box when there is no image yet (_buildImagePlaceholder)
   Widget _buildImagePlaceholder() {
     return GestureDetector(
       onTap: _showImagePickerSheet,
@@ -1074,7 +1063,8 @@ void _cycleMapMode() {
     );
   }
 
-  // dropdown สไตล์ custom
+  /// [8.14 Styled Dropdown]
+  // Custom Dropdown Style (_buildStyledDropdown)
   Widget _buildStyledDropdown({
     required String? value,
     required String hint,
@@ -1118,7 +1108,8 @@ void _cycleMapMode() {
     );
   }
 
-  // bottom sheet เลือกแหล่งรูปภาพ
+  /// [8.15 Image Picker Sheet]
+  // Bottom Sheet to select image source (_buildImagePickerSheet)
   Widget _buildImagePickerSheet() {
     return ClipRRect(
       borderRadius:
@@ -1137,7 +1128,7 @@ void _cycleMapMode() {
               children: [
                 const SizedBox(height: 10),
 
-                // handle bar
+                // Handle Bar
                 Container(
                   width: 36,
                   height: 4,
@@ -1157,7 +1148,7 @@ void _cycleMapMode() {
                 ),
                 const SizedBox(height: 16),
 
-                // 2 ตัวเลือก: ถ่ายรูป / คลังภาพ
+                // 2 Options: "ถ่ายรูป" / "คลังภาพ"
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -1195,7 +1186,8 @@ void _cycleMapMode() {
     );
   }
 
-  // ตัวเลือกใน bottom sheet
+  /// [8.16 Sheet Option]
+  // Options in the bottom sheet (_buildSheetOption)
   Widget _buildSheetOption({
     required IconData icon,
     required String label,
