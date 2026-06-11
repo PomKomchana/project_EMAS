@@ -1,4 +1,4 @@
-/// <<<<< [1. Import] Import >>>>>
+/// <<<<< [1. Import] (นำเข้า package / library) >>>>>
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -10,7 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 // ====================================================================================================
 
-/// <<<<< [2. Constants] Const Variable >>>>>
+/// <<<<< [2. Constants] Const Variable (ประกาศค่าคงที่ / ตัวแปรที่ไม่เปลี่ยน) >>>>>
 // Theme colors [_appColor, _appColorDark]
 const _appColor = Color(0xFFe85d6a);
 const _appColorDark = Color(0xFFc4394a);
@@ -29,12 +29,12 @@ const _tileSatellite = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
 const _tileTerrain   = 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}';
 // ====================================================================================================
 
-/// <<<<< [3. Enum] Enum >>>>>
+/// <<<<< [3. Enum] (ชุดตัวเลือกแบบจำกัด) >>>>>
 // Map mode [_MapMod]
 enum _MapMode {normal, hybrid, satellite, terrain,}
 // ====================================================================================================
 
-/// <<<<< [4. Widget Class] ReportForm >>>>>
+/// <<<<< [4. Widget Class] ReportForm (ตัวแม่ของหน้าจอ | หน้าที่: สร้างหน้า / ส่งต่อให้ State จัดการ) >>>>>
 class ReportForm extends StatefulWidget {
   const ReportForm({super.key});
 
@@ -43,12 +43,12 @@ class ReportForm extends StatefulWidget {
 }
 // ====================================================================================================
 
-/// <<<<< [5. State Class] _ReportFormState >>>>>
+/// <<<<< [5. State Class] _ReportFormState (สมองของหน้าจอ | หน้าที่: เก็บข้อมูล / เปลี่ยน UI / รับ event / คนควบคุม) >>>>>
 // State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 // ----------------------------------------------------------------------------------------------------
 
-  /// [5.1 Controllers]
+  /// [5.1 Controllers] (ตัวควบคุม)
   // Controllers [_descControllere, _mapController, _imagePicker]
   final _descController = TextEditingController();
   final _mapController = MapController();
@@ -65,7 +65,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     late final List<Animation<Offset>> _sectionSlideList;
   // ----------------------------------------------------------------------------------------------------
 
-  /// [5.2 State Variable]
+  /// [5.2 State Variable] (ตัวแปรสถานะ)
   // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
   bool _isMapExpanded = false;         // Whether the map is currently expanded
   bool _isPickingMode = false;         // Whether the user is in pin selection mode (waiting for map tap)
@@ -88,7 +88,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   ];
   // ----------------------------------------------------------------------------------------------------
 
-  /// [5.3 Lifecycle Methods]
+  /// [5.3 Lifecycle Methods] (เมธอดตามวงจรชีวิต | เช่น: เปิดหน้า → initState ปิดหน้า → dispose เหมือน “เกิด → ใช้งาน → ตาย”)
   // InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
   @override
   void initState() {
@@ -156,7 +156,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     }
   // ----------------------------------------------------------------------------------------------------
 
-  /// [5.4 Helper / Logic Methods]
+  /// [5.4 Helper / Logic Methods] (ฟังก์ชันช่วย + ตรรกะ | ทำงานเบื้องหลัง / ไม่ใช่สร้าง UI)
   // Request GPS permission and move map to user location
   Future<void> _requestLocationAndMove() async {
     try {
@@ -193,7 +193,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
       if (_isMapExpanded) {
         _mapAnimController.forward();
         if (enterPickingMode) _isPickingMode = true;
-        // coom out to full map
+        // Zoom Out to full map
         _mapController.fitCamera(
           CameraFit.bounds(
             bounds: _mapBounds,
@@ -234,9 +234,11 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     _showSnackBar('ปักหมุดสำเร็จ ✓', Colors.green.shade600,
         Icons.check_circle_outline);
   }
+  // ----------------------------------------------------------------------------------------------------
+
   // ====================================================================================================
 
-/// >>>>> [6.Getters] <<<<<
+/// >>>>> [6.Getters] (ตัวคืนค่าแบบคำนวณ) <<<<<
 // Get current tile URL from selected map mode [_currentTileUrl]
 String get _currentTileUrl {
   switch (_mapMode) {
@@ -370,7 +372,7 @@ void _cycleMapMode() {
   }
   // =============================================================
 
-  /// >>>>> [7.Build] <<<<<
+  /// >>>>> [7.Build] (วาดหน้าจอหลัก | Flutter จะเรียกตรงนี้เพื่อสร้าง UI) <<<<<
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -622,7 +624,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// >>>>> [8. UI Builder Method] <<<<<
+  /// >>>>> [8. UI Builder Method] (ฟังก์ชันสร้าง UI ย่อย | เอาไว้แยก build ให้อ่านง่าย) <<<<<
   /// [8.1 Image Section] (_buildImageSection)
   Widget _buildImageSection() {
     return _buildGlassCard(
