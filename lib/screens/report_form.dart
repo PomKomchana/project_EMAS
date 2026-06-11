@@ -11,9 +11,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // ====================================================================================================
 
 /// <<<<< [2. Constants] Const Variable (ประกาศค่าคงที่ / ตัวแปรที่ไม่เปลี่ยน) >>>>>
-// Theme colors [_appColor, _appColorDark]
-const _appColor = Color(0xFFe85d6a);
-const _appColorDark = Color(0xFFc4394a);
+// EMAS Theme Colors [_emasColor, _emasColorDarker]
+const _emasColor = Color(0xFFe85d6a);
+const _emasColorDarker = Color(0xFFc4394a);
 
 // Google Map Location and Bounds config [_mapLocation, _mapBounds]
 const _mapLocation = LatLng(14.1076, 100.9822);
@@ -50,6 +50,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
   /// [5.1 Controllers] (ตัวควบคุม)
   // Controllers [_descControllere, _mapController, _imagePicker]
+  final _dateController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
   final _imagePicker = ImagePicker();
@@ -72,20 +75,17 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   _MapMode _mapMode = _MapMode.normal; // Current map display mode
   LatLng? _pickedLocation;             // Selected pinned location on the map
 
-  // Form State [_selecetedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
+  // Form State [_selecetedBuilding, _selectedFloor, _selectedImage, _selectedRoom, _isSubmitting]
   String? _selectedBuilding;
   String? _selectedFloor;
+  String? _selectedRoom;
   File? _selectedImage;
   bool _isSubmitting = false;
 
-  // Dropdown Options [_buildingOptions, _floorOptions]
-  static const _buildingOptions = [
-    'อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5',
-    'อาคาร 6', 'อาคาร 7', 'อาคาร 8', 'อาคาร 9', 'อาคาร 10',
-  ];
-  static const _floorOptions = [
-    'ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5', 'ชั้น 6',
-  ];
+  // Dropdown Options [_buildingOptions, _floorOptions, _roomOptions]
+  static const _buildingOptions = ['อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5',];
+  static const _floorOptions = ['ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5',];
+  static const _roomOptions = ['110', '111', '112', '113', '114',];
   // ----------------------------------------------------------------------------------------------------
 
   /// [5.3 Lifecycle Methods] (เมธอดตามวงจรชีวิต | เช่น: เปิดหน้า → initState ปิดหน้า → dispose เหมือน “เกิด → ใช้งาน → ตาย”)
@@ -103,7 +103,12 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   void dispose() {
     _mapAnimController.dispose();
     _sectionFadeController.dispose();
+
+    _dateController.dispose();
+    _usernameController.dispose();
+    _phoneController.dispose();
     _descController.dispose();
+
     _mapController.dispose();
     super.dispose();
   }
@@ -129,7 +134,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         duration: const Duration(milliseconds: 900),
       );
 
-      _sectionFadeList = List.generate(5, (index) {
+      _sectionFadeList = List.generate(6, (index) {
         final startTime = index * 0.15;
         final endTime = (startTime + 0.5).clamp(0.0, 1.0);
         return Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -140,7 +145,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         );
       });
 
-      _sectionSlideList = List.generate(5, (index) {
+      _sectionSlideList = List.generate(6, (index) {
         final startTime = index * 0.15;
         final endTime = (startTime + 0.5).clamp(0.0, 1.0);
         return Tween<Offset>(
@@ -299,9 +304,8 @@ void _cycleMapMode() {
 
   // Submit report to Firestore [_submitReport]
   Future<void> _submitReport() async {
-
     // Check the necessary information
-    if (_selectedBuilding == null || _selectedFloor == null) {
+    if (_selectedBuilding == null || _selectedFloor == null || _selectedRoom == null) {
       _showSnackBar(
         'กรุณาเลือกอาคารและชั้น',
         Colors.red.shade600,
@@ -318,10 +322,18 @@ void _cycleMapMode() {
         await FirebaseFirestore.instance.collection('reports').add({
           'building': _selectedBuilding,
           'floor': _selectedFloor,
+          'room': _selectedRoom,
+
+          'date': _dateController.text,
+          'username': _usernameController.text,
+          'phone': _phoneController.text,
+
           'description': _descController.text.trim(),
+
           'status': 'รอดำเนินการ',
           'lat': _pickedLocation?.latitude,
           'lng': _pickedLocation?.longitude,
+
           'createdAt': FieldValue.serverTimestamp(),
         });
 
@@ -390,16 +402,23 @@ void _cycleMapMode() {
             ? const NeverScrollableScrollPhysics()
             : const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+        // Setup Column Layout
         child: Column(
           children: [
             _withSectionAnimation(0, _buildMapSection()),
             const SizedBox(height: 14),
-            _withSectionAnimation(1, _buildImageSection()),
+
+            _withSectionAnimation(1, _buildReporterSection()),
             const SizedBox(height: 14),
+
             _withSectionAnimation(2, _buildLocationSection()),
             const SizedBox(height: 14),
+
             _withSectionAnimation(3, _buildDescriptionSection()),
             const SizedBox(height: 8),
+
+            _withSectionAnimation(4, _buildImageSection()),
+            const SizedBox(height: 14),
           ],
         ),
       ),
@@ -413,7 +432,7 @@ void _cycleMapMode() {
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [_appColor, _appColorDark],
+            colors: [_emasColor, _emasColorDarker],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -427,7 +446,7 @@ void _cycleMapMode() {
             onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
-            'แจ้งปัญหา',
+            'บันทึกแจ้งปัญหา',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           centerTitle: true,
@@ -466,7 +485,7 @@ void _cycleMapMode() {
                   Icon(Icons.send_rounded, size: 18),
                   SizedBox(width: 8),
                   Text(
-                    'ส่งแจ้งซ่อม',
+                    'ส่งแจ้งปัญหา',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -533,7 +552,7 @@ void _cycleMapMode() {
                               height: 40,
                               child: const Icon(
                                 Icons.location_pin,
-                                color: _appColor,
+                                color: _emasColor,
                                 size: 40,
                               ),
                             ),
@@ -625,7 +644,165 @@ void _cycleMapMode() {
   }
 
   /// >>>>> [8. UI Builder Method] (ฟังก์ชันสร้าง UI ย่อย | เอาไว้แยก build ให้อ่านง่าย) <<<<<
-  /// [8.1 Image Section] (_buildImageSection)
+  /// [8.1 Report Info Section] (_buildReporterSection)
+  Widget _buildReporterSection() {
+    return _buildGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCardHeader(
+            icon: Icons.person_outline,
+            title: 'ข้อมูลผู้แจ้ง',
+          ),
+
+          const SizedBox(height: 12),
+
+          // Date Report "วันที่แจ้งซ่อม"
+          TextField(
+            controller: _dateController,
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'วันที่แจ้งซ่อม',
+              prefixIcon: const Icon(Icons.calendar_today, color: _emasColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: _emasColor, width: 2),
+              ),
+            ),
+
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2025),
+                lastDate: DateTime(2035),
+              );
+
+              if (date != null) {
+                _dateController.text = '${date.day}/${date.month}/${date.year}';
+              }
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          // ชื่อผู้แจ้ง
+          TextField(
+            controller: _usernameController,
+            decoration: InputDecoration(
+              labelText: 'ชื่อผู้แจ้ง',
+              prefixIcon: const Icon(Icons.person, color: _emasColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: _emasColor, width: 2),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // เบอร์ติดต่อ
+          TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: 'เบอร์ติดต่อ',
+              prefixIcon: const Icon(Icons.phone, color: _emasColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: _emasColor, width: 2),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// [8.2 Location Section] (_buildLocationSection)
+  Widget _buildLocationSection() {
+    return _buildGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCardHeader(
+              icon: Icons.apartment_rounded, title: 'สถานที่'),
+          const SizedBox(height: 12),
+          _buildStyledDropdown(
+            value: _selectedBuilding,
+            hint: 'เลือกอาคาร',
+            icon: Icons.domain_rounded,
+            items: _buildingOptions,
+            onChanged: (value) =>
+                setState(() => _selectedBuilding = value),
+          ),
+          const SizedBox(height: 10),
+          _buildStyledDropdown(
+            value: _selectedFloor,
+            hint: 'เลือกชั้น',
+            icon: Icons.layers_rounded,
+            items: _floorOptions,
+            onChanged: (value) => setState(() => _selectedFloor = value),
+          ),
+          const SizedBox(height: 10),
+          _buildStyledDropdown(
+            value: _selectedRoom,
+            hint: 'เลือกห้อง',
+            icon: Icons.room,
+            items: _roomOptions,
+            onChanged: (value) => setState(() => _selectedRoom = value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// [8.3 Description Section] (_buildDescriptionSection)
+  Widget _buildDescriptionSection() {
+    return _buildGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCardHeader(
+              icon: Icons.edit_note_rounded, title: 'รายละเอียดปัญหา'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _descController,
+            maxLines: 5,
+            style: const TextStyle(fontSize: 14, height: 1.5),
+            decoration: InputDecoration(
+              hintText: 'อธิบายปัญหาที่พบ...',
+              hintStyle:
+                  TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: _emasColor, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: const EdgeInsets.all(14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// [8.4 Image Section] (_buildImageSection)
   Widget _buildImageSection() {
     return _buildGlassCard(
       child: Column(
@@ -666,79 +843,8 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.2 Location Section] (_buildLocationSection)
-  Widget _buildLocationSection() {
-    return _buildGlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCardHeader(
-              icon: Icons.apartment_rounded, title: 'สถานที่'),
-          const SizedBox(height: 12),
-          _buildStyledDropdown(
-            value: _selectedBuilding,
-            hint: 'เลือกอาคาร',
-            icon: Icons.domain_rounded,
-            items: _buildingOptions,
-            onChanged: (value) =>
-                setState(() => _selectedBuilding = value),
-          ),
-          const SizedBox(height: 10),
-          _buildStyledDropdown(
-            value: _selectedFloor,
-            hint: 'เลือกชั้น',
-            icon: Icons.layers_rounded,
-            items: _floorOptions,
-            onChanged: (value) => setState(() => _selectedFloor = value),
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// [8.3 Description Section] (_buildDescriptionSection)
-  Widget _buildDescriptionSection() {
-    return _buildGlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCardHeader(
-              icon: Icons.edit_note_rounded, title: 'รายละเอียดปัญหา'),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _descController,
-            maxLines: 5,
-            style: const TextStyle(fontSize: 14, height: 1.5),
-            decoration: InputDecoration(
-              hintText: 'อธิบายปัญหาที่พบ...',
-              hintStyle:
-                  TextStyle(color: Colors.grey.shade400, fontSize: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    BorderSide(color: Colors.grey.shade200, width: 1),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    BorderSide(color: Colors.grey.shade200, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: _appColor, width: 2),
-              ),
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              contentPadding: const EdgeInsets.all(14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// [8.4 Glass Card]
+  /// [8.5 Glass Card]
   // Glass card with a clear white background (_buildGlassCard)
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
@@ -767,18 +873,18 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.5 Section Header]
-  // Section Header (icon + name) (_buildCardHeader)
+  /// [8.6 Section Header]
+  // Setup Section Header (icon + name + color) (_buildCardHeader)
   Widget _buildCardHeader({required IconData icon, required String title}) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: _appColor.withOpacity(0.12),
+            color: _emasColor.withOpacity(0.12),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 16, color: _appColor),
+          child: Icon(icon, size: 16, color: _emasColor),
         ),
         const SizedBox(width: 8),
         Text(
@@ -794,13 +900,13 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.6 Gradiant Button]
+  /// [8.7 Gradiant Button]
   // Gradient Button (Used with the submit button and confirm pin button) (_buildGradientButton)
   Widget _buildGradientButton({
     required VoidCallback onTap,
     required Widget child,
-    Color color1 = _appColor,
-    Color color2 = _appColorDark,
+    Color color1 = _emasColor,
+    Color color2 = _emasColorDarker,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -834,7 +940,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.7 Red Outline Button]
+  /// [8.8 Red Outline Button]
   // Red Outline Button (_buildOutlineButton)
   Widget _buildOutlineButton({
     required IconData icon,
@@ -846,20 +952,20 @@ void _cycleMapMode() {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: _appColor.withOpacity(0.06),
+          color: _emasColor.withOpacity(0.06),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: _appColor.withOpacity(0.4), width: 1.5),
+              color: _emasColor.withOpacity(0.4), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: _appColor),
+            Icon(icon, size: 16, color: _emasColor),
             const SizedBox(width: 6),
             Text(
               label,
               style: const TextStyle(
-                color: _appColor,
+                color: _emasColor,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -870,7 +976,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.8 Green Badge]
+  /// [8.9 Green Badge]
   // Green Badge "ปักหมุดแล้ว" (_buildPinBadge)
   Widget _buildPinBadge() {
     return Container(
@@ -898,7 +1004,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.9 Glass Map Botton]
+  /// [8.10 Glass Map Botton]
   // Glass Button on the map (Map Mode) (_buildGlassMapButton)
   Widget _buildGlassMapButton({
     required IconData icon,
@@ -923,7 +1029,7 @@ void _cycleMapMode() {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 14, color: _appColor),
+                Icon(icon, size: 14, color: _emasColor),
                 const SizedBox(width: 4),
                 Text(
                   label,
@@ -941,7 +1047,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.10 Picking Banner]
+  /// [8.11 Picking Banner]
   // Banner "แตะเพื่อปักหมุด" (_buildPickingBanner)
   Widget _buildPickingBanner() {
     return ClipRRect(
@@ -952,7 +1058,7 @@ void _cycleMapMode() {
           padding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: _appColor.withOpacity(0.75),
+            color: _emasColor.withOpacity(0.75),
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text(
@@ -968,7 +1074,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.11 Close Map Button]
+  /// [8.12 Close Map Button]
   // The X Button closes the Glass Map (_buildCloseMapButton)
   Widget _buildCloseMapButton() {
     return GestureDetector(
@@ -991,7 +1097,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.12 Change Image Button]
+  /// [8.13 Change Image Button]
   // Button "เปลี่ยน" on Image (_buildChangeImageButton)
   Widget _buildChangeImageButton() {
     return GestureDetector(
@@ -1025,7 +1131,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.13 Image Placeholder]
+  /// [8.14 Image Placeholder]
   // Placeholder Box when there is no image yet (_buildImagePlaceholder)
   Widget _buildImagePlaceholder() {
     return GestureDetector(
@@ -1034,21 +1140,21 @@ void _cycleMapMode() {
         height: 110,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: _appColor.withOpacity(0.05),
+          color: _emasColor.withOpacity(0.05),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-              color: _appColor.withOpacity(0.3), width: 1.5),
+              color: _emasColor.withOpacity(0.3), width: 1.5),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.add_photo_alternate_rounded,
-                size: 32, color: _appColor.withOpacity(0.7)),
+                size: 32, color: _emasColor.withOpacity(0.7)),
             const SizedBox(height: 6),
             Text(
               'แตะเพื่อเพิ่มรูปภาพ',
               style: TextStyle(
-                color: _appColor.withOpacity(0.8),
+                color: _emasColor.withOpacity(0.8),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -1065,7 +1171,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.14 Styled Dropdown]
+  /// [8.15 Styled Dropdown]
   // Custom Dropdown Style (_buildStyledDropdown)
   Widget _buildStyledDropdown({
     required String? value,
@@ -1080,7 +1186,7 @@ void _cycleMapMode() {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: value != null
-              ? _appColor.withOpacity(0.5)
+              ? _emasColor.withOpacity(0.5)
               : Colors.grey.shade200,
           width: value != null ? 1.5 : 1,
         ),
@@ -1090,7 +1196,7 @@ void _cycleMapMode() {
           value: value,
           decoration: InputDecoration(
             prefixIcon: Icon(icon,
-                size: 18, color: _appColor.withOpacity(0.7)),
+                size: 18, color: _emasColor.withOpacity(0.7)),
             hintText: hint,
             hintStyle: TextStyle(
                 color: Colors.grey.shade400, fontSize: 14),
@@ -1110,7 +1216,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.15 Image Picker Sheet]
+  /// [8.16 Image Picker Sheet]
   // Bottom Sheet to select image source (_buildImagePickerSheet)
   Widget _buildImagePickerSheet() {
     return ClipRRect(
@@ -1188,7 +1294,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.16 Sheet Option]
+  /// [8.17 Sheet Option]
   // Options in the bottom sheet (_buildSheetOption)
   Widget _buildSheetOption({
     required IconData icon,
@@ -1200,25 +1306,25 @@ void _cycleMapMode() {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: _appColor.withOpacity(0.07),
+          color: _emasColor.withOpacity(0.07),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _appColor.withOpacity(0.2)),
+          border: Border.all(color: _emasColor.withOpacity(0.2)),
         ),
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _appColor.withOpacity(0.12),
+                color: _emasColor.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: _appColor, size: 26),
+              child: Icon(icon, color: _emasColor, size: 26),
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: const TextStyle(
-                color: _appColor,
+                color: _emasColor,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
