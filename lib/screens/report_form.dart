@@ -46,8 +46,6 @@ class ReportForm extends StatefulWidget {
 /// <<<<< [5. State Class] _ReportFormState (สมองของหน้าจอ | หน้าที่: เก็บข้อมูล / เปลี่ยน UI / รับ event / คนควบคุม) >>>>>
 // State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
-// ----------------------------------------------------------------------------------------------------
-
   /// [5.1 Controllers] (ตัวควบคุม)
   // Controllers [_descController, _mapController, _imagePicker]
   final _dateController = TextEditingController();
@@ -408,17 +406,17 @@ void _cycleMapMode() {
             _withSectionAnimation(0, _buildMapSection()),
             const SizedBox(height: 14),
 
-            _withSectionAnimation(1, _buildReporterSection()),
+            _withSectionAnimation(1, _buildImageSection()),
             const SizedBox(height: 14),
 
-            _withSectionAnimation(2, _buildLocationSection()),
+            _withSectionAnimation(2, _buildReporterSection()),
             const SizedBox(height: 14),
 
-            _withSectionAnimation(3, _buildDescriptionSection()),
+            _withSectionAnimation(3, _buildLocationSection()),
+            const SizedBox(height: 14),
+
+            _withSectionAnimation(4, _buildDescriptionSection()),
             const SizedBox(height: 8),
-
-            _withSectionAnimation(4, _buildImageSection()),
-            const SizedBox(height: 14),
           ],
         ),
       ),
@@ -644,7 +642,48 @@ void _cycleMapMode() {
   }
 
   /// >>>>> [8. UI Builder Method] (ฟังก์ชันสร้าง UI ย่อย | เอาไว้แยก build ให้อ่านง่าย) <<<<<
-  /// [8.1 Report Info Section] (_buildReporterSection)
+  /// [8.1 Image Section] (_buildImageSection)
+  Widget _buildImageSection() {
+    return _buildGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCardHeader(
+              icon: Icons.camera_alt_rounded, title: 'รูปภาพ'),
+          const SizedBox(height: 12),
+
+          // If an image is already present → display the image with a change button
+          if (_selectedImage != null) ...[
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.file(
+                    _selectedImage!,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),  
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _buildChangeImageButton(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // But if an image not present → show Placeholder box
+          if (_selectedImage == null)
+            _buildImagePlaceholder(),
+        ],
+      ),
+    );
+  }
+
+  /// [8.2 Report Info Section] (_buildReporterSection)
   Widget _buildReporterSection() {
     return _buildGlassCard(
       child: Column(
@@ -734,7 +773,7 @@ void _cycleMapMode() {
     );
   }
   
-  /// [8.2 Location Section] (_buildLocationSection)
+  /// [8.3 Location Section] (_buildLocationSection)
   Widget _buildLocationSection() {
     return _buildGlassCard(
       child: Column(
@@ -772,7 +811,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.3 Description Section] (_buildDescriptionSection)
+  /// [8.4 Description Section] (_buildDescriptionSection)
   Widget _buildDescriptionSection() {
     return _buildGlassCard(
       child: Column(
@@ -802,48 +841,6 @@ void _cycleMapMode() {
       ),
     );
   }
-
-  /// [8.4 Image Section] (_buildImageSection)
-  Widget _buildImageSection() {
-    return _buildGlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCardHeader(
-              icon: Icons.camera_alt_rounded, title: 'รูปภาพ'),
-          const SizedBox(height: 12),
-
-          // If an image is already present → display the image with a change button
-          if (_selectedImage != null) ...[
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.file(
-                    _selectedImage!,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),  
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: _buildChangeImageButton(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-          ],
-
-          // But if an image not present → show Placeholder box
-          if (_selectedImage == null)
-            _buildImagePlaceholder(),
-        ],
-      ),
-    );
-  }
-
 
   /// [8.5 Glass Card]
   // Glass card with a clear white background (_buildGlassCard)
