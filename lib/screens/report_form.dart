@@ -51,6 +51,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   final _dateController = TextEditingController();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _selectedRoom = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
   final _imagePicker = ImagePicker();
@@ -76,7 +77,6 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   // Form State [_selecetedBuilding, _selectedFloor, _selectedImage, _selectedRoom, _isSubmitting]
   String? _selectedBuilding;
   String? _selectedFloor;
-  String? _selectedRoom;
   File? _selectedImage;
   bool _isSubmitting = false;
 
@@ -105,6 +105,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     _dateController.dispose();
     _usernameController.dispose();
     _phoneController.dispose();
+    _selectedRoom.dispose();
     _descController.dispose();
 
     _mapController.dispose();
@@ -303,7 +304,7 @@ void _cycleMapMode() {
   // Submit report to Firestore [_submitReport]
   Future<void> _submitReport() async {
     // Check the necessary information
-    if (_selectedBuilding == null || _selectedFloor == null || _selectedRoom == null) {
+    if (_selectedBuilding == null || _selectedFloor == null) {
       _showSnackBar(
         'กรุณาเลือกอาคารและชั้น',
         Colors.red.shade600,
@@ -318,13 +319,13 @@ void _cycleMapMode() {
         setState(() => _isSubmitting = true);
 
         await FirebaseFirestore.instance.collection('reports').add({
-          'building': _selectedBuilding,
-          'floor': _selectedFloor,
-          'room': _selectedRoom,
-
           'date': _dateController.text,
           'username': _usernameController.text,
           'phone': _phoneController.text,
+
+          'building': _selectedBuilding,
+          'floor': _selectedFloor,
+          'room': _selectedRoom,
 
           'description': _descController.text.trim(),
 
@@ -798,13 +799,21 @@ void _cycleMapMode() {
             items: _floorOptions,
             onChanged: (value) => setState(() => _selectedFloor = value),
           ),
-          const SizedBox(height: 10),
-          _buildStyledDropdown(
-            value: _selectedRoom,
-            hint: 'เลือกห้อง',
-            icon: Icons.meeting_room_outlined,
-            items: _roomOptions,
-            onChanged: (value) => setState(() => _selectedRoom = value),
+          TextField(
+            controller: _selectedRoom,
+            decoration: InputDecoration(
+              labelText: 'ห้องเลขที่',
+              labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              prefixIcon: const Icon(Icons.meeting_room_outlined, color: _emasColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _emasColor, width: 2),
+              ),
+            ),
           ),
         ],
       ),
