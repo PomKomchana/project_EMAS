@@ -306,7 +306,7 @@ void _cycleMapMode() {
 
           'building': _selectedBuilding,
           'floor': _selectedFloor,
-          'room': _selectedRoom,
+          'room': _selectedRoom.text,
 
           'description': _descController.text.trim(),
 
