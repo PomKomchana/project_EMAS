@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';  
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -37,7 +37,6 @@ class ReportForm extends StatefulWidget {
 
 // State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
-  /// [5.1 Controllers] (ตัวควบคุม)
   // Controllers [_descController, _mapController, _imagePicker]
   final _dateController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -73,6 +72,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   static const _buildingOptions = ['อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5',];
   static const _floorOptions = ['ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5',];
   static const _roomOptions = ['110', '111', '112', '113', '114',];
+  // ----------------------------------------------------------------------------------------------------
 
   // InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
   @override
@@ -306,7 +306,7 @@ void _cycleMapMode() {
 
           'building': _selectedBuilding,
           'floor': _selectedFloor,
-          'room': _selectedRoom.text,
+          'room': _selectedRoom,
 
           'description': _descController.text.trim(),
 
@@ -621,6 +621,7 @@ void _cycleMapMode() {
     );
   }
 
+  // ฟังก์ชันสร้าง UI ย่อย | เอาไว้แยก build ให้อ่านง่าย
   Widget _buildImageSection() {
     return _buildGlassCard(
       child: Column(
