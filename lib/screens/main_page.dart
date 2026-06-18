@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -8,6 +7,7 @@ import 'report_form.dart';
 import 'report_list_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
+import '../Admin/admin_login.dart';
 
 const _appColor = Color(0xFFe85d6a);
 
@@ -57,18 +57,27 @@ class _MainPageState extends State<MainPage> {
               centerTitle: true,
             ),
       drawer: _AppDrawer(
-        onTap: (i) {
-          Navigator.pop(context);
-          setState(() => _selectedIndex = i);
-        },
-        onEmergency: () {
-          Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const EmergencyPage()),
-          );
-        },
+  onTap: (i) {
+    Navigator.pop(context);
+    setState(() => _selectedIndex = i);
+  },
+  onEmergency: () {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EmergencyPage()),
+    );
+  },
+  onAdmin: () {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AdminLoginPage(),
       ),
+    );
+  },
+),
       body: IndexedStack(
         index: _selectedIndex,
         children: const [_HomePage(), ReportListPage(), ProfilePage()],
@@ -85,9 +94,15 @@ class _MainPageState extends State<MainPage> {
 }
 
 class _AppDrawer extends StatelessWidget {
-  const _AppDrawer({required this.onTap, required this.onEmergency});
+  const _AppDrawer({
+    required this.onTap,
+    required this.onEmergency,
+    required this.onAdmin,
+  });
+
   final void Function(int) onTap;
   final VoidCallback onEmergency;
+  final VoidCallback onAdmin;
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +126,7 @@ class _AppDrawer extends StatelessWidget {
             onTap: onEmergency,
             color: _appColor,
           ),
+          _DrawerItem(icon: Icons.admin_panel_settings_outlined, label: 'เข้าสู่ระบบ Admin', onTap: onAdmin),
         ],
       ),
     );
