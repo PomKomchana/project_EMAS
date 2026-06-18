@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'report_form.dart';
 import 'report_list_page.dart';
+import 'profile_page.dart';
 import 'emergency_page.dart';
 
 const _appColor = Color(0xFFe85d6a);
@@ -70,7 +71,7 @@ class _MainPageState extends State<MainPage> {
       ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [_HomePage(), ReportListPage(), _ProfilePage()],
+        children: const [_HomePage(), ReportListPage(), ProfilePage()],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
