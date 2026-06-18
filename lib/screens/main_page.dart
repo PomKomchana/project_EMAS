@@ -5,6 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'report_form.dart';
 import 'reportList/report_list_page.dart';
+import 'profile_page.dart';
+import 'emergency_page.dart';
 
 const _appColor = Color(0xFFe85d6a);
 
@@ -53,13 +55,22 @@ class _MainPageState extends State<MainPage> {
               ),
               centerTitle: true,
             ),
-      drawer: _AppDrawer(onTap: (i) {
-        Navigator.pop(context);
-        setState(() => _selectedIndex = i);
-      }),
+      drawer: _AppDrawer(
+        onTap: (i) {
+          Navigator.pop(context);
+          setState(() => _selectedIndex = i);
+        },
+        onEmergency: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EmergencyPage()),
+          );
+        },
+      ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [_HomePage(), ReportListPage(), _ProfilePage()],
+        children: const [_HomePage(), ReportListPage(), ProfilePage()],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -73,8 +84,9 @@ class _MainPageState extends State<MainPage> {
 }
 
 class _AppDrawer extends StatelessWidget {
-  const _AppDrawer({required this.onTap});
+  const _AppDrawer({required this.onTap, required this.onEmergency});
   final void Function(int) onTap;
+  final VoidCallback onEmergency;
 
   @override
   Widget build(BuildContext context) {
@@ -84,12 +96,20 @@ class _AppDrawer extends StatelessWidget {
         children: [
           const DrawerHeader(
             decoration: BoxDecoration(color: _appColor),
-            child: Text('Plan Alert',
-                style: TextStyle(color: Colors.white, fontSize: 24)),
+            child: Text('EMAS',
+                style: TextStyle(color: Colors.white, fontSize: 24,
+                    fontWeight: FontWeight.bold)),
           ),
           _DrawerItem(icon: Icons.home, label: 'หน้าหลัก', onTap: () => onTap(0)),
           _DrawerItem(icon: Icons.list_alt, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
           _DrawerItem(icon: Icons.person, label: 'โปรไฟล์', onTap: () => onTap(2)),
+          const Divider(height: 1),
+          _DrawerItem(
+            icon: Icons.phone_in_talk_outlined,
+            label: 'เบอร์โทรฉุกเฉิน',
+            onTap: onEmergency,
+            color: _appColor,
+          ),
         ],
       ),
     );
@@ -98,16 +118,19 @@ class _AppDrawer extends StatelessWidget {
 
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem(
-      {required this.icon, required this.label, required this.onTap});
+      {required this.icon, required this.label, required this.onTap,
+      this.color});
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
+      leading: Icon(icon, color: color),
+      title: Text(label,
+          style: color != null ? TextStyle(color: color, fontWeight: FontWeight.w600) : null),
       onTap: onTap,
     );
   }
