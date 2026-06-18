@@ -1,63 +1,45 @@
-/// <<<<< [1. Import] (นำเข้า package / library) >>>>>
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// <<<<< [2. Constants] (ค่าคงที่ / Theme / Shared Data) >>>>>
 const _emasColor = Color(0xFFe85d6a);
 const _emasColorDarker = Color(0xFFc4394a);
 
-// Severity Config [severityLevels]
-// Maps a severity key (stored in Firestore) to its display label + color
-// Used by both the List Card Badge and the Detail Page Badge
 const severityLevels = {
   'high':   {'label': 'ด่วนมาก',  'color': Color(0xFFef4444)},
   'medium': {'label': 'ปานกลาง', 'color': Color(0xFFf97316)},
   'low':    {'label': 'ไม่ด่วน',  'color': Color(0xFF22c55e)},
   'none':   {'label': 'ยังไม่ระบุ', 'color': Colors.grey},
 };
-// ====================================================================================================
 
-/// <<<<< [3. Widget Class] ReportListPage >>>>>
 class ReportListPage extends StatefulWidget {
   const ReportListPage({super.key});
 
   @override
   State<ReportListPage> createState() => _ReportListPageState();
 }
-// ====================================================================================================
 
-/// <<<<< [4. State Class] _ReportListPageState >>>>>
 class _ReportListPageState extends State<ReportListPage>
     with TickerProviderStateMixin {
 
-  /// [4.1 Controllers]
-  // Animation Controllers
   late final TabController _tabController;
   late final AnimationController _fadeController;
 
-  // Staggered Card Animations
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
 
-  /// [4.2 State Variables]
-  // Current Selected Filter (null = Show all reports)
   String? _filterStatus;
 
-  /// [4.3 Lifecycle Methods]
-  // Initialize Controllers and Animations
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Card Entrance Animation (Stagger)
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
 
-    // Generate Stagged Fade Animations
     _fadeList = List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
 
@@ -69,7 +51,6 @@ class _ReportListPageState extends State<ReportListPage>
       );
     });
 
-    // Generate Stagged Slide Animations
     _slideList = List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
 
@@ -84,10 +65,8 @@ class _ReportListPageState extends State<ReportListPage>
       );
     });
 
-    // Start Initial Animation
     _fadeController.forward();
 
-    // Restart animation on tab switch
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         _fadeController.reset();
@@ -96,7 +75,6 @@ class _ReportListPageState extends State<ReportListPage>
     });
   }
 
-  // dispose → Clear memory
   @override
   void dispose() {
     _tabController.dispose();
@@ -104,13 +82,10 @@ class _ReportListPageState extends State<ReportListPage>
     super.dispose();
   }
 
-  /// [4.4 Helper / Logic Methods]
-  // Fetch report stream [_reportsStream]
-  // Firestore Stream → โหลด reports และเรียง createdAt จากใหม่ → เก่า
   Stream<QuerySnapshot> _reportsStream() {
     return FirebaseFirestore.instance
         .collection('reports')
-        .orderBy('createdAt', descending: true) // ใหม่ → เก่า
+        .orderBy('createdAt', descending: true)
         .snapshots();
   }
 
@@ -119,9 +94,8 @@ class _ReportListPageState extends State<ReportListPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
 
-      // AppBar Gradient
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56 + 48), // toolbar + tabbar
+        preferredSize: const Size.fromHeight(56 + 48),
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -134,7 +108,6 @@ class _ReportListPageState extends State<ReportListPage>
             child: Column(
               children: [
 
-                // Title Row
                 Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 10),
@@ -155,7 +128,6 @@ class _ReportListPageState extends State<ReportListPage>
                   ),
                 ),
 
-                // Tab Bar
                 TabBar(
                   controller: _tabController,
                   indicatorColor: Colors.white,
@@ -191,7 +163,6 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Build Status Filter Dropdown Button
   Widget _buildFilterButton() {
     return GestureDetector(
       onTap: () => _showFilterSheet(),
@@ -228,7 +199,6 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Show Filter Bottom Sheet
   void _showFilterSheet() {
     showModalBottomSheet( 
       context: context,
@@ -259,7 +229,6 @@ class _ReportListPageState extends State<ReportListPage>
                           fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 8),
 
-                  // Filter Option
                   for (final option in [
                     null,
                     'รอดำเนินการ',
@@ -289,30 +258,25 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Build Report List
   Widget _buildList({required bool myReportsOnly}) {
     return StreamBuilder<QuerySnapshot>(
       stream: _reportsStream(),
       builder: (context, snapshot) {
 
-        // Loading
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(color: _emasColor), // วงกลมหมุนๆ
+            child: CircularProgressIndicator(color: _emasColor),
           );
         }
 
-        // Error
         if (snapshot.hasError) {
           return Center(
             child: Text('เกิดข้อผิดพลาด: ${snapshot.error}'),
           );
         }
 
-        // Success
         var docs = snapshot.data?.docs ?? [];
 
-        // Filter ตามสถานะ (ถ้าเลือก)
         if (_filterStatus != null) {
           docs = docs.where((doc) {
             final data = doc.data() as Map<String, dynamic>;
@@ -320,7 +284,6 @@ class _ReportListPageState extends State<ReportListPage>
           }).toList();
         }
 
-        // Empty State
         if (docs.isEmpty) {
           return _buildEmptyState();
         }
@@ -347,7 +310,6 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Build Empty State
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -368,7 +330,6 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Build Report Card
   Widget _buildReportCard(
       BuildContext context, Map<String, dynamic> data, String id) {
 
@@ -381,7 +342,6 @@ class _ReportListPageState extends State<ReportListPage>
     final severity = data['severity'] ?? 'none';
     final imageUrl = data['imageUrl'] as String?;
 
-    // สีและ label ของระดับความร้ายแรง
     final severityColor = (severityLevels[severity]?['color'] as Color?) ?? Colors.grey;
     final severityLabel = (severityLevels[severity]?['label'] as String?) ?? 'ยังไม่ระบุ';
 
@@ -432,7 +392,6 @@ class _ReportListPageState extends State<ReportListPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // ===== Thumbnail รูปภาพ =====
                 Hero(
                   tag: 'img_$id',
                   child: ClipRRect(
@@ -451,13 +410,11 @@ class _ReportListPageState extends State<ReportListPage>
 
                 const SizedBox(width: 12),
 
-                // ===== เนื้อหา =====
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
-                      // อาคาร / ชั้น / ห้อง
                       Row(
                         children: [
                           Expanded(
@@ -471,7 +428,6 @@ class _ReportListPageState extends State<ReportListPage>
                             ),
                           ),
 
-                          // ===== จุดระดับความร้ายแรง =====
                           _buildSeverityBadge(
                               severityColor, severityLabel),
                         ],
@@ -479,7 +435,6 @@ class _ReportListPageState extends State<ReportListPage>
 
                       const SizedBox(height: 4),
 
-                      // รายละเอียด
                       Text(
                         desc,
                         maxLines: 2,
@@ -493,7 +448,6 @@ class _ReportListPageState extends State<ReportListPage>
 
                       const SizedBox(height: 8),
 
-                      // สถานะ + วันที่
                       Row(
                         children: [
                           _buildStatusChip(status),
@@ -514,7 +468,6 @@ class _ReportListPageState extends State<ReportListPage>
                   ),
                 ),
 
-                // ===== ลูกศร =====
                 const SizedBox(width: 4),
                 Icon(Icons.chevron_right_rounded,
                     color: Colors.grey.shade400),
@@ -526,7 +479,6 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Build Severity Badge (ระดับความร้ายแรง)
   Widget _buildSeverityBadge(Color color, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -558,7 +510,6 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Build Status Chip (สถานะการดำเนินการ)
   Widget _buildStatusChip(String status) {
     Color bg;
     Color fg;
@@ -572,7 +523,7 @@ class _ReportListPageState extends State<ReportListPage>
         bg = Colors.green.shade50;
         fg = Colors.green.shade700;
         break;
-      default: // รอดำเนินการ
+      default:
         bg = _emasColor.withOpacity(0.1);
         fg = _emasColorDarker;
     }
@@ -594,15 +545,11 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 }
-// ====================================================================================================
 
-/// <<<<< [5. Detail Page] ReportDetailPage >>>>>
 class ReportDetailPage extends StatelessWidget {
-  // Report Data
   final Map<String, dynamic> data;
   final String id;
 
-  // Document ID
   const ReportDetailPage({super.key, required this.data, required this.id});
 
   @override
@@ -624,7 +571,6 @@ class ReportDetailPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
 
-      // ===== AppBar =====
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(56),
         child: Container(
@@ -659,7 +605,6 @@ class ReportDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ===== รูปภาพ (Hero) =====
             Hero(
               tag: 'img_$id',
               child: ClipRRect(
@@ -696,7 +641,6 @@ class ReportDetailPage extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // ===== Header: อาคาร + severity badge =====
             _buildGlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,7 +657,7 @@ class ReportDetailPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      // Severity badge
+
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
@@ -749,7 +693,6 @@ class ReportDetailPage extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // สถานะ + วันที่ แบบ row
                   Row(
                     children: [
                       _buildInfoChip(
@@ -767,7 +710,6 @@ class ReportDetailPage extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // ===== รายละเอียดปัญหา =====
             _buildGlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,7 +728,6 @@ class ReportDetailPage extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // ===== ข้อมูลผู้แจ้ง =====
             _buildGlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -808,8 +749,6 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  /// [5.1 UI Builder]
-  // Build Glass Card
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -837,7 +776,6 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Build Section Header
   Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
@@ -862,7 +800,6 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Build Info Row
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
@@ -883,7 +820,6 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Build Info Chip (Build สถานะการดำเนินการ)
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -910,7 +846,6 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Get Status Color (Build ระดับความร้ายแรง)
   Color _statusColor(String status) {
     switch (status) {
       case 'กำลังดำเนินการ':

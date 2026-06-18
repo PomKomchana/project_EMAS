@@ -1,16 +1,13 @@
-/// <<<<< [1. Import] (นำเข้า package / library) >>>>>
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/flutter_map.dart';  
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// ====================================================================================================
 
-/// <<<<< [2. Constants] Const Variable (ประกาศค่าคงที่ / ตัวแปรที่ไม่เปลี่ยน) >>>>>
 // EMAS Theme Colors [_emasColor, _emasColorDarker]
 const _emasColor = Color(0xFFe85d6a);
 const _emasColorDarker = Color(0xFFc4394a);
@@ -27,23 +24,17 @@ const _tileNormal = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
 const _tileHybrid = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
 const _tileSatellite = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
 const _tileTerrain   = 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}';
-// ====================================================================================================
 
-/// <<<<< [3. Enum] (ชุดตัวเลือกแบบจำกัด) >>>>>
 // Map mode [_MapMod]
 enum _MapMode {normal, hybrid, satellite, terrain,}
-// ====================================================================================================
 
-/// <<<<< [4. Widget Class] ReportForm (ตัวแม่ของหน้าจอ | หน้าที่: สร้างหน้า / ส่งต่อให้ State จัดการ) >>>>>
 class ReportForm extends StatefulWidget {
   const ReportForm({super.key});
 
   @override
   State<ReportForm> createState() => _ReportFormState();
 }
-// ====================================================================================================
 
-/// <<<<< [5. State Class] _ReportFormState (สมองของหน้าจอ | หน้าที่: เก็บข้อมูล / เปลี่ยน UI / รับ event / คนควบคุม) >>>>>
 // State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   /// [5.1 Controllers] (ตัวควบคุม)
@@ -65,9 +56,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     late final AnimationController _sectionFadeController;
     late final List<Animation<double>> _sectionFadeList;
     late final List<Animation<Offset>> _sectionSlideList;
-  // ----------------------------------------------------------------------------------------------------
 
-  /// [5.2 State Variable] (ตัวแปรสถานะ)
   // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
   bool _isMapExpanded = false;         // Whether the map is currently expanded
   bool _isPickingMode = false;         // Whether the user is in pin selection mode (waiting for map tap)
@@ -84,9 +73,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   static const _buildingOptions = ['อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5',];
   static const _floorOptions = ['ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5',];
   static const _roomOptions = ['110', '111', '112', '113', '114',];
-  // ----------------------------------------------------------------------------------------------------
 
-  /// [5.3 Lifecycle Methods] (เมธอดตามวงจรชีวิต | เช่น: เปิดหน้า → initState ปิดหน้า → dispose เหมือน “เกิด → ใช้งาน → ตาย”)
   // InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
   @override
   void initState() {
@@ -158,9 +145,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         );
       });
     }
-  // ----------------------------------------------------------------------------------------------------
 
-  /// [5.4 Helper / Logic Methods] (ฟังก์ชันช่วย + ตรรกะ | ทำงานเบื้องหลัง / ไม่ใช่สร้าง UI)
   // Request GPS permission and move map to user location [_requestLocationAndMove]
   Future<void> _requestLocationAndMove() async {
     try {
@@ -238,11 +223,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     _showSnackBar('ปักหมุดสำเร็จ ✓', Colors.green.shade600,
         Icons.check_circle_outline);
   }
-  // ----------------------------------------------------------------------------------------------------
 
-  // ====================================================================================================
-
-/// >>>>> [6.Getters] (ตัวคืนค่าแบบคำนวณ) <<<<<
 // Get current tile URL from selected map mode [_currentTileUrl]
 String get _currentTileUrl {
   switch (_mapMode) {
@@ -381,21 +362,19 @@ void _cycleMapMode() {
       ),
     );
   }
-  // =============================================================
 
-  /// >>>>> [7.Build] (วาดหน้าจอหลัก | Flutter จะเรียกตรงนี้เพื่อสร้าง UI) <<<<<
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
 
-      // ----- AppBar -----
+      // AppBar
       appBar: _buildAppBar(),
 
-      // ----- Submit Bar at bottom -----
+      // Submit Bar at bottom
       bottomNavigationBar: _withSectionAnimation(4, _buildSubmitBar()),
 
-      // ----- Main -----
+      // Main
       body: SingleChildScrollView(
         physics: _isMapExpanded
             ? const NeverScrollableScrollPhysics()
@@ -424,7 +403,7 @@ void _cycleMapMode() {
     );
   }
 
-  // ----- App Bar -----
+  // App Bar
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -454,7 +433,7 @@ void _cycleMapMode() {
     );
   }
 
-  // ----- Submit Bar -----
+  // Submit Bar
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -497,7 +476,7 @@ void _cycleMapMode() {
     );
   }
 
-  // ----- Map -----
+  // Map
   Widget _buildMapSection() {
     return _buildGlassCard(
       child: Column(
@@ -642,8 +621,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// >>>>> [8. UI Builder Method] (ฟังก์ชันสร้าง UI ย่อย | เอาไว้แยก build ให้อ่านง่าย) <<<<<
-  /// [8.1 Image Section] (_buildImageSection)
   Widget _buildImageSection() {
     return _buildGlassCard(
       child: Column(
@@ -684,7 +661,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.2 Report Info Section] (_buildReporterSection)
   Widget _buildReporterSection() {
     return _buildGlassCard(
       child: Column(
@@ -774,7 +750,6 @@ void _cycleMapMode() {
     );
   }
   
-  /// [8.3 Location Section] (_buildLocationSection)
   Widget _buildLocationSection() {
     return _buildGlassCard(
       child: Column(
@@ -820,7 +795,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.4 Description Section] (_buildDescriptionSection)
   Widget _buildDescriptionSection() {
     return _buildGlassCard(
       child: Column(
@@ -851,7 +825,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.5 Glass Card]
   // Glass card with a clear white background (_buildGlassCard)
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
@@ -880,7 +853,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.6 Section Header]
   // Setup Section Header (icon + name + color) (_buildCardHeader)
   Widget _buildCardHeader({required IconData icon, required String title}) {
     return Row(
@@ -907,7 +879,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.7 Gradiant Button]
   // Gradient Button (Used with the submit button and confirm pin button) (_buildGradientButton)
   Widget _buildGradientButton({
     required VoidCallback onTap,
@@ -947,7 +918,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.8 Red Outline Button]
   // Red Outline Button (_buildOutlineButton)
   Widget _buildOutlineButton({
     required IconData icon,
@@ -983,7 +953,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.9 Green Badge]
   // Green Badge "ปักหมุดแล้ว" (_buildPinBadge)
   Widget _buildPinBadge() {
     return Container(
@@ -1011,7 +980,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.10 Glass Map Botton]
   // Glass Button on the map (Map Mode) (_buildGlassMapButton)
   Widget _buildGlassMapButton({
     required IconData icon,
@@ -1054,7 +1022,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.11 Picking Banner]
   // Banner "แตะเพื่อปักหมุด" (_buildPickingBanner)
   Widget _buildPickingBanner() {
     return ClipRRect(
@@ -1081,7 +1048,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.12 Close Map Button]
   // The X Button closes the Glass Map (_buildCloseMapButton)
   Widget _buildCloseMapButton() {
     return GestureDetector(
@@ -1104,7 +1070,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.13 Change Image Button]
   // Button "เปลี่ยน" on Image (_buildChangeImageButton)
   Widget _buildChangeImageButton() {
     return GestureDetector(
@@ -1138,7 +1103,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.14 Image Placeholder]
   // Placeholder Box when there is no image yet (_buildImagePlaceholder)
   Widget _buildImagePlaceholder() {
     return GestureDetector(
@@ -1178,7 +1142,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.15 Styled Dropdown]
   // Custom Dropdown Style (_buildStyledDropdown)
   Widget _buildStyledDropdown({
     required String? value,
@@ -1223,7 +1186,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.16 Image Picker Sheet]
   // Bottom Sheet to select image source (_buildImagePickerSheet)
   Widget _buildImagePickerSheet() {
     return ClipRRect(
@@ -1301,7 +1263,6 @@ void _cycleMapMode() {
     );
   }
 
-  /// [8.17 Sheet Option]
   // Options in the bottom sheet (_buildSheetOption)
   Widget _buildSheetOption({
     required IconData icon,
