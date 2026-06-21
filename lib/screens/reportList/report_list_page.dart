@@ -1,7 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'report_constants.dart';
+
+import 'report_list_constants.dart';
 import 'report_detail_page.dart';
 
 class ReportListPage extends StatefulWidget {

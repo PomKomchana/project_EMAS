@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'report_constants.dart';
+import 'report_list_constants.dart';
 
 class ReportDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;

@@ -1,0 +1,77 @@
+import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_map/flutter_map.dart';
+
+/// <<<<< Theme Colors >>>>>>
+// EMAS Theme Colors [emasColor, emasColorDarker]
+const emasColor = Color(0xFFe85d6a);
+const emasColorDarker = Color(0xFFc4394a);
+
+/// <<<<< Map Location & Bounds >>>>>>
+// Google Map Location and Bounds config [mapLocation, mapBounds]
+const mapLocation = LatLng(14.1076, 100.9822);
+final mapBounds = LatLngBounds(
+  const LatLng(14.1010, 100.9750),
+  const LatLng(14.1140, 100.9900),
+);
+
+/// <<<<< Tile URLs - GoogleMap >>>>>>
+// Tile URL templates for each map mode [tileNormal, tileHybrid, tileSatellite, tileTerrain]
+const tileNormal = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+const tileHybrid = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
+const tileSatellite = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
+const tileTerrain = 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}';
+
+/// <<<<< Map Mode >>>>>>
+// Map display mode [MapMode]
+enum MapMode { normal, hybrid, satellite, terrain }
+
+// ==== Helpers to get tile URL / label / icon for a given MapMode ====
+// [_modeTileUrl, _modeLabel, _modeIcon]
+// These live here (not as getters on the State class) so any widget that
+// needs map-mode info can use them without depending on _ReportFormState.
+
+String mapModeTileUrl(MapMode mode) {
+  switch (mode) {
+    case MapMode.normal:
+      return tileNormal;
+    case MapMode.hybrid:
+      return tileHybrid;
+    case MapMode.satellite:
+      return tileSatellite;
+    case MapMode.terrain:
+      return tileTerrain;
+  }
+}
+
+String mapModeLabel(MapMode mode) {
+  switch (mode) {
+    case MapMode.normal:
+      return 'ปกติ';
+    case MapMode.hybrid:
+      return 'ไฮบริด';
+    case MapMode.satellite:
+      return 'ดาวเทียม';
+    case MapMode.terrain:
+      return 'ภูมิประเทศ';
+  }
+}
+
+IconData mapModeIcon(MapMode mode) {
+  switch (mode) {
+    case MapMode.normal:
+      return Icons.map_outlined;
+    case MapMode.hybrid:
+      return Icons.layers_outlined;
+    case MapMode.satellite:
+      return Icons.satellite_alt;
+    case MapMode.terrain:
+      return Icons.terrain;
+  }
+}
+
+/// <<<<< Dropdown Options >>>>>>
+// Dropdown Options [buildingOptions, floorOptions, roomOptions]
+const buildingOptions = ['อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5'];
+const floorOptions = ['ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5'];
+const roomOptions = ['110', '111', '112', '113', '114'];

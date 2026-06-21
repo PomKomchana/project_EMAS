@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'report_form.dart';
+import 'reportForm/report_form.dart';
 import 'reportList/report_list_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
