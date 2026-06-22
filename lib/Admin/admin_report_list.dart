@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'admin_report_detail.dart';
 
 const _appColor = Color(0xFFe85d6a);

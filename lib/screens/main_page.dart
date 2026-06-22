@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+
 import 'reportForm/report_form.dart';
 import 'reportList/report_list_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
-import '../Admin/admin_login.dart';
+import '../register/login.dart';
 
 const _appColor = Color(0xFFe85d6a);
 
@@ -73,7 +74,7 @@ class _MainPageState extends State<MainPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const AdminLoginPage(),
+        builder: (_) => const LoginPage(),
       ),
     );
   },
