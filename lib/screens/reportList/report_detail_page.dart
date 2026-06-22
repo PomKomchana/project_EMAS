@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'report_constants.dart';
+import 'report_list_constants.dart';
 
+// Detail view for a single report, opened from ReportListPage.
+// Pure display widget — no Firestore calls here.
 class ReportDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
   final String id;
@@ -14,6 +16,7 @@ class ReportDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Fall back to '-' for missing fields (older reports may lack some)
     final building = data['building'] ?? '-';
     final floor = data['floor'] ?? '-';
     final room = data['room'] ?? '-';
@@ -65,6 +68,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // App Bar
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -94,6 +98,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // Hero photo, shares tag with the list page thumbnail
   Widget _buildHeroImage(String? imageUrl) {
     return Hero(
       tag: 'img_$id',
@@ -111,6 +116,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // Shown when there's no photo
   Widget _buildNoImagePlaceholder() {
     return Container(
       height: 220,
@@ -130,6 +136,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // Title + severity badge + status/date chips
   Widget _buildHeaderSection({
     required String building,
     required String floor,
@@ -176,6 +183,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // Severity dot + label (duplicate of list page's version)
   Widget _buildSeverityBadge(SeverityInfo severity) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -209,6 +217,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // "รายละเอียดปัญหา" card
   Widget _buildDescriptionSection(String desc) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,6 +236,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // "ข้อมูลผู้แจ้ง" card
   Widget _buildReporterSection({
     required String username,
     required String phone,
@@ -243,6 +253,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // Glass card background (duplicate of list page's glass container)
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -269,6 +280,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // Icon chip + bold title for each section
   Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
@@ -293,6 +305,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // "label: value" row, used for name/phone
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
@@ -310,6 +323,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
+  // Outlined pill for the status/date chips
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

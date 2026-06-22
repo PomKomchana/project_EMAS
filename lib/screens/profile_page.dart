@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'main_page.dart';
-import '../Admin/admin_login.dart';
+import '../register/login.dart';
 
 const _appColor = Color(0xFFe85d6a);
 
@@ -181,7 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const AdminLoginPage(),
+        builder: (_) => const LoginPage(),
       ),
     );
   },

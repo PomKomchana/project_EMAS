@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'admin_main.dart';
-//
+
+import '../Admin/admin_main.dart';
+import '../screens/main_page.dart';
+
 const _appColor = Color(0xFFe85d6a);
 
-class AdminLoginPage extends StatefulWidget {
-  const AdminLoginPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<AdminLoginPage> createState() => _AdminLoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _AdminLoginPageState extends State<AdminLoginPage> {
+class _LoginPageState extends State<LoginPage> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -59,7 +61,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const AdminMainPage()),
+        MaterialPageRoute(builder: (_) => const MainPage()),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {

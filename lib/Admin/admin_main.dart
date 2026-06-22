@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'admin_report_list.dart';
 import 'admin_news.dart';
-import 'admin_login.dart';
+import '../register/login.dart';
+import '../screens/main_page.dart';
 
 const _appColor = Color(0xFFe85d6a);
 
@@ -39,7 +41,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (_) => const AdminLoginPage()),
+                  MaterialPageRoute(builder: (_) => const MainPage()),
                   (route) => false,
                 );
               }

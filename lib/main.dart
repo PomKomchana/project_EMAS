@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+
 import 'screens/loading.dart';
 import 'screens/main_page.dart';
-import 'screens/report_form.dart';
-import 'Admin/admin_login.dart';
+import 'screens/reportForm/report_form.dart';
+import 'register/login.dart';
+
 void main() async {
   // Make sure Flutter is ready
   WidgetsFlutterBinding.ensureInitialized();
