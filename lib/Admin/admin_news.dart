@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 const _appColor = Color(0xFFe85d6a);
-//
+
 class AdminNewsPage extends StatelessWidget {
   const AdminNewsPage({super.key});
 
