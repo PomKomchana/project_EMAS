@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_main.dart';
-
+//
 const _appColor = Color(0xFFe85d6a);
 
 class AdminLoginPage extends StatefulWidget {
@@ -90,7 +90,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('เข้าสู่ระบบ Admin'),
+        title: const Text('EMAS Admin Login'),
         backgroundColor: _appColor,
         foregroundColor: Colors.white,
       ),
@@ -112,7 +112,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                       size: 50, color: _appColor),
                 ),
                 const SizedBox(height: 16),
-                const Text('Admin Login',
+                const Text('EMAS Admin Login',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

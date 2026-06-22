@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'main_page.dart';
+import '../Admin/admin_login.dart';
 
 const _appColor = Color(0xFFe85d6a);
 
@@ -166,14 +167,32 @@ class _ProfilePageState extends State<ProfilePage> {
                           style: const TextStyle(
                               fontSize: 14, color: Color(0xFF999999)),
                         ),
-                        isLast: true,
+                        isLast: false,
                       ),
+                      _InfoTile(
+  icon: Icons.admin_panel_settings_outlined,
+  label: 'EMAS Admin',
+  trailing: const Icon(
+    Icons.chevron_right_rounded,
+    color: Color(0xFFBBBBBB),
+    size: 22,
+  ),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AdminLoginPage(),
+      ),
+    );
+  },
+  isLast: true,
+),
                     ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 32),
+   
             ],
           ),
         ),
