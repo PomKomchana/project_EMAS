@@ -172,7 +172,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       _InfoTile(
   icon: Icons.admin_panel_settings_outlined,
-  label: 'EMAS Admin',
+  label: 'Login',
   trailing: const Icon(
     Icons.chevron_right_rounded,
     color: Color(0xFFBBBBBB),
