@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'report_form_constants.dart';
 
+// Reusable widgets for the report form. Dumb widgets only — no Firestore/state logic.
+
 /// <<<<< Glass Card >>>>>>
 // Glass card with a clear white background.
 // Used to wrap every section on the report form (map, image, reporter info, etc).
@@ -39,7 +41,7 @@ class GlassCard extends StatelessWidget {
 }
 
 /// <<<<< Card Header >>>>>>
-// Section header used inside a [GlassCard]: small icon chip + bold title.
+// Icon chip + bold title, used inside a GlassCard section.
 class CardHeader extends StatelessWidget {
   const CardHeader({super.key, required this.icon, required this.title});
 
@@ -74,8 +76,7 @@ class CardHeader extends StatelessWidget {
 }
 
 /// <<<<< Gradient Button >>>>>>
-// Gradient pill button. Used for the submit button and the confirm-pin
-// button — pass [color1]/[color2] to re-theme it (e.g. green for "confirm").
+// Gradient pill button. Pass color1/color2 to re-theme it (e.g. green for "confirm").
 class GradientButton extends StatelessWidget {
   const GradientButton({
     super.key,
@@ -126,7 +127,7 @@ class GradientButton extends StatelessWidget {
 }
 
 /// <<<<< Outline Button >>>>>>
-// Red outline button. Used below the map for "เลือกตำแหน่ง" / "เปลี่ยนตำแหน่ง".
+// Red outline button: "เลือกตำแหน่ง" / "เปลี่ยนตำแหน่ง".
 class OutlineButton extends StatelessWidget {
   const OutlineButton({
     super.key,
@@ -171,8 +172,7 @@ class OutlineButton extends StatelessWidget {
 }
 
 /// <<<<< Pin Badge >>>>>>
-// Small green "ปักหมุดแล้ว" badge shown next to the location button
-// once a pin has been placed.
+// Green "ปักหมุดแล้ว" badge shown once a pin is placed.
 class PinBadge extends StatelessWidget {
   const PinBadge({super.key});
 
@@ -204,8 +204,7 @@ class PinBadge extends StatelessWidget {
 }
 
 /// <<<<< Glass Map Button >>>>>>
-// Small frosted-glass pill button overlaid on the map (used for the
-// map-mode switcher, e.g. "ปกติ" / "ดาวเทียม").
+// Frosted-glass pill overlaid on the map (map-mode switcher).
 class GlassMapButton extends StatelessWidget {
   const GlassMapButton({
     super.key,
@@ -256,8 +255,7 @@ class GlassMapButton extends StatelessWidget {
 }
 
 /// <<<<< Picking Banner >>>>>>
-// "📍 แตะเพื่อปักหมุดจุดเกิดเหตุ" banner shown over the map while in
-// pin-picking mode.
+// "แตะเพื่อปักหมุด" banner shown over the map in pin-picking mode.
 class PickingBanner extends StatelessWidget {
   const PickingBanner({super.key});
 
@@ -288,7 +286,7 @@ class PickingBanner extends StatelessWidget {
 }
 
 /// <<<<< Close Map Button >>>>>>
-// Round "X" button (frosted glass) used to collapse the expanded map.
+// Round "X" button to collapse the expanded map.
 class CloseMapButton extends StatelessWidget {
   const CloseMapButton({super.key, required this.onTap});
 
@@ -317,8 +315,7 @@ class CloseMapButton extends StatelessWidget {
 }
 
 /// <<<<< Change Image Button >>>>>>
-// "เปลี่ยน" pill button overlaid on the picked image, to re-open the
-// image-source picker sheet.
+// "เปลี่ยน" pill overlaid on the picked image, reopens the image picker sheet.
 class ChangeImageButton extends StatelessWidget {
   const ChangeImageButton({super.key, required this.onTap});
 
@@ -360,7 +357,7 @@ class ChangeImageButton extends StatelessWidget {
 }
 
 /// <<<<< Image Placeholder >>>>>>
-// Dashed-style placeholder box shown when no image has been picked yet.
+// Empty-state box shown when no image is picked yet.
 class ImagePlaceholder extends StatelessWidget {
   const ImagePlaceholder({super.key, required this.onTap});
 
@@ -401,8 +398,7 @@ class ImagePlaceholder extends StatelessWidget {
 }
 
 /// <<<<< Styled Dropdown >>>>>>
-// Custom-styled dropdown used for "เลือกอาคาร" / "เลือกชั้น".
-// Border highlights pink once a value is selected.
+// Dropdown for "เลือกอาคาร" / "เลือกชั้น". Border turns pink once selected.
 class StyledDropdown extends StatelessWidget {
   const StyledDropdown({
     super.key,
@@ -451,8 +447,7 @@ class StyledDropdown extends StatelessWidget {
 }
 
 /// <<<<< Sheet Option >>>>>>
-// One tappable option inside the image-source bottom sheet
-// (e.g. "ถ่ายรูป" / "คลังภาพ").
+// One tappable option in the image-source bottom sheet (ถ่ายรูป / คลังภาพ).
 class SheetOption extends StatelessWidget {
   const SheetOption({
     super.key,

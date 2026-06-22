@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'report_list_constants.dart';
 import 'report_detail_page.dart';
 
+// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status filter.
+// NOTE: glass card / severity badge / status chip duplicate report_detail_page.dart — worth a shared widgets file.
 class ReportListPage extends StatefulWidget {
   const ReportListPage({super.key});
 
@@ -17,9 +19,11 @@ class _ReportListPageState extends State<ReportListPage>
   late final TabController _tabController;
   late final AnimationController _fadeController;
 
+  // Staggered list-item animation, replayed on tab switch.
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
 
+  // null = show all statuses
   String? _filterStatus;
 
   @override
@@ -36,6 +40,7 @@ class _ReportListPageState extends State<ReportListPage>
 
     _fadeController.forward();
 
+    // Replay entrance animation on tab switch
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         _fadeController.reset();
@@ -51,6 +56,7 @@ class _ReportListPageState extends State<ReportListPage>
     super.dispose();
   }
 
+  // Staggered fade-in per list item slot [_buildStaggeredFadeList]
   List<Animation<double>> _buildStaggeredFadeList() {
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
@@ -63,6 +69,7 @@ class _ReportListPageState extends State<ReportListPage>
     });
   }
 
+  // Same as above but slide-up motion [_buildStaggeredSlideList]
   List<Animation<Offset>> _buildStaggeredSlideList() {
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
@@ -78,6 +85,7 @@ class _ReportListPageState extends State<ReportListPage>
     });
   }
 
+  // Reports stream, newest first [_reportsStream]
   Stream<QuerySnapshot> _reportsStream() {
     return FirebaseFirestore.instance
         .collection('reports')
@@ -85,6 +93,7 @@ class _ReportListPageState extends State<ReportListPage>
         .snapshots();
   }
 
+  // App bar + tab bar with two lists ("ทั้งหมด" / "ของฉัน")
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,6 +109,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // App Bar [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56 + 48),
@@ -142,6 +152,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Tab selector: ทั้งหมด / ของฉัน
   Widget _buildTabBar() {
     return TabBar(
       controller: _tabController,
@@ -156,6 +167,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Filter pill button, opens the filter sheet
   Widget _buildFilterButton() {
     return GestureDetector(
       onTap: _showFilterSheet,
@@ -194,6 +206,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Opens the status filter sheet
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
@@ -202,6 +215,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Filter sheet: every status option + "ทุกสถานะ" (all)
   Widget _buildFilterSheetContent() {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -239,6 +253,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // One row in the filter sheet. null = "show all".
   Widget _buildFilterOptionTile(String? option) {
     return ListTile(
       leading: Icon(
@@ -255,6 +270,8 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Tab content: loading/error/empty states, or the report list.
+  // NOTE: myReportsOnly is unused — both tabs show the same stream.
   Widget _buildList({required bool myReportsOnly}) {
     return StreamBuilder<QuerySnapshot>(
       stream: _reportsStream(),
@@ -280,6 +297,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Filters docs by _filterStatus (null = no filter)
   List<QueryDocumentSnapshot> _applyStatusFilter(
     List<QueryDocumentSnapshot> docs,
   ) {
@@ -291,6 +309,7 @@ class _ReportListPageState extends State<ReportListPage>
     }).toList();
   }
 
+  // Report cards with staggered entrance animation
   Widget _buildAnimatedListView(List<QueryDocumentSnapshot> docs) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -312,6 +331,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Shown when no reports match the current filter
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -332,6 +352,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // One report card: thumbnail, title, status, date. Tap → detail page.
   Widget _buildReportCard(
     BuildContext context,
     Map<String, dynamic> data,
@@ -375,6 +396,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Navigate to detail page with fade + slide-up transition
   void _openDetailPage(
     BuildContext context,
     Map<String, dynamic> data,
@@ -403,6 +425,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Glass background for the card (duplicate of detail page's glass card)
   Widget _buildCardGlassContainer({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -428,6 +451,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Thumbnail. Shares a Hero tag with the detail page's hero image.
   Widget _buildThumbnail(String id, String? imageUrl) {
     return Hero(
       tag: 'img_$id',
@@ -449,6 +473,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Text column: title, severity badge, status chip, date
   Widget _buildCardContent({
     required String building,
     required String floor,
@@ -508,6 +533,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Severity dot + label (duplicate of detail page's version)
   Widget _buildSeverityBadge(SeverityInfo severity) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -541,6 +567,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Status pill (pending/in-progress/done)
   Widget _buildStatusChip(String status) {
     final colors = getStatusColors(status);
 

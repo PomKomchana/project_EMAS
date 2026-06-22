@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 
 /// <<<<< Theme Colors >>>>>>
 // EMAS Theme Colors [emasColor, emasColorDarker]
+// NOTE: duplicated in report_list_constants.dart
 const emasColor = Color(0xFFe85d6a);
 const emasColorDarker = Color(0xFFc4394a);
 
@@ -26,11 +27,10 @@ const tileTerrain = 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}';
 // Map display mode [MapMode]
 enum MapMode { normal, hybrid, satellite, terrain }
 
-// ==== Helpers to get tile URL / label / icon for a given MapMode ====
-// [_modeTileUrl, _modeLabel, _modeIcon]
-// These live here (not as getters on the State class) so any widget that
-// needs map-mode info can use them without depending on _ReportFormState.
+// ==== Free functions so any widget can use them without the form's State ====
+// [mapModeTileUrl, mapModeLabel, mapModeIcon]
 
+// Tile URL for the mode
 String mapModeTileUrl(MapMode mode) {
   switch (mode) {
     case MapMode.normal:
@@ -44,6 +44,7 @@ String mapModeTileUrl(MapMode mode) {
   }
 }
 
+// Thai label for the mode
 String mapModeLabel(MapMode mode) {
   switch (mode) {
     case MapMode.normal:
@@ -57,6 +58,7 @@ String mapModeLabel(MapMode mode) {
   }
 }
 
+// Icon for the mode switch button
 IconData mapModeIcon(MapMode mode) {
   switch (mode) {
     case MapMode.normal:
@@ -72,6 +74,7 @@ IconData mapModeIcon(MapMode mode) {
 
 /// <<<<< Dropdown Options >>>>>>
 // Dropdown Options [buildingOptions, floorOptions, roomOptions]
+// roomOptions: unused, room is a free-text field
 const buildingOptions = ['อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5'];
 const floorOptions = ['ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5'];
 const roomOptions = ['110', '111', '112', '113', '114'];

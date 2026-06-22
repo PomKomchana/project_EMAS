@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'report_form_constants.dart';
 import 'report_form_widgets.dart';
 
+// Report form page [ReportForm]
 class ReportForm extends StatefulWidget {
   const ReportForm({super.key});
 
@@ -77,52 +78,52 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     super.dispose();
   }
 
-    // Setup Animations [_setupAnimations]
-    void _setupAnimations() {
-      // Map Animation 200 → 520
-      _mapAnimController = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 500),
-      )..addListener(() => setState(() {}));
+  // Setup Animations [_setupAnimations]
+  void _setupAnimations() {
+    // Map height grows from 200 to 520 when expanded.
+    _mapAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..addListener(() => setState(() {}));
 
-      _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
+    _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
+      CurvedAnimation(
+        parent: _mapAnimController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
+
+    // Fade + slide animation for 5 sections (Stagger per section)
+    _sectionFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _sectionFadeList = List.generate(6, (index) {
+      final startTime = index * 0.15;
+      final endTime = (startTime + 0.5).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
-          parent: _mapAnimController,
-          curve: Curves.easeInOutCubic,
+          parent: _sectionFadeController,
+          curve: Interval(startTime, endTime, curve: Curves.easeOut),
         ),
       );
+    });
 
-      // Fade + slide animation for 5 sections (Stagger per section)
-      _sectionFadeController = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 900),
+    _sectionSlideList = List.generate(6, (index) {
+      final startTime = index * 0.15;
+      final endTime = (startTime + 0.5).clamp(0.0, 1.0);
+      return Tween<Offset>(
+        begin: const Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _sectionFadeController,
+          curve: Interval(startTime, endTime, curve: Curves.easeOutCubic),
+        ),
       );
-
-      _sectionFadeList = List.generate(6, (index) {
-        final startTime = index * 0.15;
-        final endTime = (startTime + 0.5).clamp(0.0, 1.0);
-        return Tween<double>(begin: 0.0, end: 1.0).animate(
-          CurvedAnimation(
-            parent: _sectionFadeController,
-            curve: Interval(startTime, endTime, curve: Curves.easeOut),
-          ),
-        );
-      });
-
-      _sectionSlideList = List.generate(6, (index) {
-        final startTime = index * 0.15;
-        final endTime = (startTime + 0.5).clamp(0.0, 1.0);
-        return Tween<Offset>(
-          begin: const Offset(0, 0.3),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _sectionFadeController,
-            curve: Interval(startTime, endTime, curve: Curves.easeOutCubic),
-          ),
-        );
-      });
-    }
+    });
+  }
 
   // Request GPS permission and move map to user location [_requestLocationAndMove]
   Future<void> _requestLocationAndMove() async {
@@ -253,8 +254,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
         'building': _selectedBuilding,
         'floor': _selectedFloor,
-        // [_roomController.text] — was previously passing the controller
-        // object itself instead of its text value; fixed during refactor.
+        // [_roomController.text] — was saving controller object, fixed to .text
         'room': _roomController.text,
 
         'description': _descController.text.trim(),
@@ -422,7 +422,6 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          // Card Header (ตำแหน่งที่เกิดเหตุ)
           const CardHeader(icon: Icons.location_on_rounded, title: 'ตำแหน่งที่เกิดเหตุ'),
           const SizedBox(height: 12),
 
@@ -477,7 +476,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
                   // Map Mode Button
                   Positioned(
-                    top: _isMapExpanded ? 50 : 10, // Expand = scroll down, Reduce = scroll up
+                    top: _isMapExpanded ? 50 : 10, // Move down when expanded so it clears the app bar area.
                     left: 10,
                     child: GlassMapButton(
                       icon: mapModeIcon(_mapMode),
