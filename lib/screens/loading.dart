@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,7 +6,7 @@ import 'main_page.dart';
 import '../register/login.dart';
 
 class LoadingScreen extends StatefulWidget {
-  const LoadingScreen({Key? key}) : super(key: key);
+  const LoadingScreen({super.key});
 
   @override
   State<LoadingScreen> createState() => _LoadingScreenState();
@@ -14,13 +14,15 @@ class LoadingScreen extends StatefulWidget {
 
 class _LoadingScreenState extends State<LoadingScreen>
     with TickerProviderStateMixin {
+  static const _brand = Color(0xFFE85D6A);
 
-  static const Color accentColor = Color(0xFFE85D6A);
+  late final AnimationController _introCtrl;
+  late final AnimationController _glowCtrl;
+  late final AnimationController _dotsCtrl;
 
-  late AnimationController scaleController;
-  late AnimationController dotsController;
-
-  late Animation<double> scaleAnimation;
+  late final Animation<double> _scale;
+  late final Animation<double> _fadeIn;
+  late final Animation<double> _glow;
 
   @override
   void initState() {
@@ -33,95 +35,133 @@ class _LoadingScreenState extends State<LoadingScreen>
       ),
     );
 
-    scaleController = AnimationController(
+    _introCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1300),
     );
 
-    dotsController = AnimationController(
+    _glowCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+
+    _dotsCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1050),
     )..repeat();
 
-    scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+    _scale = Tween<double>(begin: 0.28, end: 1.0).animate(
+      CurvedAnimation(parent: _introCtrl, curve: Curves.elasticOut),
+    );
+
+    _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: scaleController,
-        curve: Curves.easeOut,
+        parent: _introCtrl,
+        curve: const Interval(0.0, 0.38, curve: Curves.easeIn),
       ),
     );
 
-    scaleController.forward();
+    _glow = Tween<double>(begin: 0.08, end: 0.22).animate(
+      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
+    );
 
-    Future.delayed(const Duration(milliseconds: 2500), navigateToMain);
+    _introCtrl.forward();
+    Future.delayed(const Duration(milliseconds: 3200), _go);
   }
 
-  void navigateToMain() {
+  void _go() {
     if (!mounted) return;
-
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const LoginPage(),
-        transitionsBuilder: (_, animation, __, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 700),
       ),
     );
   }
 
   @override
   void dispose() {
-    scaleController.dispose();
-    dotsController.dispose();
+    _introCtrl.dispose();
+    _glowCtrl.dispose();
+    _dotsCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, //พื้นขาวล้วน
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: Colors.white,
+      body: Stack(
         children: [
-
-          /// LOGO
-          Expanded(
-            child: Center(
-              child: AnimatedBuilder(
-                animation: scaleController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: scaleAnimation.value,
-                    child: child,
-                  );
-                },
-                child: Image.asset(
-                  'assets/images/emas_logo.png',
-                  width: 180, // เล็กลงให้ดู minimal
+          // Subtle brand-tinted radial background
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.05),
+                  radius: 0.75,
+                  colors: [
+                    const Color(0xFFFFF0F1),
+                    Colors.white,
+                  ],
                 ),
               ),
             ),
           ),
 
-          ///LOADING DOTS
-          Padding(
-            padding: const EdgeInsets.only(bottom: 60),
-            child: DotsLoader(
-              controller: dotsController,
-              color: accentColor,
+          // Logo — center stage
+          Center(
+            child: AnimatedBuilder(
+              animation: Listenable.merge([_introCtrl, _glowCtrl]),
+              builder: (_, child) => Opacity(
+                opacity: _fadeIn.value,
+                child: Transform.scale(
+                  scale: _scale.value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _brand.withOpacity(_glow.value),
+                          blurRadius: 80,
+                          spreadRadius: 16,
+                        ),
+                      ],
+                    ),
+                    child: child,
+                  ),
+                ),
+              ),
+              child: Image.asset(
+                'assets/images/emas_logo.png',
+                width: 260,
+              ),
             ),
           ),
 
-          /// VERSION
-          const Padding(
-            padding: EdgeInsets.only(bottom: 20),
+          // Bouncing dots loader
+          Positioned(
+            bottom: 72,
+            left: 0,
+            right: 0,
+            child: _DotsLoader(controller: _dotsCtrl, color: _brand),
+          ),
+
+          // Subtle version label
+          Positioned(
+            bottom: 28,
+            left: 0,
+            right: 0,
             child: Text(
               'v1.0.0',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
-                color: Colors.black38,
-                letterSpacing: 1,
+                fontSize: 11,
+                color: _brand.withOpacity(0.28),
+                letterSpacing: 1.0,
               ),
             ),
           ),
@@ -131,35 +171,37 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 }
 
-class DotsLoader extends StatelessWidget {
+class _DotsLoader extends StatelessWidget {
+  const _DotsLoader({required this.controller, required this.color});
+
   final AnimationController controller;
   final Color color;
-
-  const DotsLoader({
-    Key? key,
-    required this.controller,
-    required this.color,
-  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
-      builder: (context, child) {
+      builder: (_, __) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(3, (index) {
-            final delay = index * 0.2;
-            final value = (controller.value - delay).clamp(0.0, 1.0);
-
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: 6 + (6 * value),
-              height: 6 + (6 * value),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.3 + (0.7 * value)),
-                shape: BoxShape.circle,
+          children: List.generate(3, (i) {
+            final phase = (controller.value + i / 3.0) % 1.0;
+            final v = math.sin(phase * math.pi).abs();
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              child: Opacity(
+                opacity: 0.25 + 0.75 * v,
+                child: Transform.translate(
+                  offset: Offset(0, -8 * v),
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
               ),
             );
           }),

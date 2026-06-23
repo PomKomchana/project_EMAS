@@ -206,7 +206,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   void _cycleMapMode() {
     HapticFeedback.selectionClick();
     setState(() {
-      final modes = MapMode.values; // [normal, hybrid, satellite, terrain]
+      final modes = MapMode.values; // [normal, satellite]
       final nextIndex = (modes.indexOf(_mapMode) + 1) % modes.length;
       _mapMode = modes[nextIndex];
     });
