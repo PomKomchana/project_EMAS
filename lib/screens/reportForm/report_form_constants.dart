@@ -17,13 +17,13 @@ final mapBounds = LatLngBounds(
 );
 
 /// <<<<< Tile URLs - GoogleMap >>>>>>
-// Tile URL templates for each map mode [tileNormal, tileSatellite]
+// Tile URL templates for each map mode [tileNormal, tileHybrid]
 const tileNormal = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
-const tileSatellite = 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}';
+const tileHybrid = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
 
 /// <<<<< Map Mode >>>>>>
 // Map display mode [MapMode]
-enum MapMode {normal, satellite}
+enum MapMode {normal, hybrid}
 
 // ==== Free functions so any widget can use them without the form's State ====
 // [mapModeTileUrl, mapModeLabel, mapModeIcon]
@@ -33,8 +33,8 @@ String mapModeTileUrl(MapMode mode) {
   switch (mode) {
     case MapMode.normal:
       return tileNormal;
-    case MapMode.satellite:
-      return tileSatellite;
+    case MapMode.hybrid:
+      return tileHybrid;
   }
 }
 
@@ -43,8 +43,8 @@ String mapModeLabel(MapMode mode) {
   switch (mode) {
     case MapMode.normal:
       return 'ปกติ';
-    case MapMode.satellite:
-      return 'ดาวเทียม';
+    case MapMode.hybrid:
+      return 'ไฮบริด';
   }
 }
 
@@ -53,8 +53,8 @@ IconData mapModeIcon(MapMode mode) {
   switch (mode) {
     case MapMode.normal:
       return Icons.layers_outlined;
-    case MapMode.satellite:
-      return Icons.satellite_alt;
+    case MapMode.hybrid:
+      return Icons.layers_outlined;
   }
 }
 
