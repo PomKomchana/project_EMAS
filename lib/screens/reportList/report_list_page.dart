@@ -30,7 +30,7 @@ class _ReportListPageState extends State<ReportListPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -94,7 +94,7 @@ class _ReportListPageState extends State<ReportListPage>
         .snapshots();
   }
 
-  // App bar + tab bar with three lists ("ทั้งหมด" / "ของฉัน" / "ข่าวสาร")
+  // App bar + tab bar with three lists ("ทั้งหมด" / "ของฉัน")
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,7 +105,6 @@ class _ReportListPageState extends State<ReportListPage>
         children: [
           _buildList(myReportsOnly: false),
           _buildList(myReportsOnly: true),
-          _buildNewsList(),
         ],
       ),
     );
@@ -145,11 +144,7 @@ class _ReportListPageState extends State<ReportListPage>
                     // Status filter only applies to report tabs, not news
                     AnimatedBuilder(
                       animation: _tabController.animation!,
-                      builder: (_, __) {
-                        return _tabController.index == 2
-                            ? const SizedBox.shrink()
-                            : _buildFilterButton();
-                      },
+                      builder: (_, __) => _buildFilterButton(),
                     ),
                   ],
                 ),
@@ -162,7 +157,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Tab selector: ทั้งหมด / ของฉัน / ข่าวสาร
+  // Tab selector: ทั้งหมด / ของฉัน
   Widget _buildTabBar() {
     return TabBar(
       controller: _tabController,
@@ -173,7 +168,6 @@ class _ReportListPageState extends State<ReportListPage>
       tabs: const [
         Tab(child: Text('ทั้งหมด', style: TextStyle(color: Colors.white))),
         Tab(child: Text('ของฉัน', style: TextStyle(color: Colors.white))),
-        Tab(child: Text('ข่าวสาร', style: TextStyle(color: Colors.white))),
       ],
     );
   }
@@ -340,167 +334,6 @@ class _ReportListPageState extends State<ReportListPage>
         );
       },
     );
-  }
-
-  // News stream, newest first — same collection admin_news.dart writes to [_newsStream]
-  Stream<QuerySnapshot> _newsStream() {
-    return FirebaseFirestore.instance
-        .collection('news')
-        .orderBy('createdAt', descending: true)
-        .snapshots();
-  }
-
-  // Tab content for "ข่าวสาร" — read-only, no filter, no Hero/detail nav.
-  Widget _buildNewsList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _newsStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: emasColor),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text('เกิดข้อผิดพลาด: ${snapshot.error}'));
-        }
-
-        final docs = snapshot.data?.docs ?? [];
-
-        if (docs.isEmpty) {
-          return _buildEmptyNewsState();
-        }
-
-        return _buildAnimatedNewsListView(docs);
-      },
-    );
-  }
-
-  // News cards with the same staggered entrance animation as report cards
-  Widget _buildAnimatedNewsListView(List<QueryDocumentSnapshot> docs) {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      itemCount: docs.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final data = docs[index].data() as Map<String, dynamic>;
-        final animIndex = index % _fadeList.length;
-
-        return FadeTransition(
-          opacity: _fadeList[animIndex],
-          child: SlideTransition(
-            position: _slideList[animIndex],
-            child: _buildNewsCard(data),
-          ),
-        );
-      },
-    );
-  }
-
-  // Shown when there's no news posted yet
-  Widget _buildEmptyNewsState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.campaign_outlined, size: 64, color: Colors.grey.shade300),
-          const SizedBox(height: 12),
-          Text(
-            'ยังไม่มีข่าวสาร',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // One news card: icon, title, content, posted date. No tap action.
-  Widget _buildNewsCard(Map<String, dynamic> data) {
-    final title = data['title'] ?? '-';
-    final content = data['content'] ?? '';
-    final date = _formatNewsDate(data['createdAt']);
-
-    return _buildCardGlassContainer(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildNewsIcon(),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                if (content.toString().isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    content,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-                if (date != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        size: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Round icon badge, same slot as the report thumbnail
-  Widget _buildNewsIcon() {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: emasColor.withOpacity(0.1),
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.campaign, color: emasColor, size: 22),
-    );
-  }
-
-  // Firestore Timestamp -> dd/MM/yyyy, null-safe for pending server timestamps [_formatNewsDate]
-  String? _formatNewsDate(dynamic createdAt) {
-    if (createdAt is! Timestamp) return null;
-    final d = createdAt.toDate();
-    return '${d.day}/${d.month}/${d.year}';
   }
 
   Widget _buildEmptyState() {

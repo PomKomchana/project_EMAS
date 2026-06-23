@@ -7,6 +7,8 @@ import 'screens/main_page.dart';
 import 'screens/reportForm/report_form.dart';
 import 'register/login.dart';
 
+import 'screens/report_news.dart';
+
 void main() async {
   // Make sure Flutter is ready
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,7 +48,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFe85d6a)),
       ),
-      home: const LoadingScreen(),
+      home: const ReportNewsPage(),
     );
   }
 }
