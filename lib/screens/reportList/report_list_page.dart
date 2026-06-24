@@ -5,7 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'report_list_constants.dart';
 import 'report_detail_page.dart';
 
-// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status filter.
+// Lists all submitted reports. Three tabs ("ทั้งหมด" / "ของฉัน" / "ข่าวสาร") + status filter.
+// News tab reads the same Firestore 'news' collection admin_news.dart writes to — read-only here.
 // NOTE: glass card / severity badge / status chip duplicate report_detail_page.dart — worth a shared widgets file.
 class ReportListPage extends StatefulWidget {
   const ReportListPage({super.key});
@@ -93,7 +94,7 @@ class _ReportListPageState extends State<ReportListPage>
         .snapshots();
   }
 
-  // App bar + tab bar with two lists ("ทั้งหมด" / "ของฉัน")
+  // App bar + tab bar with three lists ("ทั้งหมด" / "ของฉัน")
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,7 +141,11 @@ class _ReportListPageState extends State<ReportListPage>
                       ),
                     ),
                     const Spacer(),
-                    _buildFilterButton(),
+                    // Status filter only applies to report tabs, not news
+                    AnimatedBuilder(
+                      animation: _tabController.animation!,
+                      builder: (_, __) => _buildFilterButton(),
+                    ),
                   ],
                 ),
               ),
@@ -331,7 +336,6 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Shown when no reports match the current filter
   Widget _buildEmptyState() {
     return Center(
       child: Column(

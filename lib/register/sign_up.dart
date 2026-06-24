@@ -75,21 +75,13 @@ class SignupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          width: 220,
-          height: 110,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),  
-          decoration: BoxDecoration(
-          color: signupColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        SizedBox(
+          width: 260,
         child: Image.asset(
-          'assets/images/emas_logo.png',
+          'assets/images/signup_emas_logo.png',
+          fit: BoxFit.contain,
+          ),
         ),
-      ),
-
-        const SizedBox(height: 16),
-
         const Text(
           'สร้างบัญชีผู้ใช้',
           style: TextStyle(
