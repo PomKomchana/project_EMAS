@@ -13,8 +13,9 @@ class ReportNewsPage extends StatefulWidget {
 }
 
 class _ReportNewsPageState extends State<ReportNewsPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _fadeController;
+  late final AnimationController _shimmerController;
 
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
@@ -28,6 +29,12 @@ class _ReportNewsPageState extends State<ReportNewsPage>
       duration: const Duration(milliseconds: 800),
     );
 
+    // Looping pulse used by the skeleton loading cards [_shimmerController]
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+
     _fadeList = _buildStaggeredFadeList();
     _slideList = _buildStaggeredSlideList();
 
@@ -37,6 +44,7 @@ class _ReportNewsPageState extends State<ReportNewsPage>
   @override
   void dispose() {
     _fadeController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -85,6 +93,24 @@ class _ReportNewsPageState extends State<ReportNewsPage>
         .collection('news')
         .orderBy('createdAt', descending: true)
         .snapshots();
+  }
+
+  // ==== Check if news was posted within the last 48 hours [_isRecentNews] ====
+  bool _isRecentNews(dynamic createdAt) {
+    if (createdAt is! Timestamp) {
+      return false;
+    }
+
+    final postedAt = createdAt.toDate();
+    final diff = DateTime.now().difference(postedAt);
+
+    return diff.inHours < 48 && !diff.isNegative;
+  }
+
+  // ==== Pull-to-refresh handler [_handleRefresh] ====
+  // Stream is already realtime; short delay just gives the gesture feedback.
+  Future<void> _handleRefresh() async {
+    await Future.delayed(const Duration(milliseconds: 600));
   }
 
   @override
@@ -140,11 +166,7 @@ class _ReportNewsPageState extends State<ReportNewsPage>
         stream: _newsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: emasColor,
-              ),
-            );
+            return _buildSkeletonList();
           }
 
           if (snapshot.hasError) {
@@ -158,37 +180,140 @@ class _ReportNewsPageState extends State<ReportNewsPage>
           final docs = snapshot.data?.docs ?? [];
 
           if (docs.isEmpty) {
-            return _buildEmptyState();
+            return RefreshIndicator(
+              color: emasColor,
+              onRefresh: _handleRefresh,
+              child: ListView(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: _buildEmptyState(),
+                  ),
+                ],
+              ),
+            );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              24,
+          return RefreshIndicator(
+            color: emasColor,
+            onRefresh: _handleRefresh,
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                24,
+              ),
+              itemCount: docs.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final doc = docs[index];
+                final data =
+                    doc.data() as Map<String, dynamic>;
+
+                final animIndex =
+                    index % _fadeList.length;
+
+                return FadeTransition(
+                  opacity: _fadeList[animIndex],
+                  child: SlideTransition(
+                    position: _slideList[animIndex],
+                    child: _buildNewsCard(doc.id, data),
+                  ),
+                );
+              },
             ),
-            itemCount: docs.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final data =
-                  docs[index].data() as Map<String, dynamic>;
-
-              final animIndex =
-                  index % _fadeList.length;
-
-              return FadeTransition(
-                opacity: _fadeList[animIndex],
-                child: SlideTransition(
-                  position: _slideList[animIndex],
-                  child: _buildNewsCard(data),
-                ),
-              );
-            },
           );
         },
       ),
+    );
+  }
+
+  // ==== Skeleton placeholder shown while the stream connects [_buildSkeletonList] ====
+  Widget _buildSkeletonList() {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: 3,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) => _buildSkeletonCard(),
+    );
+  }
+
+  Widget _buildSkeletonCard() {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        // Pulse opacity between 0.4 and 0.9 [_shimmerController]
+        final opacity = 0.4 + (_shimmerController.value * 0.5);
+
+        return Opacity(
+          opacity: opacity,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.78),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.6),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Container(
+                        width: 180,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Container(
+                        width: 120,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -220,113 +345,210 @@ class _ReportNewsPageState extends State<ReportNewsPage>
   }
 
   Widget _buildNewsCard(
+    String docId,
     Map<String, dynamic> data,
   ) {
     final title = data['title'] ?? '-';
     final content = data['content'] ?? '';
+    final imageUrl = data['imageUrl'] as String?;
     final date = _formatNewsDate(
       data['createdAt'],
     );
+    final isRecent = _isRecentNews(data['createdAt']);
+    final heroTag = 'news_image_$docId';
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: 20,
-          sigmaY: 20,
+    // Tappable wrapper opens full content in a bottom sheet [_openNewsDetail]
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _openNewsDetail(
+          heroTag: heroTag,
+          imageUrl: imageUrl,
+          title: title,
+          content: content,
+          date: date,
         ),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.78),
-            borderRadius:
-                BorderRadius.circular(18),
-            border: Border.all(
-              color:
-                  Colors.white.withOpacity(0.6),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: 20,
+              sigmaY: 20,
             ),
-            boxShadow: [
-              BoxShadow(
-                color:
-                    Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.78),
+                borderRadius:
+                    BorderRadius.circular(18),
+                border: Border.all(
+                  color:
+                      Colors.white.withOpacity(0.6),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              _buildNewsIcon(),
+              child: Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  _buildNewsThumbnail(heroTag, imageUrl),
 
-              const SizedBox(width: 12),
+                  const SizedBox(width: 12),
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight:
-                            FontWeight.w700,
-                        fontSize: 15,
-                        color: Colors.black87,
-                      ),
-                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        // Title row + "ใหม่" badge [isRecent]
+                        Row(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontWeight:
+                                      FontWeight.w700,
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
 
-                    if (content
-                        .toString()
-                        .isNotEmpty) ...[
-                      const SizedBox(height: 6),
-
-                      Text(
-                        content,
-                        style: TextStyle(
-                          color:
-                              Colors.grey.shade700,
-                          fontSize: 13,
-                          height: 1.5,
+                            if (isRecent) ...[
+                              const SizedBox(width: 6),
+                              _buildNewBadge(),
+                            ],
+                          ],
                         ),
-                      ),
-                    ],
 
-                    if (date != null) ...[
-                      const SizedBox(height: 10),
+                        if (content
+                            .toString()
+                            .isNotEmpty) ...[
+                          const SizedBox(height: 6),
 
-                      Row(
-                        children: [
-                          Icon(
-                            Icons
-                                .calendar_today_outlined,
-                            size: 11,
-                            color: Colors
-                                .grey
-                                .shade500,
-                          ),
-
-                          const SizedBox(
-                              width: 4),
-
+                          // Truncated preview, full text shown in bottom sheet
                           Text(
-                            date,
+                            content,
+                            maxLines: 2,
+                            overflow:
+                                TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 11,
-                              color: Colors
-                                  .grey
-                                  .shade500,
+                              color:
+                                  Colors.grey.shade700,
+                              fontSize: 13,
+                              height: 1.5,
                             ),
                           ),
                         ],
-                      ),
-                    ],
-                  ],
-                ),
+
+                        if (date != null) ...[
+                          const SizedBox(height: 10),
+
+                          Row(
+                            children: [
+                              Icon(
+                                Icons
+                                    .calendar_today_outlined,
+                                size: 11,
+                                color: Colors
+                                    .grey
+                                    .shade500,
+                              ),
+
+                              const SizedBox(
+                                  width: 4),
+
+                              Text(
+                                date,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors
+                                      .grey
+                                      .shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Chevron hints the card is tappable
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.grey.shade400,
+                    size: 20,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ==== Small pink "ใหม่" pill shown on recent news [_buildNewBadge] ====
+  Widget _buildNewBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: emasColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'ใหม่',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  // ==== Thumbnail: real image + Hero when available, icon fallback otherwise [_buildNewsThumbnail] ====
+  Widget _buildNewsThumbnail(String heroTag, String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return _buildNewsIcon();
+    }
+
+    return Hero(
+      tag: heroTag,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          imageUrl,
+          width: 48,
+          height: 48,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+
+            return Container(
+              width: 48,
+              height: 48,
+              color: Colors.grey.shade200,
+            );
+          },
+          // Falls back to the default icon if the image fails to load
+          errorBuilder: (context, error, stackTrace) =>
+              _buildNewsIcon(),
         ),
       ),
     );
@@ -345,6 +567,156 @@ class _ReportNewsPageState extends State<ReportNewsPage>
         color: emasColor,
         size: 24,
       ),
+    );
+  }
+
+  // ==== Bottom sheet showing full news content [_openNewsDetail] ====
+  void _openNewsDetail({
+    required String heroTag,
+    required String? imageUrl,
+    required String title,
+    required String content,
+    required String? date,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.55,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: 20,
+                  sigmaY: 20,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.92),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                  ),
+                  child: ListView(
+                    controller: scrollController,
+                    padding: EdgeInsets.zero,
+                    children: [
+                      // Drag handle
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius:
+                                BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+
+                      if (imageUrl != null &&
+                          imageUrl.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                          ),
+                          child: Hero(
+                            tag: heroTag,
+                            child: ClipRRect(
+                              borderRadius:
+                                  BorderRadius.circular(16),
+                              child: Image.network(
+                                imageUrl,
+                                width: double.infinity,
+                                height: 180,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error,
+                                        stackTrace) =>
+                                    const SizedBox.shrink(),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                      ],
+
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          20,
+                          0,
+                          20,
+                          28,
+                        ),
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+
+                            if (date != null) ...[
+                              const SizedBox(height: 6),
+
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons
+                                        .calendar_today_outlined,
+                                    size: 12,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    date,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+
+                            const SizedBox(height: 16),
+
+                            Text(
+                              content,
+                              style: TextStyle(
+                                fontSize: 14,
+                                height: 1.6,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

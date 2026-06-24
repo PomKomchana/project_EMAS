@@ -7,7 +7,6 @@ import 'report_detail_page.dart';
 
 // Lists all submitted reports. Three tabs ("ทั้งหมด" / "ของฉัน" / "ข่าวสาร") + status filter.
 // News tab reads the same Firestore 'news' collection admin_news.dart writes to — read-only here.
-// NOTE: glass card / severity badge / status chip duplicate report_detail_page.dart — worth a shared widgets file.
 class ReportListPage extends StatefulWidget {
   const ReportListPage({super.key});
 
