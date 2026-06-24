@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFe85d6a)),
       ),
-      home: const ReportNewsPage(),
+      home: const LoadingScreen(),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'report_news.dart';
 import 'reportForm/report_form.dart';
 import 'reportList/report_list_page.dart';
 import 'profile_page.dart';
@@ -15,15 +16,23 @@ import 'reportForm/report_form_constants.dart';
 const _appColor = Color(0xFFe85d6a);
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final int initialIndex;
+
+  const MainPage({super.key, this.initialIndex = 0});
 
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 0;
-
+   late int _selectedIndex;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
+  
   static const _titles = [
     'Home',
     'รายการแจ้งปัญหา',
@@ -86,7 +95,7 @@ class _MainPageState extends State<MainPage> {
         children: const [
           _HomePage(),          // ของเดิม
           ReportListPage(),
-          NotificationPage(),   //  เพิ่ม
+          ReportNewsPage(),   //  เพิ่ม
           ProfilePage(),
         ],
       ),
@@ -335,7 +344,7 @@ class _HomePageState extends State<_HomePage> {
 }
 
 // ================= Notification =================
-class NotificationPage extends StatelessWidget {
+/*class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
 
   @override
@@ -344,4 +353,4 @@ class NotificationPage extends StatelessWidget {
       child: Text('Information Page'),
     );
   }
-}
+}*/
