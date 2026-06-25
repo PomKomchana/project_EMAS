@@ -69,15 +69,6 @@ class _MainPageState extends State<MainPage> {
       MaterialPageRoute(builder: (_) => const EmergencyPage()),
     );
   },
-  onAdmin: () {
-    Navigator.pop(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const LoginPage(),
-      ),
-    );
-  },
 ),
       body: IndexedStack(
         index: _selectedIndex,
@@ -98,12 +89,10 @@ class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
     required this.onEmergency,
-    required this.onAdmin,
   });
 
   final void Function(int) onTap;
   final VoidCallback onEmergency;
-  final VoidCallback onAdmin;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +116,6 @@ class _AppDrawer extends StatelessWidget {
             onTap: onEmergency,
             color: _appColor,
           ),
-          _DrawerItem(icon: Icons.admin_panel_settings_outlined, label: 'เข้าสู่ระบบ Admin', onTap: onAdmin),
         ],
       ),
     );

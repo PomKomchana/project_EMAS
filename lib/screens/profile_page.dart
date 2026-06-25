@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'main_page.dart';
 import '../register/login.dart';
@@ -148,52 +149,65 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ? FileImage(_profileImage!)
                                     : null,
                                 child: _profileImage == null
-                                    ? const Icon(Icons.person,
-                                        color: Color(0xFFB39DDB), size: 20)
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Color(0xFFB39DDB),
+                                        size: 20,
+                                      )
                                     : null,
                               ),
                               const SizedBox(width: 8),
-                              const Icon(Icons.chevron_right_rounded,
-                                  color: Color(0xFFBBBBBB), size: 22),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: Color(0xFFBBBBBB),
+                                size: 22,
+                              ),
                             ],
                           ),
                         ),
                         isLast: false,
                       ),
+
                       _InfoTile(
                         icon: Icons.badge_outlined,
                         label: 'บัญชี',
                         trailing: Text(
                           _accountId,
                           style: const TextStyle(
-                              fontSize: 14, color: Color(0xFF999999)),
+                            fontSize: 14,
+                            color: Color(0xFF999999),
+                          ),
                         ),
                         isLast: false,
                       ),
+
                       _InfoTile(
-  icon: Icons.admin_panel_settings_outlined,
-  label: 'Login',
-  trailing: const Icon(
-    Icons.chevron_right_rounded,
-    color: Color(0xFFBBBBBB),
-    size: 22,
-  ),
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const LoginPage(),
-      ),
-    );
-  },
-  isLast: true,
-),
+                        icon: Icons.admin_panel_settings_outlined,
+                        label: 'Logout',
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFFBBBBBB),
+                          size: 22,
+                        ),
+                        isLast: true,
+                        onTap: () async {
+                          await FirebaseAuth.instance.signOut();
+
+                          if (!mounted) return;
+
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginPage(),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
               ),
-
-   
             ],
           ),
         ),
