@@ -136,15 +136,7 @@ class _ReportNewsPageState extends State<ReportNewsPage>
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-
+                  
                   const SizedBox(width: 4),
 
                   const Text(
