@@ -1,39 +1,50 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'report_news.dart';
 import 'reportForm/report_form.dart';
 import 'reportList/report_list_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
 import '../register/login.dart';
+import 'reportForm/report_form_constants.dart';
 
 const _appColor = Color(0xFFe85d6a);
 
-const _swuCenter = LatLng(14.1076, 100.9822);
-final _swuBounds = LatLngBounds(
-  southwest: const LatLng(14.1010, 100.9750),
-  northeast: const LatLng(14.1140, 100.9900),
-);
-
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final int initialIndex;
+
+  const MainPage({super.key, this.initialIndex = 0});
 
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedIndex = 0;
-
-  static const _titles = ['Home', 'รายการแจ้งปัญหา', 'โปรไฟล์'];
+   late int _selectedIndex;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
+  
+  static const _titles = [
+    'Home',
+    'รายการแจ้งปัญหา',
+    'ข่าวสาร',
+    'โปรไฟล์'
+  ];
 
   static const _navItems = [
-    BottomNavigationBarItem(icon: Icon(Icons.home), label: 'หน้าหลัก'),
-    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'รายการ'),
-    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'โปรไฟล์'),
+    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''), // 🔔
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
   ];
 
   @override
@@ -72,19 +83,31 @@ class _MainPageState extends State<MainPage> {
 ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [_HomePage(), ReportListPage(), ProfilePage()],
+        children: const [
+          _HomePage(),          // ของเดิม
+          ReportListPage(),
+          ReportNewsPage(),   //  เพิ่ม
+          ProfilePage(),
+        ],
       ),
+
+      // Bottom Bar
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
+        backgroundColor: const Color(0xFFFFFFFF),
         selectedItemColor: _appColor,
         unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
         items: _navItems,
       ),
     );
   }
 }
 
+// ================= Drawer =================
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
@@ -103,12 +126,15 @@ class _AppDrawer extends StatelessWidget {
           const DrawerHeader(
             decoration: BoxDecoration(color: _appColor),
             child: Text('EMAS',
-                style: TextStyle(color: Colors.white, fontSize: 24,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold)),
           ),
           _DrawerItem(icon: Icons.home, label: 'หน้าหลัก', onTap: () => onTap(0)),
           _DrawerItem(icon: Icons.list_alt, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
-          _DrawerItem(icon: Icons.person, label: 'โปรไฟล์', onTap: () => onTap(2)),
+          _DrawerItem(icon: Icons.notifications_none, label: 'ข่าวสาร', onTap: () => onTap(2)),
+          _DrawerItem(icon: Icons.person, label: 'โปรไฟล์', onTap: () => onTap(3)),
           const Divider(height: 1),
           _DrawerItem(
             icon: Icons.phone_in_talk_outlined,
@@ -123,9 +149,13 @@ class _AppDrawer extends StatelessWidget {
 }
 
 class _DrawerItem extends StatelessWidget {
-  const _DrawerItem(
-      {required this.icon, required this.label, required this.onTap,
-      this.color});
+  const _DrawerItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -136,15 +166,15 @@ class _DrawerItem extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(label,
-          style: color != null ? TextStyle(color: color, fontWeight: FontWeight.w600) : null),
+          style: color != null
+              ? TextStyle(color: color, fontWeight: FontWeight.w600)
+              : null),
       onTap: onTap,
     );
   }
 }
 
-// ===================================================
-// Home Tab — Google Maps + ปุ่มแจ้งปัญหา
-// ===================================================
+// ================= Home Page =================
 class _HomePage extends StatefulWidget {
   const _HomePage();
 
@@ -153,40 +183,22 @@ class _HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<_HomePage> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
+
   LatLng? _userPosition;
-  MapType _mapType = MapType.normal;
-
-  static const _mapTypes = [
-    MapType.normal,
-    MapType.hybrid,
-  ];
-
-  static const _mapTypeLabels = ['ปกติ', 'ไฮบริด'];
-
-  static const _mapTypeIcons = [
-    Icons.map_outlined,
-    Icons.layers_outlined,
-  ];
+  MapMode _mapMode = MapMode.normal;
 
   void _cycleMapType() {
     HapticFeedback.selectionClick();
-    final next = (_mapTypes.indexOf(_mapType) + 1) % _mapTypes.length;
-    setState(() => _mapType = _mapTypes[next]);
+    final modes = MapMode.values;
+    final next = (modes.indexOf(_mapMode) + 1) % modes.length;
+    setState(() => _mapMode = modes[next]);
   }
-
-  int get _mapTypeIndex => _mapTypes.indexOf(_mapType);
 
   @override
   void initState() {
     super.initState();
     _getUserLocation();
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
   }
 
   Future<void> _getUserLocation() async {
@@ -195,68 +207,62 @@ class _HomePageState extends State<_HomePage> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
+
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) return;
 
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
+      final pos = await Geolocator.getCurrentPosition();
 
       if (!mounted) return;
 
       final latLng = LatLng(pos.latitude, pos.longitude);
       setState(() => _userPosition = latLng);
 
-      final inBounds = _swuBounds.contains(latLng);
-      if (inBounds) {
-        _mapController?.animateCamera(
-          CameraUpdate.newLatLngZoom(latLng, 16),
-        );
+      if (mapBounds.contains(latLng)) {
+        _mapController.move(latLng, 16);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Location error: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Google Map เต็มหน้าจอ
-        GoogleMap(
-          initialCameraPosition: const CameraPosition(
-            target: _swuCenter,
-            zoom: 15.5,
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: mapLocation,
+            initialZoom: 15.5,
+            minZoom: 14,
+            maxZoom: 20,
+            cameraConstraint: CameraConstraint.contain(bounds: mapBounds),
           ),
-          onMapCreated: (controller) {
-            _mapController = controller;
-            controller.animateCamera(
-              CameraUpdate.newLatLngBounds(_swuBounds, 40),
-            );
-          },
-          mapType: _mapType,
-          cameraTargetBounds: CameraTargetBounds(_swuBounds),
-          minMaxZoomPreference: const MinMaxZoomPreference(14, 20),
-          myLocationEnabled: true,
-          myLocationButtonEnabled: false,
-          zoomControlsEnabled: false,
-          zoomGesturesEnabled: true,
-          scrollGesturesEnabled: true,
-          compassEnabled: true,
-          buildingsEnabled: true,
-          markers: _userPosition != null
-              ? {
+          children: [
+            TileLayer(
+              urlTemplate: mapModeTileUrl(_mapMode),
+              userAgentPackageName: 'com.example.app',
+            ),
+            if (_userPosition != null)
+              MarkerLayer(
+                markers: [
                   Marker(
-                    markerId: const MarkerId('user'),
-                    position: _userPosition!,
-                    infoWindow: const InfoWindow(title: 'ตำแหน่งของคุณ'),
+                    point: _userPosition!,
+                    width: 40,
+                    height: 40,
+                    child: const Icon(
+                      Icons.location_pin,
+                      color: Colors.red,
+                      size: 40,
+                    ),
                   ),
-                }
-              : {},
+                ],
+              ),
+          ],
         ),
 
-        // ปุ่ม Hamburger ลอยบนซ้าย
+        //  menu (ของเดิม)
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           left: 12,
@@ -272,82 +278,30 @@ class _HomePageState extends State<_HomePage> {
           ),
         ),
 
-        // ปุ่มสลับ map type — glass style เหมือน report_form
+        //  map switch (ของเดิม)
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           left: 68,
           child: GestureDetector(
             onTap: _cycleMapType,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.9), width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2)),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(_mapTypeIcons[_mapTypeIndex],
-                          size: 16, color: _appColor),
-                      const SizedBox(width: 6),
-                      Text(
-                        _mapTypeLabels[_mapTypeIndex],
-                        style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(mapModeIcon(_mapMode), size: 16, color: _appColor),
+                  const SizedBox(width: 6),
+                  Text(mapModeLabel(_mapMode)),
+                ],
               ),
             ),
           ),
         ),
 
-        // ปุ่ม Zoom มุมขวาบน ตรงแนวเดียวกับ hamburger
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 8,
-          right: 12,
-          child: Column(
-            children: [
-              _ZoomButton(
-                icon: Icons.add,
-                onTap: () async {
-                  final zoom = await _mapController?.getZoomLevel() ?? 15;
-                  _mapController?.animateCamera(
-                    CameraUpdate.zoomTo((zoom + 1).clamp(14, 20)),
-                  );
-                },
-              ),
-              const SizedBox(height: 6),
-              _ZoomButton(
-                icon: Icons.remove,
-                onTap: () async {
-                  final zoom = await _mapController?.getZoomLevel() ?? 15;
-                  _mapController?.animateCamera(
-                    CameraUpdate.zoomTo((zoom - 1).clamp(14, 20)),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // ปุ่มแจ้งปัญหาใหม่ ลอยด้านล่าง
+        //  ปุ่มแจ้งปัญหา (ของเดิม)
         Positioned(
           bottom: 24,
           left: 24,
@@ -358,12 +312,10 @@ class _HomePageState extends State<_HomePage> {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              elevation: 6,
+                  borderRadius: BorderRadius.circular(18)),
             ),
             icon: const Icon(Icons.add_circle_outline),
-            label: const Text('แจ้งปัญหาใหม่',
-                style: TextStyle(fontSize: 16)),
+            label: const Text('แจ้งปัญหาใหม่'),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ReportForm()),
@@ -375,47 +327,14 @@ class _HomePageState extends State<_HomePage> {
   }
 }
 
-class _ZoomButton extends StatelessWidget {
-  const _ZoomButton({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      elevation: 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, color: Colors.black87, size: 22),
-        ),
-      ),
-    );
-  }
-}
-
-// ===================================================
-// Profile Tab — placeholder
-// ===================================================
-class _ProfilePage extends StatelessWidget {
-  const _ProfilePage();
+// ================= Notification =================
+/*class NotificationPage extends StatelessWidget {
+  const NotificationPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text('โปรไฟล์', style: TextStyle(fontSize: 20, color: Colors.grey)),
-        ],
-      ),
+      child: Text('Information Page'),
     );
   }
-}
+}*/

@@ -8,6 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../main_page.dart';
+import '../reportList/report_list_page.dart';
 import 'report_form_constants.dart';
 import 'report_form_widgets.dart';
 
@@ -232,53 +234,55 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
   // Submit report to Firestore [_submitReport]
   Future<void> _submitReport() async {
-    // Check the necessary information
-    if (_selectedBuilding == null || _selectedFloor == null) {
-      _showSnackBar(
-        'กรุณาเลือกอาคารและชั้น',
-        Colors.red.shade600,
-        Icons.error_outline,
-      );
-      return;
-    }
+  if (_selectedBuilding == null || _selectedFloor == null) {
+    _showSnackBar(
+      'กรุณาเลือกอาคารและชั้น',
+      Colors.red.shade600,
+      Icons.error_outline,
+    );
+    return;
+  }
 
-    HapticFeedback.mediumImpact();
+  HapticFeedback.mediumImpact();
 
-    try {
-      setState(() => _isSubmitting = true);
+  try {
+    setState(() => _isSubmitting = true);
 
-      await FirebaseFirestore.instance.collection('reports').add({
-        'date': _dateController.text,
-        'username': _usernameController.text,
-        'phone': _phoneController.text,
+    await FirebaseFirestore.instance.collection('reports').add({
+      'date': _dateController.text,
+      'username': _usernameController.text,
+      'phone': _phoneController.text,
+      'building': _selectedBuilding,
+      'floor': _selectedFloor,
+      'room': _roomController.text,
+      'description': _descController.text.trim(),
+      'status': 'รอดำเนินการ',
+      'lat': _pickedLocation?.latitude,
+      'lng': _pickedLocation?.longitude,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
 
-        'building': _selectedBuilding,
-        'floor': _selectedFloor,
-        // [_roomController.text] — was saving controller object, fixed to .text
-        'room': _roomController.text,
+    if (!mounted) return;
 
-        'description': _descController.text.trim(),
+    _showSnackBar('ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green, Icons.check_circle);
 
-        'status': 'รอดำเนินการ',
-        'lat': _pickedLocation?.latitude,
-        'lng': _pickedLocation?.longitude,
+    // ✅ ไปหน้า Report List
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MainPage(initialIndex: 1), // ไป tab รายการ
+      ),
+      (route) => false,
+    );
 
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      if (!mounted) return;
-
-      _showSnackBar('ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green, Icons.check_circle);
-
-      Navigator.pop(context);
-    } catch (e) {
-      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red, Icons.error);
-    } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+  } catch (e) {
+    _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red, Icons.error);
+  } finally {
+    if (mounted) {
+      setState(() => _isSubmitting = false);
     }
   }
+}
 
   // Show snackbar message [_showSnackBar]
   void _showSnackBar(String message, Color color, IconData icon) {

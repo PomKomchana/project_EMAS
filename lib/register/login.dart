@@ -103,17 +103,17 @@ class _LoginPageState extends State<LoginPage> {
         child: Stack(
           children: [
 
-            /// 🔙 ปุ่มมุมขวาบน
+            ///  ปุ่มมุมขวาบน
             Positioned(
               top: 8,
-              right: 8,
+              left: 8,
               child: IconButton(
                 icon: const Icon(Icons.close, color: Colors.black87),
                 onPressed: _goBackToMain,
               ),
             ),
 
-            /// 🔥 เนื้อหาหลัก
+            ///  เนื้อหาหลัก
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 28),
