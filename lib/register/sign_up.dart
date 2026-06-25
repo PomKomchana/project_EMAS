@@ -75,26 +75,28 @@ class SignupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(
+        /*SizedBox(
           width: 260,
         child: Image.asset(
           'assets/images/signup_emas_logo.png',
           fit: BoxFit.contain,
           ),
-        ),
+        ),*/
         const Text(
-          'สร้างบัญชีผู้ใช้',
+          'Create Account',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 36,
             fontWeight: FontWeight.bold,
-            color: signupColor,
+            color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 4),
+        
         const Text(
-          'กรอกข้อมูลเพื่อเริ่มใช้งาน EMAS',
+          'Fill your information to get started with EMAS',
           style: TextStyle(fontSize: 13, color: Colors.black54),
         ),
+
+        const SizedBox(height: 36),
       ],
     );
   }
@@ -223,7 +225,7 @@ class SignupSubmitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 40,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: signupColor,
@@ -235,14 +237,14 @@ class SignupSubmitButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         child: isLoading
             ? const SizedBox(
-                width: 24,
-                height: 24,
+                width: double.infinity,
+                height: 40,
                 child: CircularProgressIndicator(
                   color: Colors.white,
                   strokeWidth: 2,
                 ),
               )
-            : const Text('สร้างบัญชี', style: TextStyle(fontSize: 16)),
+            : const Text('Sign Up', style: TextStyle(fontSize: 18)),
       ),
     );
   }
@@ -262,7 +264,7 @@ class SignupLoginLink extends StatelessWidget {
         TextButton(
           onPressed: onTap,
           child: const Text(
-            'เข้าสู่ระบบ',
+            'Login',
             style: TextStyle(
               color: signupColor,
               fontWeight: FontWeight.bold,
@@ -373,12 +375,9 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('สร้างบัญชีผู้ใช้'),
-        backgroundColor: signupColor,
-        foregroundColor: Colors.white,
-      ),
+
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),

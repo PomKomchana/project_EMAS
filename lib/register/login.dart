@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      if (role != 'admin') {
+      if (role == 'admin') {
         await FirebaseAuth.instance.signOut();
         setState(() => _error = 'บัญชีนี้ไม่มีสิทธิ์ Admin');
         return;
@@ -103,16 +103,6 @@ class _LoginPageState extends State<LoginPage> {
         child: Stack(
           children: [
 
-            ///  ปุ่มมุมขวาบน
-            Positioned(
-              top: 8,
-              left: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.black87),
-                onPressed: _goBackToMain,
-              ),
-            ),
-
             ///  เนื้อหาหลัก
             Center(
               child: SingleChildScrollView(
@@ -122,34 +112,28 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-
-                      /// LOGO
-                      Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          color: _primaryColor.withOpacity(0.08),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.admin_panel_settings,
-                          size: 60,
-                          color: _primaryColor,
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
+                      
                       const Text(
                         'Login',
                         style: TextStyle(
-                          fontSize: 26,
+                          fontSize: 48,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      //const SizedBox(height: 20),
+
+                      const Text(
+                        'Hi welcome to EMAS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.normal,
+                          color: Color(0xFF212121),
+                        ),
+                      ),
+
+                      const SizedBox(height: 36),
 
                       /// ERROR
                       if (_error != null) ...[
@@ -176,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'Email',
+                          hintText: 'example@gmail.com',
                           prefixIcon: const Icon(Icons.email_outlined),
                           filled: true,
                           fillColor: Colors.grey.shade100,
@@ -231,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                       /// LOGIN BUTTON
                       SizedBox(
                         width: double.infinity,
-                        height: 52,
+                        height: 40,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _primaryColor,
@@ -251,6 +235,7 @@ class _LoginPageState extends State<LoginPage> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                     letterSpacing: 1,
                                   ),
                                 ),
