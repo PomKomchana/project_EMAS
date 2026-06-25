@@ -5,7 +5,6 @@ import 'firebase_options.dart';
 import 'screens/loading.dart';
 import 'screens/main_page.dart';
 import 'screens/reportForm/report_form.dart';
-import 'register/login.dart';
 
 void main() async {
   // Make sure Flutter is ready
@@ -46,7 +45,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFe85d6a)),
       ),
-      home: const LoginPage(),
+      home: const LoadingScreen(),
     );
   }
 }
