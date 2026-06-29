@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class AdminReportDetailPage extends StatefulWidget {
   final String reportId;
@@ -131,7 +131,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('รายละเอียด'),
-        backgroundColor: _appColor,
+        backgroundColor: _emasColor,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -200,7 +200,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                                 sel ? FontWeight.bold : FontWeight.normal,
                           ),
                           side: BorderSide(
-                              color: sel ? c : Colors.grey!),
+                              color: sel ? c : Colors.grey),
                           onSelected: (_) =>
                               setState(() => _currentStatus = status),
                         );
@@ -246,7 +246,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
               height: 52,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _appColor,
+                  backgroundColor: _emasColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),

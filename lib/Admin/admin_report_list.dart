@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_detail.dart';
+import 'admin_create_report_sheet.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class AdminReportListPage extends StatefulWidget {
   const AdminReportListPage({super.key});
@@ -30,33 +31,45 @@ class _AdminReportListPageState extends State<AdminReportListPage>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          color: _appColor.withOpacity(0.05),
-          child: TabBar(
-            controller: _tabCtrl,
-            labelColor: _appColor,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: _appColor,
-            tabs: const [
-              Tab(text: 'รอดำเนินการ'),
-              Tab(text: 'กำลังดำเนินการ'),
-              Tab(text: 'เสร็จสิ้น'),
-            ],
+    return Scaffold(
+      // เพิ่มรายการแจ้งซ่อม (Admin) [showAdminCreateReportSheet]
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: _emasColor,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('เพิ่มรายการแจ้งซ่อม'),
+        onPressed: () => showAdminCreateReportSheet(context),
+      ),
+
+      body: Column(
+        children: [
+          Container(
+            color: _emasColor.withOpacity(0.05),
+            child: TabBar(
+              controller: _tabCtrl,
+              labelColor: _emasColor,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: _emasColor,
+              tabs: const [
+                Tab(text: 'รอดำเนินการ'),
+                Tab(text: 'กำลังดำเนินการ'),
+                Tab(text: 'เสร็จสิ้น'),
+              ],
+            ),
           ),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabCtrl,
-            children: const [
-              _FilteredList(status: 'รอดำเนินการ'),
-              _FilteredList(status: 'กำลังดำเนินการ'),
-              _FilteredList(status: 'เสร็จสิ้น'),
-            ],
+
+          Expanded(
+            child: TabBarView(
+              controller: _tabCtrl,
+              children: const [
+                _FilteredList(status: 'รอดำเนินการ'),
+                _FilteredList(status: 'กำลังดำเนินการ'),
+                _FilteredList(status: 'เสร็จสิ้น'),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -95,11 +108,14 @@ class _FilteredList extends StatelessWidget {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final doc = docs[index];
             final data = doc.data() as Map<String, dynamic>;
+
+            // รายการที่ admin สร้างเอง (ไม่ใช่ user แจ้ง) [createdBy]
+            final isAdminCreated = data['createdBy'] == 'admin';
 
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
@@ -108,7 +124,12 @@ class _FilteredList extends StatelessWidget {
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(14),
-                leading: const Icon(Icons.location_on, color: _appColor),
+                leading: Icon(
+                  isAdminCreated
+                      ? Icons.admin_panel_settings_rounded
+                      : Icons.location_on,
+                  color: _emasColor,
+                ),
                 title: Text(
                   '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
@@ -118,7 +139,33 @@ class _FilteredList extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: const Icon(Icons.chevron_right),
+                
+                // ป้ายเล็กบอกว่า admin เป็นคนสร้างรายการนี้เอง
+                trailing: isAdminCreated
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _emasColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Admin',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: _emasColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      )
+                    : const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.push(
                     context,

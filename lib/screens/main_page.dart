@@ -16,7 +16,7 @@ import '../register/login.dart';
 import 'reportForm/report_form_constants.dart';
 import '../Admin/admin_main.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class MainPage extends StatefulWidget {
   final int initialIndex;
@@ -138,7 +138,7 @@ class _MainPageState extends State<MainPage> {
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
         backgroundColor: const Color(0xFFFFFFFF),
-        selectedItemColor: _appColor,
+        selectedItemColor: _emasColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         showSelectedLabels: false,
@@ -149,7 +149,7 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// ================= Drawer =================
+// Drawer
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
@@ -170,13 +170,16 @@ class _AppDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           const DrawerHeader(
-            decoration: BoxDecoration(color: _appColor),
-            child: Text('EMAS',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold)),
-          ),
+            decoration: BoxDecoration(color: _emasColor),
+            child: Text('EMAS', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            ),
+          
+        if (isAdmin)
+          _DrawerItem(icon: Icons.admin_panel_settings, label: 'Admin', onTap: onAdmin),
+
+        if (isAdmin)
+          const Divider(height: 1),
+
           _DrawerItem(icon: Icons.home, label: 'หน้าหลัก', onTap: () => onTap(0)),
           _DrawerItem(icon: Icons.list_alt, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
           _DrawerItem(icon: Icons.notifications_none, label: 'ข่าวสาร', onTap: () => onTap(2)),
@@ -184,20 +187,7 @@ class _AppDrawer extends StatelessWidget {
 
           const Divider(height: 1),
 
-          _DrawerItem(
-            icon: Icons.phone_in_talk_outlined,
-            label: 'เบอร์โทรฉุกเฉิน',
-            onTap: onEmergency,
-            color: _appColor,
-          ),
-
-        if (isAdmin)
-          _DrawerItem(
-            icon: Icons.admin_panel_settings,
-            label: 'Admin',
-            onTap: onAdmin,
-            color: _appColor,
-          ),
+          _DrawerItem(icon: Icons.phone_in_talk_outlined, label: 'เบอร์โทรฉุกเฉิน', onTap: onEmergency),
         ],
       ),
     );
@@ -230,7 +220,7 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-// ================= Home Page =================
+// Home Page
 class _HomePage extends StatefulWidget {
   const _HomePage();
 
@@ -334,7 +324,7 @@ class _HomePageState extends State<_HomePage> {
           ),
         ),
 
-        //  map switch (ของเดิม)
+        // Map Switch
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           left: 68,
@@ -348,7 +338,7 @@ class _HomePageState extends State<_HomePage> {
               ),
               child: Row(
                 children: [
-                  Icon(mapModeIcon(_mapMode), size: 16, color: _appColor),
+                  Icon(mapModeIcon(_mapMode), size: 16, color: _emasColor),
                   const SizedBox(width: 6),
                   Text(mapModeLabel(_mapMode)),
                 ],
@@ -357,14 +347,14 @@ class _HomePageState extends State<_HomePage> {
           ),
         ),
 
-        //  ปุ่มแจ้งปัญหา (ของเดิม)
+        // Report Form
         Positioned(
           bottom: 24,
           left: 24,
           right: 24,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: _appColor,
+              backgroundColor: _emasColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
