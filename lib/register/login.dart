@@ -53,12 +53,6 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      if (role == 'admin') {
-        await FirebaseAuth.instance.signOut();
-        setState(() => _error = 'บัญชีนี้ไม่มีสิทธิ์ Admin');
-        return;
-      }
-
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const MainPage()),
