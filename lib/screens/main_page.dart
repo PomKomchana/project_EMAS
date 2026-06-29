@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'report_news.dart';
 import 'reportForm/report_form.dart';
@@ -12,8 +14,9 @@ import 'profile_page.dart';
 import 'emergency_page.dart';
 import '../register/login.dart';
 import 'reportForm/report_form_constants.dart';
+import '../Admin/admin_main.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class MainPage extends StatefulWidget {
   final int initialIndex;
@@ -25,12 +28,14 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-   late int _selectedIndex;
+  late int _selectedIndex;
+  bool _isAdmin = false;
   
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _checkAdmin();
   }
   
   static const _titles = [
@@ -43,9 +48,34 @@ class _MainPageState extends State<MainPage> {
   static const _navItems = [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
     BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''), // 🔔
+    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''),
     BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
   ];
+
+  Future<void> _checkAdmin() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) return;
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) return;
+
+      final data = doc.data();
+
+      if (data?['role'] == 'admin') {
+        setState(() {
+          _isAdmin = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Admin check error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +98,14 @@ class _MainPageState extends State<MainPage> {
               ),
               centerTitle: true,
             ),
+
       drawer: _AppDrawer(
+        isAdmin: _isAdmin,
         onTap: (i) {
           Navigator.pop(context);
           setState(() => _selectedIndex = i);
         },
+
         onEmergency: () {
           Navigator.pop(context);
           Navigator.push(
@@ -80,22 +113,22 @@ class _MainPageState extends State<MainPage> {
             MaterialPageRoute(builder: (_) => const EmergencyPage()),
           );
         },
+
         onAdmin: () {
           Navigator.pop(context);
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
+            MaterialPageRoute(builder: (_) => const AdminMainPage()),
           );
         },
       ),
 
-      // หน้าแต่ละแท็บ
       body: IndexedStack(
         index: _selectedIndex,
         children: const [
-          _HomePage(),          // ของเดิม
+          _HomePage(),
           ReportListPage(),
-          ReportNewsPage(),   //  เพิ่ม
+          ReportNewsPage(),
           ProfilePage(),
         ],
       ),
@@ -105,7 +138,7 @@ class _MainPageState extends State<MainPage> {
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
         backgroundColor: const Color(0xFFFFFFFF),
-        selectedItemColor: _appColor,
+        selectedItemColor: _emasColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         showSelectedLabels: false,
@@ -116,17 +149,19 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// ================= Drawer =================
+// Drawer
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
     required this.onEmergency,
     required this.onAdmin,
+    required this.isAdmin,
   });
 
   final void Function(int) onTap;
   final VoidCallback onEmergency;
   final VoidCallback onAdmin;
+  final bool isAdmin;
 
   @override
   Widget build(BuildContext context) {
@@ -135,29 +170,24 @@ class _AppDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           const DrawerHeader(
-            decoration: BoxDecoration(color: _appColor),
-            child: Text('EMAS',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold)),
-          ),
+            decoration: BoxDecoration(color: _emasColor),
+            child: Text('EMAS', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            ),
+          
+        if (isAdmin)
+          _DrawerItem(icon: Icons.admin_panel_settings, label: 'Admin Panel', onTap: onAdmin),
+
+        if (isAdmin)
+          const Divider(height: 1),
+
           _DrawerItem(icon: Icons.home, label: 'หน้าหลัก', onTap: () => onTap(0)),
           _DrawerItem(icon: Icons.list_alt, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
           _DrawerItem(icon: Icons.notifications_none, label: 'ข่าวสาร', onTap: () => onTap(2)),
           _DrawerItem(icon: Icons.person, label: 'โปรไฟล์', onTap: () => onTap(3)),
+
           const Divider(height: 1),
-          _DrawerItem(
-            icon: Icons.phone_in_talk_outlined,
-            label: 'เบอร์โทรฉุกเฉิน',
-            onTap: onEmergency,
-            color: _appColor,
-          ),
-          _DrawerItem(
-            icon: Icons.admin_panel_settings_outlined,
-            label: 'เข้าสู่ระบบ Admin',
-            onTap: onAdmin,
-          ),
+
+          _DrawerItem(icon: Icons.phone_in_talk_outlined, label: 'เบอร์โทรฉุกเฉิน', onTap: onEmergency),
         ],
       ),
     );
@@ -190,7 +220,7 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-// ================= Home Page =================
+// Home Page
 class _HomePage extends StatefulWidget {
   const _HomePage();
 
@@ -294,7 +324,7 @@ class _HomePageState extends State<_HomePage> {
           ),
         ),
 
-        //  map switch (ของเดิม)
+        // Map Switch
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           left: 68,
@@ -308,7 +338,7 @@ class _HomePageState extends State<_HomePage> {
               ),
               child: Row(
                 children: [
-                  Icon(mapModeIcon(_mapMode), size: 16, color: _appColor),
+                  Icon(mapModeIcon(_mapMode), size: 16, color: _emasColor),
                   const SizedBox(width: 6),
                   Text(mapModeLabel(_mapMode)),
                 ],
@@ -317,14 +347,14 @@ class _HomePageState extends State<_HomePage> {
           ),
         ),
 
-        //  ปุ่มแจ้งปัญหา (ของเดิม)
+        // Report Form
         Positioned(
           bottom: 24,
           left: 24,
           right: 24,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: _appColor,
+              backgroundColor: _emasColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -342,15 +372,3 @@ class _HomePageState extends State<_HomePage> {
     );
   }
 }
-
-// ================= Notification =================
-/*class NotificationPage extends StatelessWidget {
-  const NotificationPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Information Page'),
-    );
-  }
-}*/

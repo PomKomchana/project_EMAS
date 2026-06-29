@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'main_page.dart';
 import '../register/login.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -49,13 +50,11 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // ──── Header ────
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
                 decoration: const BoxDecoration(
-                  color: _appColor,
+                  color: _emasColor,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
@@ -87,7 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.camera_alt_rounded,
-                                size: 16, color: _appColor),
+                                size: 16, color: _emasColor),
                           ),
                         ],
                       ),
@@ -115,7 +114,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 24),
 
-              // ──── Section Card ────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
@@ -148,52 +146,65 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ? FileImage(_profileImage!)
                                     : null,
                                 child: _profileImage == null
-                                    ? const Icon(Icons.person,
-                                        color: Color(0xFFB39DDB), size: 20)
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Color(0xFFB39DDB),
+                                        size: 20,
+                                      )
                                     : null,
                               ),
                               const SizedBox(width: 8),
-                              const Icon(Icons.chevron_right_rounded,
-                                  color: Color(0xFFBBBBBB), size: 22),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: Color(0xFFBBBBBB),
+                                size: 22,
+                              ),
                             ],
                           ),
                         ),
                         isLast: false,
                       ),
+
                       _InfoTile(
                         icon: Icons.badge_outlined,
                         label: 'บัญชี',
                         trailing: Text(
                           _accountId,
                           style: const TextStyle(
-                              fontSize: 14, color: Color(0xFF999999)),
+                            fontSize: 14,
+                            color: Color(0xFF999999),
+                          ),
                         ),
                         isLast: false,
                       ),
+
                       _InfoTile(
-  icon: Icons.admin_panel_settings_outlined,
-  label: 'Login',
-  trailing: const Icon(
-    Icons.chevron_right_rounded,
-    color: Color(0xFFBBBBBB),
-    size: 22,
-  ),
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const LoginPage(),
-      ),
-    );
-  },
-  isLast: true,
-),
+                        icon: Icons.admin_panel_settings_outlined,
+                        label: 'Logout',
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFFBBBBBB),
+                          size: 22,
+                        ),
+                        isLast: true,
+                        onTap: () async {
+                          await FirebaseAuth.instance.signOut();
+
+                          if (!mounted) return;
+
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginPage(),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
               ),
-
-   
             ],
           ),
         ),
@@ -202,9 +213,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-// ===================================================
-// _InfoTile
-// ===================================================
 class _InfoTile extends StatelessWidget {
   const _InfoTile({
     required this.icon,
@@ -268,9 +276,6 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
-// ===================================================
-// _ImageSourceSheet
-// ===================================================
 class _ImageSourceSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

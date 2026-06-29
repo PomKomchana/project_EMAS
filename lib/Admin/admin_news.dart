@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class AdminNewsPage extends StatelessWidget {
   const AdminNewsPage({super.key});
@@ -10,7 +10,7 @@ class AdminNewsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: _appColor,
+        backgroundColor: _emasColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('เพิ่มข่าวสาร'),
@@ -56,8 +56,8 @@ class AdminNewsPage extends StatelessWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(14),
                   leading: CircleAvatar(
-                    backgroundColor: _appColor.withOpacity(0.1),
-                    child: const Icon(Icons.campaign, color: _appColor),
+                    backgroundColor: _emasColor.withOpacity(0.1),
+                    child: const Icon(Icons.campaign, color: _emasColor),
                   ),
                   title: Text(data['title'] ?? '-',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -134,7 +134,7 @@ class AdminNewsPage extends StatelessWidget {
             child: const Text('ยกเลิก'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _appColor),
+            style: ElevatedButton.styleFrom(backgroundColor: _emasColor),
             onPressed: () async {
               if (titleCtrl.text.trim().isEmpty) return;
 
