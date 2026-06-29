@@ -184,7 +184,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         trailing: const Icon(
                           Icons.chevron_right_rounded,
                           color: Color(0xFFBBBBBB),
-                          size: 22,
                         ),
                         isLast: true,
                         onTap: () async {
