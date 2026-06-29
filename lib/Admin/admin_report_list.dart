@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_detail.dart';
-import 'admin_create_report_sheet.dart';
+import 'admin_report_form.dart';
 
 const _emasColor = Color(0xFFe85d6a);
 
@@ -32,13 +32,13 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // เพิ่มรายการแจ้งซ่อม (Admin) [showAdminCreateReportSheet]
+      // เพิ่มรายการแจ้งซ่อม (Admin) [showAdminReportForm]
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: _emasColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('เพิ่มรายการแจ้งซ่อม'),
-        onPressed: () => showAdminCreateReportSheet(context),
+        onPressed: () => showAdminReportForm(context),
       ),
 
       body: Column(

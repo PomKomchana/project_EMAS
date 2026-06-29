@@ -13,26 +13,26 @@ import '../screens/reportList/report_list_constants.dart'
 const emasColor = Color(0xFFe85d6a);
 const emasColorDarker = Color(0xFFc4394a);
 
-// ==== Bottom sheet: admin สร้างรายการแจ้งซ่อมเอง [showAdminCreateReportSheet] ====
+// ==== Bottom sheet: admin สร้างรายการแจ้งซ่อมเอง [showAdminReportForm] ====
 // เรียกจาก FAB ใน admin_report_list.dart
-Future<void> showAdminCreateReportSheet(BuildContext context) {
+Future<void> showAdminReportForm(BuildContext context) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => const AdminCreateReportSheet(),
+    builder: (_) => const AdminReportForm(),
   );
 }
 
-class AdminCreateReportSheet extends StatefulWidget {
-  const AdminCreateReportSheet({super.key});
+class AdminReportForm extends StatefulWidget {
+  const AdminReportForm({super.key});
 
   @override
-  State<AdminCreateReportSheet> createState() =>
-      _AdminCreateReportSheetState();
+  State<AdminReportForm> createState() =>
+      _AdminReportFormState();
 }
 
-class _AdminCreateReportSheetState extends State<AdminCreateReportSheet>
+class _AdminReportFormState extends State<AdminReportForm>
     with TickerProviderStateMixin {
   // Controllers [_roomController, _descController]
   final _roomController = TextEditingController();

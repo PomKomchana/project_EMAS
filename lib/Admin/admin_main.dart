@@ -7,7 +7,7 @@ import 'admin_news.dart';
 import '../register/login.dart';
 import '../screens/main_page.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class AdminMainPage extends StatefulWidget {
   const AdminMainPage({super.key});
@@ -29,26 +29,28 @@ class _AdminMainPageState extends State<AdminMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Panel',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: _appColor,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MainPage()),
-                  (route) => false,
-                );
-              }
-            },
-          ),
-        ],
+        automaticallyImplyLeading: false,
+
+        leading: IconButton(
+        icon: const Icon(Icons.logout),
+        onPressed: () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const MainPage()),
+            (route) => false,
+          );
+        },
       ),
+
+      title: const Text(
+        'Admin Panel',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+
+      backgroundColor: _emasColor,
+      foregroundColor: Colors.white,
+    ),
+
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -59,11 +61,13 @@ class _AdminMainPageState extends State<AdminMainPage> {
             selectedIcon: Icon(Icons.dashboard),
             label: 'แดชบอร์ด',
           ),
+
           NavigationDestination(
             icon: Icon(Icons.list_alt_outlined),
             selectedIcon: Icon(Icons.list_alt),
             label: 'รายการแจ้งซ่อม',
           ),
+          
           NavigationDestination(
             icon: Icon(Icons.newspaper_outlined),
             selectedIcon: Icon(Icons.newspaper),
