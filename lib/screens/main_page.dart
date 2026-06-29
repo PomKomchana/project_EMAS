@@ -175,7 +175,7 @@ class _AppDrawer extends StatelessWidget {
             ),
           
         if (isAdmin)
-          _DrawerItem(icon: Icons.admin_panel_settings, label: 'Admin', onTap: onAdmin),
+          _DrawerItem(icon: Icons.admin_panel_settings, label: 'Admin Panel', onTap: onAdmin),
 
         if (isAdmin)
           const Divider(height: 1),

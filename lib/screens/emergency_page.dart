@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const _appColor = Color(0xFFe85d6a);
-
-// ── Data ──────────────────────────────────────────────────────────────────────
+const _emasColor = Color(0xFFe85d6a);
 
 class _Contact {
   const _Contact({
@@ -61,11 +59,9 @@ const _contacts = [
     label: 'รปภ. มศว องครักษ์',
     subtitle: 'งานรักษาความปลอดภัย',
     number: '037395397',
-    color: _appColor,
+    color: _emasColor,
   ),
 ];
-
-// ── Page ──────────────────────────────────────────────────────────────────────
 
 class EmergencyPage extends StatelessWidget {
   const EmergencyPage({super.key});
@@ -77,18 +73,17 @@ class EmergencyPage extends StatelessWidget {
         title: const Text('เบอร์โทรฉุกเฉิน',
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: _appColor,
+        backgroundColor: _emasColor,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: Column(
         children: [
-          // Header banner
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
             decoration: const BoxDecoration(
-              color: _appColor,
+              color: _emasColor,
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),
@@ -124,7 +119,6 @@ class EmergencyPage extends StatelessWidget {
             ),
           ),
 
-          // Contact list
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -138,8 +132,6 @@ class EmergencyPage extends StatelessWidget {
     );
   }
 }
-
-// ── Contact card ──────────────────────────────────────────────────────────────
 
 class _ContactCard extends StatelessWidget {
   const _ContactCard({required this.contact});
@@ -164,7 +156,6 @@ class _ContactCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              // Icon badge
               Container(
                 width: 50,
                 height: 50,
@@ -176,7 +167,6 @@ class _ContactCard extends StatelessWidget {
               ),
               const SizedBox(width: 14),
 
-              // Label + subtitle
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +182,6 @@ class _ContactCard extends StatelessWidget {
                 ),
               ),
 
-              // Number badge
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 7),

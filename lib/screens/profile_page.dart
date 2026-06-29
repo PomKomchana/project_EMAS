@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'main_page.dart';
 import '../register/login.dart';
 
-const _appColor = Color(0xFFe85d6a);
+const _emasColor = Color(0xFFe85d6a);
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -50,13 +50,11 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // ──── Header ────
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
                 decoration: const BoxDecoration(
-                  color: _appColor,
+                  color: _emasColor,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
@@ -88,7 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.camera_alt_rounded,
-                                size: 16, color: _appColor),
+                                size: 16, color: _emasColor),
                           ),
                         ],
                       ),
@@ -116,7 +114,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 24),
 
-              // ──── Section Card ────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
@@ -216,9 +213,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-// ===================================================
-// _InfoTile
-// ===================================================
 class _InfoTile extends StatelessWidget {
   const _InfoTile({
     required this.icon,
@@ -282,9 +276,6 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
-// ===================================================
-// _ImageSourceSheet
-// ===================================================
 class _ImageSourceSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
