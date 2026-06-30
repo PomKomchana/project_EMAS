@@ -9,12 +9,12 @@ import '../screens/reportForm/report_form_constants.dart'
     hide emasColor, emasColorDarker;
 import '../screens/reportList/report_list_constants.dart'
     hide emasColor, emasColorDarker;
+import '../screens/reportForm/report_form_widgets.dart';
 
 const emasColor = Color(0xFFe85d6a);
 const emasColorDarker = Color(0xFFc4394a);
 
-// ==== Bottom sheet: admin สร้างรายการแจ้งซ่อมเอง [showAdminReportForm] ====
-// เรียกจาก FAB ใน admin_report_list.dart
+// Bottom sheet: Admin [showAdminReportForm]
 Future<void> showAdminReportForm(BuildContext context) {
   return showModalBottomSheet(
     context: context,
@@ -28,36 +28,42 @@ class AdminReportForm extends StatefulWidget {
   const AdminReportForm({super.key});
 
   @override
-  State<AdminReportForm> createState() =>
-      _AdminReportFormState();
+  State<AdminReportForm> createState() => _AdminReportFormState();
 }
 
 class _AdminReportFormState extends State<AdminReportForm>
     with TickerProviderStateMixin {
-  // Controllers [_roomController, _descController]
+  // Controllers [_roomController, _descController, _mapController]
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
 
-  // Map picking state [_pickedLocation, _isPickingMode, _mapMode]
+  // Map State [_pickedLocation, _isPickingMode, _isMapExpanded, _mapMode]
   LatLng? _pickedLocation;
   bool _isPickingMode = false;
+  bool _isMapExpanded = false;
   MapMode _mapMode = MapMode.normal;
 
-  // Form state [_selectedBuilding, _selectedFloor, _selectedSeverity, _isSaving]
+  // Form State [_selectedBuilding, _selectedFloor, _selectedSeverity, _selectedStatus, _isSaving]
   String? _selectedBuilding;
   String? _selectedFloor;
   String? _selectedSeverity;
+  String _selectedStatus = ReportStatus.pending;
   bool _isSaving = false;
 
-  // Staggered fade-in สำหรับ section ต่างๆ ในชีต ให้ feel เหมือน report_list
+  // Staggered Entrance Animations [_fadeController, _fadeList, _slideList]
   late final AnimationController _fadeController;
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
 
+  // Map Expand / Collapse Animation [_mapAnimController, _mapHeightAnimation]
+  late final AnimationController _mapAnimController;
+  late final Animation<double> _mapHeightAnimation;
+
   @override
   void initState() {
     super.initState();
+
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -65,6 +71,19 @@ class _AdminReportFormState extends State<AdminReportForm>
     _fadeList = _buildStaggeredFadeList();
     _slideList = _buildStaggeredSlideList();
     _fadeController.forward();
+
+    // Map Animations height: 200 → 520 [_mapAnimController]
+    _mapAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..addListener(() => setState(() {}));
+
+    _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
+      CurvedAnimation(
+        parent: _mapAnimController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
   }
 
   @override
@@ -73,12 +92,13 @@ class _AdminReportFormState extends State<AdminReportForm>
     _descController.dispose();
     _mapController.dispose();
     _fadeController.dispose();
+    _mapAnimController.dispose();
     super.dispose();
   }
 
   List<Animation<double>> _buildStaggeredFadeList() {
-    return List.generate(4, (i) {
-      final start = (i * 0.12).clamp(0.0, 0.9);
+    return List.generate(5, (i) {
+      final start = (i * 0.1).clamp(0.0, 0.9);
       return Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(
           parent: _fadeController,
@@ -89,12 +109,9 @@ class _AdminReportFormState extends State<AdminReportForm>
   }
 
   List<Animation<Offset>> _buildStaggeredSlideList() {
-    return List.generate(4, (i) {
-      final start = (i * 0.12).clamp(0.0, 0.9);
-      return Tween<Offset>(
-        begin: const Offset(0, 0.12),
-        end: Offset.zero,
-      ).animate(
+    return List.generate(5, (i) {
+      final start = (i * 0.1).clamp(0.0, 0.9);
+      return Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
         CurvedAnimation(
           parent: _fadeController,
           curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
@@ -103,16 +120,33 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
-  // ==== Handle map tap → ปักหมุด (เช็ค bounds เหมือน report_form) [_onMapTapped] ====
+  // Toggle Expand Mode + Picking Mode [_toggleMapExpand]
+  void _toggleMapExpand({bool enterPickingMode = false}) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isMapExpanded = !_isMapExpanded;
+      if (_isMapExpanded) {
+        _mapAnimController.forward();
+        if (enterPickingMode) _isPickingMode = true;
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: mapBounds,
+            padding: const EdgeInsets.all(40),
+          ),
+        );
+      } else {
+        _mapAnimController.reverse();
+        _isPickingMode = false;
+      }
+    });
+  }
+
   void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
     if (!_isPickingMode) return;
 
     if (!mapBounds.contains(tappedPosition)) {
       HapticFeedback.heavyImpact();
-      _showSnack(
-        'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น',
-        Colors.orange.shade700,
-      );
+      _showSnack('กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น', Colors.orange.shade700);
       return;
     }
 
@@ -121,28 +155,30 @@ class _AdminReportFormState extends State<AdminReportForm>
     _mapController.move(tappedPosition, 18);
   }
 
-  // ==== สลับโหมดแผนที่ ปกติ/ไฮบริด [_cycleMapMode] ====
+  // Confirm Pin → Zoom Out Map [_confirmPin]
+  void _confirmPin() {
+    HapticFeedback.mediumImpact();
+    _toggleMapExpand();
+    _showSnack('ปักหมุดสำเร็จ ✓', Colors.green.shade600);
+  }
+
   void _cycleMapMode() {
     HapticFeedback.selectionClick();
     setState(() {
       final modes = MapMode.values;
-      final nextIndex = (modes.indexOf(_mapMode) + 1) % modes.length;
-      _mapMode = modes[nextIndex];
+      _mapMode = modes[(modes.indexOf(_mapMode) + 1) % modes.length];
     });
   }
 
-  // ==== บันทึกรายการแจ้งซ่อมลง Firestore [_submit] ====
   Future<void> _submit() async {
     if (_selectedBuilding == null || _selectedFloor == null) {
       _showSnack('กรุณาเลือกอาคารและชั้น', Colors.red.shade600);
       return;
     }
-
     if (_selectedSeverity == null) {
-      _showSnack('กรุณาเลือกระดับความเร่งด่วน', Colors.red.shade600);
+      _showSnack('กรุณาเลือกระดับความรุนแรง', Colors.red.shade600);
       return;
     }
-
     if (_descController.text.trim().isEmpty) {
       _showSnack('กรุณากรอกรายละเอียดปัญหา', Colors.red.shade600);
       return;
@@ -158,11 +194,11 @@ class _AdminReportFormState extends State<AdminReportForm>
         'room': _roomController.text.trim(),
         'description': _descController.text.trim(),
         'severity': _selectedSeverity,
-        'status': ReportStatus.pending,
+        'status': _selectedStatus,
         'lat': _pickedLocation?.latitude,
         'lng': _pickedLocation?.longitude,
-        'username': 'Admin', // [createdBy=admin] ระบุชื่อผู้แจ้งเป็น Admin ตรงๆ
-        'createdBy': 'admin', // เพื่อแยกว่า admin สร้างเอง ไม่ใช่ user แจ้ง
+        'username': 'Admin',
+        'createdBy': 'admin',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -190,7 +226,6 @@ class _AdminReportFormState extends State<AdminReportForm>
 
   @override
   Widget build(BuildContext context) {
-    // เปิดเกือบเต็มจอ แต่ยัง dismiss แบบ sheet ได้ [DraggableScrollableSheet]
     return DraggableScrollableSheet(
       initialChildSize: 0.92,
       minChildSize: 0.5,
@@ -207,6 +242,9 @@ class _AdminReportFormState extends State<AdminReportForm>
                 _buildHeader(),
                 Expanded(
                   child: SingleChildScrollView(
+                    physics: _isMapExpanded
+                        ? const NeverScrollableScrollPhysics()
+                        : const BouncingScrollPhysics(),
                     controller: scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     child: Column(
@@ -216,9 +254,11 @@ class _AdminReportFormState extends State<AdminReportForm>
                         const SizedBox(height: 14),
                         _buildAnimatedSection(1, _buildLocationSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(2, _buildSeveritySection()),
+                        _buildAnimatedSection(2, _buildStatusSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(3, _buildDescriptionSection()),
+                        _buildAnimatedSection(3, _buildSeveritySection()),
+                        const SizedBox(height: 14),
+                        _buildAnimatedSection(4, _buildDescriptionSection()),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -233,7 +273,6 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  // ==== ครอบแต่ละ section ด้วย fade + slide-up ตอนเปิดชีต [_buildAnimatedSection] ====
   Widget _buildAnimatedSection(int index, Widget child) {
     return FadeTransition(
       opacity: _fadeList[index],
@@ -241,7 +280,6 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  // ==== Drag handle ด้านบน sheet ====
   Widget _buildHandle() {
     return Container(
       margin: const EdgeInsets.only(top: 10, bottom: 6),
@@ -265,7 +303,6 @@ class _AdminReportFormState extends State<AdminReportForm>
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
           ),
-          // Badge เล็กๆ บอกว่านี่คือรายการที่ admin สร้างเอง
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             margin: const EdgeInsets.only(right: 6),
@@ -292,18 +329,26 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  // ==== แผนที่เลือกตำแหน่ง (ใช้ขนาดคงที่ เพราะอยู่ใน sheet ที่ scroll ได้แล้ว) [_buildMapSection] ====
   Widget _buildMapSection() {
-    return _buildGlassCard(
-      icon: Icons.location_on_rounded,
-      title: 'ตำแหน่งที่เกิดเหตุ (ไม่บังคับ)',
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: SizedBox(
-              height: 260,
+          const CardHeader(
+            icon: Icons.location_on_rounded,
+            title: 'ตำแหน่งที่เกิดเหตุ',
+          ),
+          const SizedBox(height: 12),
+
+          // Height Animations 200 → 520 [_mapHeightAnimation]
+          AnimatedBuilder(
+            animation: _mapAnimController,
+            builder: (_, child) => SizedBox(
+              height: _mapHeightAnimation.value,
+              child: child,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
               child: Stack(
                 children: [
                   FlutterMap(
@@ -313,8 +358,7 @@ class _AdminReportFormState extends State<AdminReportForm>
                       initialZoom: 15,
                       minZoom: 14,
                       maxZoom: 20,
-                      cameraConstraint:
-                          CameraConstraint.containCenter(bounds: mapBounds),
+                      cameraConstraint: CameraConstraint.containCenter(bounds: mapBounds),
                       onTap: _onMapTapped,
                     ),
                     children: [
@@ -340,113 +384,94 @@ class _AdminReportFormState extends State<AdminReportForm>
                     ],
                   ),
 
-                  // ปุ่มสลับโหมดแผนที่
+                  // Map Mode
                   Positioned(
-                    top: 10,
+                    top: _isMapExpanded ? 50 : 10,
                     left: 10,
-                    child: _MapModeChip(
+                    child: GlassMapButton(
                       icon: mapModeIcon(_mapMode),
                       label: mapModeLabel(_mapMode),
                       onTap: _cycleMapMode,
                     ),
                   ),
 
-                  // แบนเนอร์บอกให้แตะปักหมุด
+                  // Banner "แตะเพื่อปักหมุด"
                   if (_isPickingMode)
-                    Positioned(
+                    const Positioned(
                       top: 10,
                       left: 0,
                       right: 0,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.65),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'แตะบนแผนที่เพื่อปักหมุด',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
+                      child: Center(child: PickingBanner()),
+                    ),
+
+                  // Botton "ปุ่มยืนยันตำแหน่ง"
+                  if (_isPickingMode && _pickedLocation != null)
+                    Positioned(
+                      bottom: 12,
+                      left: 12,
+                      right: 12,
+                      child: GradientButton(
+                        onTap: _confirmPin,
+                        color1: Colors.green.shade500,
+                        color2: Colors.green.shade700,
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_rounded, size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'ยืนยันตำแหน่งนี้',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
+
+                  // Botton "X"
+                  if (_isMapExpanded && !_isPickingMode)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: CloseMapButton(onTap: _toggleMapExpand),
                     ),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // ปุ่มเข้า/ออก โหมดปักหมุด
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: emasColor,
-                    side: const BorderSide(color: emasColor),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    setState(() => _isPickingMode = !_isPickingMode);
-                  },
-                  icon: Icon(
-                    _isPickingMode
-                        ? Icons.check_rounded
-                        : Icons.my_location_rounded,
-                    size: 18,
-                  ),
-                  label: Text(
-                    _isPickingMode
-                        ? 'เสร็จสิ้นการปักหมุด'
-                        : (_pickedLocation == null
-                            ? 'เลือกตำแหน่ง'
-                            : 'เปลี่ยนตำแหน่ง'),
+          // Botton "เลือกตำแหน่ง" / "เปลี่ยนตำแหน่ง"
+          if (!_isMapExpanded)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlineButton(
+                    icon: Icons.my_location_rounded,
+                    label: _pickedLocation == null ? 'เลือกตำแหน่ง' : 'เปลี่ยนตำแหน่ง',
+                    onTap: () => _toggleMapExpand(enterPickingMode: true),
                   ),
                 ),
-              ),
-              if (_pickedLocation != null && !_isPickingMode) ...[
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green.shade200),
-                  ),
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    color: Colors.green.shade600,
-                    size: 20,
-                  ),
-                ),
+                if (_pickedLocation != null) ...[
+                  const SizedBox(width: 10),
+                  const PinBadge(),
+                ],
               ],
-            ],
-          ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildLocationSection() {
-    return _buildGlassCard(
-      icon: Icons.apartment_rounded,
-      title: 'สถานที่',
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDropdown(
+          const CardHeader(icon: Icons.apartment_rounded, title: 'สถานที่'),
+          const SizedBox(height: 12),
+          StyledDropdown(
             value: _selectedBuilding,
             hint: 'เลือกอาคาร',
             icon: Icons.domain_rounded,
@@ -454,7 +479,7 @@ class _AdminReportFormState extends State<AdminReportForm>
             onChanged: (v) => setState(() => _selectedBuilding = v),
           ),
           const SizedBox(height: 10),
-          _buildDropdown(
+          StyledDropdown(
             value: _selectedFloor,
             hint: 'เลือกชั้น',
             icon: Icons.layers_rounded,
@@ -465,7 +490,7 @@ class _AdminReportFormState extends State<AdminReportForm>
           TextField(
             controller: _roomController,
             decoration: InputDecoration(
-              labelText: 'ห้องเลขที่ (ไม่บังคับ)',
+              labelText: 'ห้องเลขที่',
               labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               prefixIcon: const Icon(Icons.meeting_room_outlined, color: emasColor),
               border: OutlineInputBorder(
@@ -483,36 +508,135 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  // ==== เลือกระดับความเร่งด่วน (severity) — ของใหม่ ไม่มีในเวอร์ชันเดิม [_buildSeveritySection] ====
-  Widget _buildSeveritySection() {
-    // ตัด 'none' ออก เพราะ admin ต้องเลือกระดับจริงเสมอ ไม่ปล่อยว่าง
-    final options = severityLevels.entries
-        .where((entry) => entry.key != 'none')
-        .toList();
+  // [ADMIN] Report Status ("รอดำเนินการ" / "กำลังดำเนินการ") [_buildStatusSection]
+  Widget _buildStatusSection() {
+    final options = [
+      (
+        value: ReportStatus.pending,
+        label: 'รอดำเนินการ',
+        icon: Icons.hourglass_empty_rounded,
+        color: Colors.orange,
+      ),
+      (
+        value: ReportStatus.inProgress,
+        label: 'กำลังดำเนินการ',
+        icon: Icons.construction_rounded,
+        color: Colors.blue,
+      ),
+    ];
 
-    return _buildGlassCard(
-      icon: Icons.priority_high_rounded,
-      title: 'ระดับความเร่งด่วน',
-      child: Row(
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < options.length; i++) ...[
-            if (i > 0) const SizedBox(width: 8),
-            Expanded(
-              child: _buildSeverityOption(
-                options[i].key,
-                options[i].value,
-              ),
-            ),
-          ],
+          // CardHeader + Admin Badge (In the same row)
+          Row(
+            children: [
+              const CardHeader(icon: Icons.flag_rounded, title: 'สถานะเริ่มต้น'),
+              const Spacer(),
+              _buildAdminBadge(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final opt in options) ...[
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _selectedStatus = opt.value);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _selectedStatus == opt.value
+                            ? opt.color.withOpacity(0.1)
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _selectedStatus == opt.value
+                              ? opt.color
+                              : Colors.grey.shade200,
+                          width: _selectedStatus == opt.value ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            opt.icon,
+                            size: 20,
+                            color: _selectedStatus == opt.value
+                                ? opt.color
+                                : Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            opt.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: _selectedStatus == opt.value
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: _selectedStatus == opt.value
+                                  ? opt.color
+                                  : Colors.grey.shade500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (opt != options.last) const SizedBox(width: 8),
+              ],
+            ],
+          ),
         ],
       ),
     );
   }
 
-  // ==== ปุ่มเลือก severity แบบ chip กดเลือกได้ [_buildSeverityOption] ====
+  // [ADMIN] Report Severity ("อันตรายมาก" / "อันตรายปานกลาง" / "อันตรายต่ำ") -- Import Constants from 'report_list_constants.dart' [_buildSeveritySection]
+  Widget _buildSeveritySection() {
+    final options = severityLevels.entries
+        .where((e) => e.key != 'none')
+        .toList();
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CardHeader(
+                icon: Icons.priority_high_rounded,
+                title: 'ระดับความรุนแรง',
+              ),
+              const Spacer(),
+              _buildAdminBadge(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (var i = 0; i < options.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(
+                  child: _buildSeverityOption(options[i].key, options[i].value),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSeverityOption(String key, SeverityInfo info) {
     final isSelected = _selectedSeverity == key;
-
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -552,36 +676,38 @@ class _AdminReportFormState extends State<AdminReportForm>
   }
 
   Widget _buildDescriptionSection() {
-    return _buildGlassCard(
-      icon: Icons.edit_note_rounded,
-      title: 'รายละเอียดปัญหา',
-      child: TextField(
-        controller: _descController,
-        maxLines: 5,
-        style: const TextStyle(fontSize: 14, height: 1.5),
-        decoration: InputDecoration(
-          hintText: 'อธิบายปัญหาที่พบ...',
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade200),
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CardHeader(icon: Icons.edit_note_rounded, title: 'รายละเอียดปัญหา'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _descController,
+            maxLines: 5,
+            style: const TextStyle(fontSize: 14, height: 1.5),
+            decoration: InputDecoration(
+              hintText: 'อธิบายปัญหาที่พบ...',
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: emasColor, width: 2),
+              ),
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: emasColor, width: 2),
-          ),
-        ),
+        ],
       ),
     );
   }
 
-  // ==== ปุ่มบันทึกด้านล่าง sheet ====
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
+        16, 12, 16,
         MediaQuery.of(context).padding.bottom + 12,
       ),
       decoration: BoxDecoration(
@@ -594,162 +720,52 @@ class _AdminReportFormState extends State<AdminReportForm>
           ),
         ],
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 50,
-        child: ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: emasColor,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          onPressed: _isSaving ? null : _submit,
-          icon: _isSaving
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Icon(Icons.save_rounded, size: 18),
-          label: Text(
-            _isSaving ? 'กำลังบันทึก...' : 'บันทึกรายการแจ้งซ่อม',
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==== Glass card wrapper — สไตล์เดียวกับการ์ดใน report_list_page.dart [_buildGlassCard] ====
-  Widget _buildGlassCard({
-    required IconData icon,
-    required String title,
-    required Widget child,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.78),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.6)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      child: GradientButton(
+        onTap: _isSaving ? () {} : _submit,
+        child: _isSaving
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, color: emasColor, size: 18),
-                  const SizedBox(width: 8),
+                  Icon(Icons.save_rounded, size: 18),
+                  SizedBox(width: 8),
                   Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    'บันทึกรายการแจ้งซ่อม',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              child,
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  // ==== Dropdown ใช้ร่วมกัน building/floor [_buildDropdown] ====
-  Widget _buildDropdown({
-    required String? value,
-    required String hint,
-    required IconData icon,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-        prefixIcon: Icon(icon, color: emasColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: emasColor, width: 2),
-        ),
-      ),
-      items: items
-          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
-}
-
-// ==== ปุ่มเล็กสลับโหมดแผนที่ (เวอร์ชันย่อ ไม่ใช้ glass effect เหมือน report_form) [_MapModeChip] ====
-class _MapModeChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _MapModeChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+  // Admin Badge [_buildAdminBadge]
+  Widget _buildAdminBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: emasColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 14, color: emasColorDarker),
-                  const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: emasColorDarker,
-                    ),
-                  ),
-                ],
-              ),
+        border: Border.all(color: emasColor.withOpacity(0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.lock_rounded, size: 10, color: emasColorDarker),
+          const SizedBox(width: 3),
+          Text(
+            'Admin',
+            style: TextStyle(
+              color: emasColorDarker,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
             ),
           ),
-        ),
+        ],
       ),
     );
   }

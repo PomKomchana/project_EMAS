@@ -15,9 +15,9 @@ class SeverityInfo {
 
 // All severity levels, keyed by Firestore value
 const Map<String, SeverityInfo> severityLevels = {
-  'high': SeverityInfo(label: 'ด่วนมาก', color: Color(0xFFef4444)),
-  'medium': SeverityInfo(label: 'ปานกลาง', color: Color(0xFFf97316)),
-  'low': SeverityInfo(label: 'ไม่ด่วน', color: Color(0xFF22c55e)),
+  'low': SeverityInfo(label: 'อันตรายต่ำ', color: Color(0xFF22c55e)),
+  'medium': SeverityInfo(label: 'อันตรายปานกลาง', color: Color(0xFFf97316)),
+  'high': SeverityInfo(label: 'อันตรายสูง', color: Color(0xFFef4444)),
   'none': SeverityInfo(label: 'ยังไม่ระบุ', color: Colors.grey),
 };
 
