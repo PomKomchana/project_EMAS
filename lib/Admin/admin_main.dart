@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_list.dart';
 import 'admin_news.dart';
-import '../register/login.dart';
+import '../auth/login.dart';
 import '../screens/main_page.dart';
 
 const _emasColor = Color(0xFFe85d6a);

@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'main_page.dart';
-import '../register/login.dart';
+import '../auth/login.dart';
 
 const _emasColor = Color(0xFFe85d6a);
 
@@ -194,7 +194,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const LoginPage(),
+                              builder: (_) => LoginPage(),
                             ),
                             (route) => false,
                           );

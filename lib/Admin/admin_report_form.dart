@@ -5,11 +5,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../screens/reportForm/report_form_constants.dart'
+import '../report/report_form_constants.dart'
     hide emasColor, emasColorDarker;
-import '../screens/reportList/report_list_constants.dart'
+import '../report/report_list_constants.dart'
     hide emasColor, emasColorDarker;
-import '../screens/reportForm/report_form_widgets.dart';
+import '../report/report_form_widgets.dart';
 
 const emasColor = Color(0xFFe85d6a);
 const emasColorDarker = Color(0xFFc4394a);

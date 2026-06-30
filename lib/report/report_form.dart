@@ -8,8 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../main_page.dart';
-import '../reportList/report_list_page.dart';
+import '../screens/main_page.dart';
+import 'report_list_page.dart';
 import 'report_form_constants.dart';
 import 'report_form_widgets.dart';
 

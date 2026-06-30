@@ -4,7 +4,6 @@ import 'firebase_options.dart';
 
 import 'screens/loading.dart';
 import 'screens/main_page.dart';
-import 'screens/reportForm/report_form.dart';
 
 void main() async {
   // Make sure Flutter is ready

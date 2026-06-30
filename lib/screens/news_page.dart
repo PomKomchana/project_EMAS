@@ -5,14 +5,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 const emasColor = Color(0xFFe85d6a);
 const emasColorDarker = Color(0xFFc94756);
 
-class ReportNewsPage extends StatefulWidget {
-  const ReportNewsPage({super.key});
+class NewsPage extends StatefulWidget {
+  const NewsPage({super.key});
 
   @override
-  State<ReportNewsPage> createState() => _ReportNewsPageState();
+  State<NewsPage> createState() => _NewsPageState();
 }
 
-class _ReportNewsPageState extends State<ReportNewsPage>
+class _NewsPageState extends State<NewsPage>
     with TickerProviderStateMixin {
   late final AnimationController _fadeController;
   late final AnimationController _shimmerController;

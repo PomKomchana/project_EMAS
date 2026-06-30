@@ -7,14 +7,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'report_news.dart';
-import 'reportForm/report_form.dart';
-import 'reportList/report_list_page.dart';
+import '../admin/admin_main.dart';
+import '../auth/login.dart';
+import 'news_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
-import '../register/login.dart';
-import 'reportForm/report_form_constants.dart';
-import '../Admin/admin_main.dart';
+import '../report/report_form_constants.dart';
+import '../report/report_list_page.dart';
+import '../report/report_form.dart';
 
 const _emasColor = Color(0xFFe85d6a);
 
@@ -128,7 +128,7 @@ class _MainPageState extends State<MainPage> {
         children: const [
           _HomePage(),
           ReportListPage(),
-          ReportNewsPage(),
+          NewsPage(),
           ProfilePage(),
         ],
       ),
