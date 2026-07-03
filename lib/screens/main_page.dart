@@ -15,6 +15,7 @@ import 'emergency_page.dart';
 import '../report/report_form_constants.dart';
 import '../report/report_list_page.dart';
 import '../report/report_form.dart';
+import 'mark.dart';
 
 const _emasColor = Color(0xFFe85d6a);
 
@@ -30,6 +31,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   late int _selectedIndex;
   bool _isAdmin = false;
+  dynamic _selectedReport; // หรือใช้ model ของคุณ
   
   @override
   void initState() {
@@ -233,6 +235,7 @@ class _HomePageState extends State<_HomePage> {
 
   LatLng? _userPosition;
   MapMode _mapMode = MapMode.normal;
+  Map<String, dynamic>? _selectedReport;
 
   void _cycleMapType() {
     HapticFeedback.selectionClick();
@@ -272,6 +275,75 @@ class _HomePageState extends State<_HomePage> {
     }
   }
 
+  Widget _buildBottomCard() {
+  final data = _selectedReport!;
+
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: const BoxDecoration(
+      color: Colors.black87,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                data['description'] ?? '-',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _selectedReport = null;
+                });
+              },
+            )
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        Text(
+          "${data['building'] ?? '-'} · ห้อง ${data['room'] ?? '-'}",
+          style: const TextStyle(color: Colors.white70),
+        ),
+
+        const SizedBox(height: 12),
+
+        Row(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                // ไปหน้า detail ได้ตรงนี้
+              },
+              child: const Text("ดูรายละเอียด"),
+            ),
+            const SizedBox(width: 10),
+            OutlinedButton(
+              onPressed: () {
+                setState(() {
+                  _selectedReport = null;
+                });
+              },
+              child: const Text("ปิด"),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -290,6 +362,15 @@ class _HomePageState extends State<_HomePage> {
               urlTemplate: mapModeTileUrl(_mapMode),
               userAgentPackageName: 'com.example.app',
             ),
+
+            ReportMarkerLayer(
+              onTapMarker: (data) {
+                setState(() {
+                  _selectedReport = data;
+                  });
+                  },
+                  ),
+
             if (_userPosition != null)
               MarkerLayer(
                 markers: [
@@ -368,6 +449,58 @@ class _HomePageState extends State<_HomePage> {
             ),
           ),
         ),
+        if (_selectedReport != null)
+  Positioned(
+    bottom: 100, // ขยับขึ้นกันชนปุ่มล่าง
+    left: 20,
+    right: 20,
+    child: Material(
+      borderRadius: BorderRadius.circular(16),
+      elevation: 10,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _selectedReport?['title'] ?? 'ไม่มีชื่อ',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              _selectedReport?['description'] ?? 'ไม่มีรายละเอียด',
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedReport = null;
+                    });
+                  },
+                  child: const Text('ปิด'),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    ),
+  ),
       ],
     );
   }
