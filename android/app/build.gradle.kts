@@ -46,10 +46,3 @@ kotlin {
 flutter {
     source = "../.."
 }
-
-android {
-    defaultConfig {
-        manifestPlaceholders["MAP_API_KEY"] =
-            project.findProperty("MAP_API_KEY") as String? ?: ""
-    }
-}

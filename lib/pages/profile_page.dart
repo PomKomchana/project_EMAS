@@ -6,8 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'main_page.dart';
 import '../auth/login.dart';
 
-const _emasColor = Color(0xFFe85d6a);
+import '../shared/constants/emas_colors.dart';
 
+// User profile: avatar picker (local only, not yet persisted), account info, logout [ProfilePage]
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -16,10 +17,20 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  File? _profileImage;
+
+  /// ============================== [Controllers & Services] ==============================
   final _imagePicker = ImagePicker();
+
+  /// ============================== [State] ==============================
+  File? _profileImage;
+
+  // NOTE: hardcoded placeholder — not the signed-in user's real account id [_accountId]
   final String _accountId = '968641516';
 
+  /// ============================== [Image Picker Logic] ==============================
+  // Pick a profile image from camera/gallery.
+  // NOTE: only sets local state — never uploaded to Storage or saved to
+  // Firestore, so it resets on app restart (same gap fixed in ReportService). [_pickProfileImage]
   Future<void> _pickProfileImage() async {
     final source = await _showImageSourceSheet();
     if (source == null) return;
@@ -33,6 +44,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _profileImage = File(picked.path));
   }
 
+  // Bottom sheet: camera / gallery / cancel [_showImageSourceSheet]
   Future<ImageSource?> _showImageSourceSheet() async {
     return showModalBottomSheet<ImageSource>(
       context: context,
@@ -41,6 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,7 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
                 decoration: const BoxDecoration(
-                  color: _emasColor,
+                  color: emasColor,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
@@ -86,7 +99,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.camera_alt_rounded,
-                                size: 16, color: _emasColor),
+                                size: 16, color: emasColor),
                           ),
                         ],
                       ),
@@ -212,6 +225,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
+// One row in the info card [_InfoTile]
 class _InfoTile extends StatelessWidget {
   const _InfoTile({
     required this.icon,
@@ -227,6 +241,7 @@ class _InfoTile extends StatelessWidget {
   final bool isLast;
   final VoidCallback? onTap;
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -246,6 +261,7 @@ class _InfoTile extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
+                    // NOTE: hardcoded hex duplicates emasColor — file already imports it above
                     color: const Color(0xFFe85d6a).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -275,7 +291,9 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
+// Bottom sheet: choose image source or cancel [_ImageSourceSheet]
 class _ImageSourceSheet extends StatelessWidget {
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -328,6 +346,7 @@ class _ImageSourceSheet extends StatelessWidget {
   }
 }
 
+// One row in the image source sheet [_SheetTile]
 class _SheetTile extends StatelessWidget {
   const _SheetTile({
     required this.icon,
@@ -340,6 +359,7 @@ class _SheetTile extends StatelessWidget {
   final VoidCallback onTap;
   final Color? color;
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     final c = color ?? const Color(0xFF1A1A1A);
@@ -348,6 +368,7 @@ class _SheetTile extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
+          // NOTE: hardcoded hex duplicates emasColor — same as _InfoTile above
           color: (color ?? const Color(0xFFe85d6a)).withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
         ),

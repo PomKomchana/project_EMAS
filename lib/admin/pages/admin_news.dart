@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-const _emasColor = Color(0xFFe85d6a);
+import '../services/admin_service.dart';
+import '../../shared/constants/emas_colors.dart';
 
+// News tab: list + add/edit/delete via dialogs [AdminNewsPage]
 class AdminNewsPage extends StatelessWidget {
   const AdminNewsPage({super.key});
 
+  /// ============================== [Controllers & Services] ==============================
+  static final _adminService = AdminService();
+
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: _emasColor,
+        backgroundColor: emasColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('เพิ่มข่าวสาร'),
         onPressed: () => _showNewsDialog(context),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('news')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
+        stream: _adminService.newsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -56,8 +59,8 @@ class AdminNewsPage extends StatelessWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(14),
                   leading: CircleAvatar(
-                    backgroundColor: _emasColor.withOpacity(0.1),
-                    child: const Icon(Icons.campaign, color: _emasColor),
+                    backgroundColor: emasColor.withOpacity(0.1),
+                    child: const Icon(Icons.campaign, color: emasColor),
                   ),
                   title: Text(data['title'] ?? '-',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -87,6 +90,8 @@ class AdminNewsPage extends StatelessWidget {
     );
   }
 
+  /// ============================== [News Logic] ==============================
+  // Add/edit dialog. doc == null → add mode, otherwise pre-fills for edit. [_showNewsDialog]
   void _showNewsDialog(BuildContext context,
       {QueryDocumentSnapshot? doc}) {
     final titleCtrl = TextEditingController(
@@ -134,26 +139,21 @@ class AdminNewsPage extends StatelessWidget {
             child: const Text('ยกเลิก'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _emasColor),
+            style: ElevatedButton.styleFrom(backgroundColor: emasColor),
             onPressed: () async {
               if (titleCtrl.text.trim().isEmpty) return;
 
-              final newsData = {
-                'title': titleCtrl.text.trim(),
-                'content': contentCtrl.text.trim(),
-                'updatedAt': FieldValue.serverTimestamp(),
-              };
-
               if (isEdit) {
-                await FirebaseFirestore.instance
-                    .collection('news')
-                    .doc(doc!.id)
-                    .update(newsData);
+                await _adminService.updateNews(
+                  docId: doc!.id,
+                  title: titleCtrl.text.trim(),
+                  content: contentCtrl.text.trim(),
+                );
               } else {
-                newsData['createdAt'] = FieldValue.serverTimestamp();
-                await FirebaseFirestore.instance
-                    .collection('news')
-                    .add(newsData);
+                await _adminService.addNews(
+                  title: titleCtrl.text.trim(),
+                  content: contentCtrl.text.trim(),
+                );
               }
 
               if (ctx.mounted) Navigator.pop(ctx);
@@ -166,6 +166,7 @@ class AdminNewsPage extends StatelessWidget {
     );
   }
 
+  // Confirm + delete a news doc [_deleteNews]
   void _deleteNews(BuildContext context, String docId) {
     showDialog(
       context: context,
@@ -180,10 +181,7 @@ class AdminNewsPage extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await FirebaseFirestore.instance
-                  .collection('news')
-                  .doc(docId)
-                  .delete();
+              await _adminService.deleteNews(docId);
               if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('ลบ', style: TextStyle(color: Colors.white)),

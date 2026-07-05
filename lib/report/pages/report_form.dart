@@ -6,12 +6,18 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../screens/main_page.dart';
-import 'report_list_page.dart';
-import 'report_form_constants.dart';
-import 'report_form_widgets.dart';
+import '../../pages/main_page.dart';
+import '../services/report_service.dart';
+
+import '../../shared/constants/emas_colors.dart';
+import '../../shared/constants/map_constants.dart';
+import '../../shared/constants/report_constants.dart';
+import '../../shared/widgets/buttons.dart';
+import '../../shared/widgets/form_widgets.dart';
+import '../../shared/widgets/glass_card.dart';
+import '../../shared/widgets/image_widgets.dart';
+import '../../shared/widgets/map_widgets.dart';
 
 // Report form page [ReportForm]
 class ReportForm extends StatefulWidget {
@@ -23,7 +29,12 @@ class ReportForm extends StatefulWidget {
 
 // State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
-  // Controllers [_descController, _mapController, _imagePicker]
+
+  /// ============================== [Controllers & Services] ==============================
+  // Service [_reportService]
+  final _reportService = ReportService();
+
+  // Text Controllers [_dateController, _usernameController, _phoneController, _roomController, _descController]
   final _dateController = TextEditingController();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -42,6 +53,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     late final List<Animation<double>> _sectionFadeList;
     late final List<Animation<Offset>> _sectionSlideList;
 
+  /// ============================== [State] ==============================
   // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
   bool _isMapExpanded = false;        // Whether the map is currently expanded
   bool _isPickingMode = false;        // Whether the user is in pin selection mode (waiting for map tap)
@@ -53,8 +65,8 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   String? _selectedFloor;
   File? _selectedImage;
   bool _isSubmitting = false;
-  // ----------------------------------------------------------------------------------------------------
 
+  /// ============================== [Life Cycle] ==============================
   // InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
   @override
   void initState() {
@@ -80,6 +92,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  /// ============================== [Animation Logic] ==============================
   // Setup Animations [_setupAnimations]
   void _setupAnimations() {
     // Map height grows from 200 to 520 when expanded.
@@ -127,6 +140,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     });
   }
 
+  /// ============================== [Location & Map Logic] ==============================
   // Request GPS permission and move map to user location [_requestLocationAndMove]
   Future<void> _requestLocationAndMove() async {
     try {
@@ -214,6 +228,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     });
   }
 
+  /// ============================== [Image Picker Logic] ==============================
   // Show image picker bottom sheet [_showImagePickerSheet]
   void _showImagePickerSheet() {
     HapticFeedback.lightImpact();
@@ -232,58 +247,56 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     }
   }
 
-  // Submit report to Firestore [_submitReport]
+  /// ============================== [Submit Logic] ==============================
+  // Submit report via ReportService [_submitReport]
   Future<void> _submitReport() async {
-  if (_selectedBuilding == null || _selectedFloor == null) {
-    _showSnackBar(
-      'กรุณาเลือกอาคารและชั้น',
-      Colors.red.shade600,
-      Icons.error_outline,
-    );
-    return;
-  }
+    if (_selectedBuilding == null || _selectedFloor == null) {
+      _showSnackBar(
+        'กรุณาเลือกอาคารและชั้น',
+        Colors.red.shade600,
+        Icons.error_outline,
+      );
+      return;
+    }
 
-  HapticFeedback.mediumImpact();
+    HapticFeedback.mediumImpact();
 
-  try {
-    setState(() => _isSubmitting = true);
+    try {
+      setState(() => _isSubmitting = true);
 
-    await FirebaseFirestore.instance.collection('reports').add({
-      'date': _dateController.text,
-      'username': _usernameController.text,
-      'phone': _phoneController.text,
-      'building': _selectedBuilding,
-      'floor': _selectedFloor,
-      'room': _roomController.text,
-      'description': _descController.text.trim(),
-      'status': 'รอดำเนินการ',
-      'lat': _pickedLocation?.latitude,
-      'lng': _pickedLocation?.longitude,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+      await _reportService.submitReport(
+        date: _dateController.text,
+        username: _usernameController.text,
+        phone: _phoneController.text,
+        building: _selectedBuilding!,
+        floor: _selectedFloor!,
+        room: _roomController.text,
+        description: _descController.text,
+        location: _pickedLocation,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    _showSnackBar('ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green, Icons.check_circle);
+      _showSnackBar('ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green, Icons.check_circle);
 
-    // ✅ ไปหน้า Report List
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MainPage(initialIndex: 1), // ไป tab รายการ
-      ),
-      (route) => false,
-    );
-
-  } catch (e) {
-    _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red, Icons.error);
-  } finally {
-    if (mounted) {
-      setState(() => _isSubmitting = false);
+      // Submit to ReportListPage
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MainPage(initialIndex: 1), // ไป tab รายการ
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red, Icons.error);
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
-}
 
+  /// ============================== [UI Helpers] ==============================
   // Show snackbar message [_showSnackBar]
   void _showSnackBar(String message, Color color, IconData icon) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -312,6 +325,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -352,7 +366,8 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // App Bar
+  /// ============================== [Widgets] ==============================
+  // App Bar with back button and title [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -382,7 +397,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Submit Bar
+  // Submit Button Bar pinned at bottom, shows loading spinner while submitting [_buildSubmitBar]
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
@@ -415,11 +430,11 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
                   ),
                 ],
               ),
-      ),
-    );
-  }
+            ),
+          );
+        }
 
-  // Map
+  // Map Section with pin picking, Expand / Collapse animation, and mode toggle [_buildMapSection]
   Widget _buildMapSection() {
     return GlassCard(
       child: Column(
@@ -555,7 +570,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // รูปภาพ section
+  // Image Upload Section, shows placeholder or selected image with change button [_buildImageSection]
   Widget _buildImageSection() {
     return GlassCard(
       child: Column(
@@ -594,6 +609,78 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
+  // Bottom Sheet to choose image source: camera or gallery [_buildImagePickerSheet]
+  Widget _buildImagePickerSheet() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.85),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+
+                // Handle Bar
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'เพิ่มรูปภาพ',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                const SizedBox(height: 16),
+
+                // 2 Options: "ถ่ายรูป" / "คลังภาพ"
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SheetOption(
+                          icon: Icons.camera_alt_rounded,
+                          label: 'ถ่ายรูป',
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _pickImageFrom(ImageSource.camera);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SheetOption(
+                          icon: Icons.photo_library_rounded,
+                          label: 'คลังภาพ',
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _pickImageFrom(ImageSource.gallery);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Reporter Info Section: date picker, username, phone [_buildReporterSection]
   Widget _buildReporterSection() {
     return GlassCard(
       child: Column(
@@ -678,6 +765,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
+  // Location Section: Building / Floor dropdown + room number [_buildLocationSection]
   Widget _buildLocationSection() {
     return GlassCard(
       child: Column(
@@ -722,6 +810,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
+  // Problem Description Section (free text) [_buildDescriptionSection]
   Widget _buildDescriptionSection() {
     return GlassCard(
       child: Column(
@@ -747,77 +836,6 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Bottom Sheet to select image source (_buildImagePickerSheet)
-  Widget _buildImagePickerSheet() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-
-                // Handle Bar
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'เพิ่มรูปภาพ',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                const SizedBox(height: 16),
-
-                // 2 Options: "ถ่ายรูป" / "คลังภาพ"
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SheetOption(
-                          icon: Icons.camera_alt_rounded,
-                          label: 'ถ่ายรูป',
-                          onTap: () async {
-                            Navigator.pop(context);
-                            await _pickImageFrom(ImageSource.camera);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SheetOption(
-                          icon: Icons.photo_library_rounded,
-                          label: 'คลังภาพ',
-                          onTap: () async {
-                            Navigator.pop(context);
-                            await _pickImageFrom(ImageSource.gallery);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

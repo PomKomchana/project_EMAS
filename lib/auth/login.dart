@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../screens/main_page.dart';
+import '../pages/main_page.dart';
 import 'sign_up.dart';
 
-const _primaryColor = Color(0xFFe85d6a);
+import '../../shared/constants/emas_colors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -212,7 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                         height: 40,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _primaryColor,
+                            backgroundColor: emasColor,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -258,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: const Text(
                               'Sign up',
                               style: TextStyle(
-                                color: _primaryColor,
+                                color: emasColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_list.dart';
 import 'admin_news.dart';
-import '../auth/login.dart';
-import '../screens/main_page.dart';
+import '../services/admin_service.dart';
+import '../../pages/main_page.dart';
 
-const _emasColor = Color(0xFFe85d6a);
+import '../../shared/constants/emas_colors.dart';
 
+// Admin shell: bottom nav across Dashboard / Report List / News [AdminMainPage]
 class AdminMainPage extends StatefulWidget {
   const AdminMainPage({super.key});
 
@@ -17,40 +17,40 @@ class AdminMainPage extends StatefulWidget {
 }
 
 class _AdminMainPageState extends State<AdminMainPage> {
+
+  /// ============================== [State] ==============================
   int _selectedIndex = 0;
 
+  // Tab pages, indexed by the bottom nav [_pages]
   final List<Widget> _pages = [
     const _AdminDashboard(),
     const AdminReportListPage(),
     const AdminNewsPage(),
   ];
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-
         leading: IconButton(
-        icon: const Icon(Icons.logout),
-        onPressed: () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const MainPage()),
-            (route) => false,
-          );
-        },
+          icon: const Icon(Icons.logout),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const MainPage()),
+              (route) => false,
+            );
+          },
+        ),
+        title: const Text(
+          'Admin Panel',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: emasColor,
+        foregroundColor: Colors.white,
       ),
-
-      title: const Text(
-        'Admin Panel',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-
-      backgroundColor: _emasColor,
-      foregroundColor: Colors.white,
-    ),
-
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -61,13 +61,11 @@ class _AdminMainPageState extends State<AdminMainPage> {
             selectedIcon: Icon(Icons.dashboard),
             label: 'แดชบอร์ด',
           ),
-
           NavigationDestination(
             icon: Icon(Icons.list_alt_outlined),
             selectedIcon: Icon(Icons.list_alt),
             label: 'รายการแจ้งซ่อม',
           ),
-          
           NavigationDestination(
             icon: Icon(Icons.newspaper_outlined),
             selectedIcon: Icon(Icons.newspaper),
@@ -79,16 +77,22 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 }
 
+// Dashboard tab: stat cards computed live from the reports stream [_AdminDashboard]
 class _AdminDashboard extends StatelessWidget {
   const _AdminDashboard();
 
+  /// ============================== [Controllers & Services] ==============================
+  static final _adminService = AdminService();
+
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('reports').snapshots(),
+      stream: _adminService.reportsStream(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
 
+        // Status counts tallied client-side from the raw stream [pending, inProgress, done]
         int pending = 0, inProgress = 0, done = 0;
         for (final doc in docs) {
           final data = doc.data() as Map<String, dynamic>;
@@ -111,6 +115,7 @@ class _AdminDashboard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
+                  // NOTE: hardcoded hex duplicates emasColor/emasColorDarker — should reference those constants instead
                   gradient: const LinearGradient(
                     colors: [Color(0xFFe85d6a), Color(0xFFff8a80)],
                   ),
@@ -170,6 +175,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 }
 
+// Single stat tile: icon + count + label [_StatCard]
 class _StatCard extends StatelessWidget {
   final String title;
   final int count;
@@ -183,6 +189,7 @@ class _StatCard extends StatelessWidget {
     required this.icon,
   });
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Container(

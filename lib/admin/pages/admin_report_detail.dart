@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-const _emasColor = Color(0xFFe85d6a);
+import '../services/admin_service.dart';
+import '../../shared/constants/emas_colors.dart';
 
+// Report detail + status/note editor for admins [AdminReportDetailPage]
 class AdminReportDetailPage extends StatefulWidget {
   final String reportId;
   final Map<String, dynamic> data;
@@ -18,16 +19,23 @@ class AdminReportDetailPage extends StatefulWidget {
 }
 
 class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
-  late String _currentStatus;
+
+  /// ============================== [Controllers & Services] ==============================
   final _noteCtrl = TextEditingController();
+  final _adminService = AdminService();
+
+  /// ============================== [State] ==============================
+  late String _currentStatus;
   bool _isSaving = false;
 
+  // Status options for the ChoiceChip row [_statusOptions]
   static const _statusOptions = [
     'รอดำเนินการ',
     'กำลังดำเนินการ',
     'เสร็จสิ้น',
   ];
 
+  /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
@@ -41,18 +49,17 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     super.dispose();
   }
 
+  /// ============================== [Report Actions Logic] ==============================
+  // Save status + admin note [_saveStatus]
   Future<void> _saveStatus() async {
     setState(() => _isSaving = true);
 
     try {
-      await FirebaseFirestore.instance
-          .collection('reports')
-          .doc(widget.reportId)
-          .update({
-        'status': _currentStatus,
-        'adminNote': _noteCtrl.text.trim(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await _adminService.updateReportStatus(
+        reportId: widget.reportId,
+        status: _currentStatus,
+        note: _noteCtrl.text.trim(),
+      );
 
       if (!mounted) return;
 
@@ -75,6 +82,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
+  // Confirm + delete this report [_deleteReport]
   Future<void> _deleteReport() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -98,10 +106,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     if (confirm != true) return;
 
     try {
-      await FirebaseFirestore.instance
-          .collection('reports')
-          .doc(widget.reportId)
-          .delete();
+      await _adminService.deleteReport(widget.reportId);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -115,6 +120,8 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
+  /// ============================== [UI Helpers] ==============================
+  // Color per status, used for ChoiceChip styling [_statusColor]
   Color _statusColor(String s) {
     switch (s) {
       case 'รอดำเนินการ': return Colors.orange;
@@ -124,6 +131,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
@@ -131,7 +139,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('รายละเอียด'),
-        backgroundColor: _emasColor,
+        backgroundColor: emasColor,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -246,7 +254,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
               height: 52,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _emasColor,
+                  backgroundColor: emasColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -270,6 +278,8 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
+  /// ============================== [Widgets] ==============================
+  // "label: value" row for the report info card [_info]
   Widget _info(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

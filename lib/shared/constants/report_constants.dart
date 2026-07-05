@@ -1,16 +1,34 @@
 import 'package:flutter/material.dart';
 
-// EMAS Theme Colors [emasColor, emasColorDarker]
-// NOTE: duplicated in report_form_constants.dart
-const emasColor = Color(0xFFe85d6a);
-const emasColorDarker = Color(0xFFc4394a);
+import '../../shared/constants/emas_colors.dart';
 
-// Label + color for one severity level
+// [buildingOptions]
+const buildingOptions = [
+  'อาคาร 1',
+  'อาคาร 2',
+  'อาคาร 3',
+  'อาคาร 4',
+  'อาคาร 5',
+];
+
+// [floorOptions]
+const floorOptions = [
+  'ชั้น 1',
+  'ชั้น 2',
+  'ชั้น 3',
+  'ชั้น 4',
+  'ชั้น 5',
+];
+
+// Label + Color for one severity level [SeverityInfo]
 class SeverityInfo {
   final String label;
   final Color color;
 
-  const SeverityInfo({required this.label, required this.color});
+  const SeverityInfo({
+    required this.label,
+    required this.color,
+  });
 }
 
 // All severity levels, keyed by Firestore value
@@ -26,13 +44,13 @@ SeverityInfo getSeverityInfo(String? severityKey) {
   return severityLevels[severityKey] ?? severityLevels['none']!;
 }
 
-// Status values, stored as Thai strings in Firestore [ReportStatus]
+// Status values, stored as Strings in Firestore [ReportStatus]
 class ReportStatus {
   static const pending = 'รอดำเนินการ';
   static const inProgress = 'กำลังดำเนินการ';
   static const done = 'เสร็จสิ้น';
 
-  // null = show all statuses
+  // null = Show all statuses
   static const List<String?> filterOptions = [
     null,
     pending,
@@ -53,7 +71,7 @@ class ReportStatus {
   }
 }
 
-// Text-only color for a status (used on detail page) [getStatusTextColor]
+// Text-only color for a status (Used on detail page) [getStatusTextColor]
 Color getStatusTextColor(String status) {
   switch (status) {
     case ReportStatus.inProgress:

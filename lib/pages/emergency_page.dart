@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const _emasColor = Color(0xFFe85d6a);
+import '../shared/constants/emas_colors.dart';
 
+// Emergency contact model [_Contact]
 class _Contact {
   const _Contact({
     required this.icon,
@@ -18,6 +19,8 @@ class _Contact {
   final Color color;
 }
 
+/// ============================== [Data] ==============================
+// Static emergency contact directory [_contacts]
 const _contacts = [
   _Contact(
     icon: Icons.local_police_outlined,
@@ -59,13 +62,15 @@ const _contacts = [
     label: 'รปภ. มศว องครักษ์',
     subtitle: 'งานรักษาความปลอดภัย',
     number: '037395397',
-    color: _emasColor,
+    color: emasColor,
   ),
 ];
 
+// Emergency contacts directory: tap a card to dial directly [EmergencyPage]
 class EmergencyPage extends StatelessWidget {
   const EmergencyPage({super.key});
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,7 +78,7 @@ class EmergencyPage extends StatelessWidget {
         title: const Text('เบอร์โทรฉุกเฉิน',
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: _emasColor,
+        backgroundColor: emasColor,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -83,7 +88,7 @@ class EmergencyPage extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
             decoration: const BoxDecoration(
-              color: _emasColor,
+              color: emasColor,
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),
@@ -133,10 +138,14 @@ class EmergencyPage extends StatelessWidget {
   }
 }
 
+// Single contact card, tap to dial [_ContactCard]
 class _ContactCard extends StatelessWidget {
   const _ContactCard({required this.contact});
   final _Contact contact;
 
+  /// ============================== [Logic] ==============================
+  // Launch the phone dialer with this contact's number.
+  // NOTE: errors are silently swallowed — user gets no feedback if launch fails. [_call]
   Future<void> _call() async {
     final uri = Uri(scheme: 'tel', path: contact.number);
     try {
@@ -144,6 +153,7 @@ class _ContactCard extends StatelessWidget {
     } catch (_) {}
   }
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Card(

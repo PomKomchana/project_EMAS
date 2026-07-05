@@ -3,20 +3,22 @@ import 'package:flutter/services.dart';
 
 import '../auth/login.dart';
 
-class LoadingScreen extends StatefulWidget {
-  const LoadingScreen({super.key});
+// Splash screen: fade in logo, hold, then transition to LoginPage [LoadingPage]
+class LoadingPage extends StatefulWidget {
+  const LoadingPage({super.key});
 
   @override
-  State<LoadingScreen> createState() => _LoadingScreenState();
+  State<LoadingPage> createState() => _LoadingPageState();
 }
 
-class _LoadingScreenState extends State<LoadingScreen>
+class _LoadingPageState extends State<LoadingPage>
     with SingleTickerProviderStateMixin {
-  static const _brand = Color(0xFFE85D6A);
 
+  /// ============================== [Controllers & Services] ==============================
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
 
+  /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
@@ -43,6 +45,14 @@ class _LoadingScreenState extends State<LoadingScreen>
     Future.delayed(const Duration(seconds: 2), _go);
   }
 
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
+  /// ============================== [Navigation Logic] ==============================
+  // Fade-transition to LoginPage after the splash delay [_go]
   void _go() {
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -56,12 +66,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     );
   }
 
-  @override
-  void dispose() {
-    _fadeCtrl.dispose();
-    super.dispose();
-  }
-
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,20 +82,6 @@ class _LoadingScreenState extends State<LoadingScreen>
                 width: 240,
               ),
             ),
-
-            // progress bar bottom
-            /*Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: SizedBox(
-                height: 3,
-                child: LinearProgressIndicator(
-                  backgroundColor: _brand.withOpacity(0.15),
-                  valueColor: AlwaysStoppedAnimation(_brand),
-                ),
-              ),
-            ),*/
           ],
         ),
       ),

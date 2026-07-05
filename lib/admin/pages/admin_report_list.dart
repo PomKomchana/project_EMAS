@@ -3,9 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_detail.dart';
 import 'admin_report_form.dart';
+import '../services/admin_service.dart';
 
-const _emasColor = Color(0xFFe85d6a);
+import '../../shared/constants/emas_colors.dart';
 
+// Admin report list: tabbed by status ("รอดำเนินการ" / "กำลังดำเนินการ" / "เสร็จสิ้น") [AdminReportListPage]
 class AdminReportListPage extends StatefulWidget {
   const AdminReportListPage({super.key});
 
@@ -15,8 +17,11 @@ class AdminReportListPage extends StatefulWidget {
 
 class _AdminReportListPageState extends State<AdminReportListPage>
     with SingleTickerProviderStateMixin {
+
+  /// ============================== [Controllers & Services] ==============================
   late final TabController _tabCtrl;
 
+  /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
@@ -29,12 +34,13 @@ class _AdminReportListPageState extends State<AdminReportListPage>
     super.dispose();
   }
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // เพิ่มรายการแจ้งซ่อม (Admin) [showAdminReportForm]
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: _emasColor,
+        backgroundColor: emasColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('เพิ่มรายการแจ้งซ่อม'),
@@ -44,12 +50,12 @@ class _AdminReportListPageState extends State<AdminReportListPage>
       body: Column(
         children: [
           Container(
-            color: _emasColor.withOpacity(0.05),
+            color: emasColor.withOpacity(0.05),
             child: TabBar(
               controller: _tabCtrl,
-              labelColor: _emasColor,
+              labelColor: emasColor,
               unselectedLabelColor: Colors.grey,
-              indicatorColor: _emasColor,
+              indicatorColor: emasColor,
               tabs: const [
                 Tab(text: 'รอดำเนินการ'),
                 Tab(text: 'กำลังดำเนินการ'),
@@ -74,18 +80,19 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   }
 }
 
+// One tab's content: reports filtered by status, newest first [_FilteredList]
 class _FilteredList extends StatelessWidget {
   final String status;
   const _FilteredList({required this.status});
 
+  /// ============================== [Controllers & Services] ==============================
+  static final _adminService = AdminService();
+
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('reports')
-          .where('status', isEqualTo: status)
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: _adminService.reportsByStatusStream(status),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -128,7 +135,7 @@ class _FilteredList extends StatelessWidget {
                   isAdminCreated
                       ? Icons.admin_panel_settings_rounded
                       : Icons.location_on,
-                  color: _emasColor,
+                  color: emasColor,
                 ),
                 title: Text(
                   '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}',
@@ -139,7 +146,7 @@ class _FilteredList extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                
+
                 // ป้ายเล็กบอกว่า admin เป็นคนสร้างรายการนี้เอง
                 trailing: isAdminCreated
                     ? Row(
@@ -149,7 +156,7 @@ class _FilteredList extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: _emasColor.withOpacity(0.1),
+                              color: emasColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -157,7 +164,7 @@ class _FilteredList extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: _emasColor,
+                                color: emasColor,
                               ),
                             ),
                           ),

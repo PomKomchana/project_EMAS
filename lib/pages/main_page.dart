@@ -7,17 +7,17 @@ import 'package:geolocator/geolocator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../admin/admin_main.dart';
-import '../auth/login.dart';
+import '../admin/pages/admin_main.dart';
 import 'news_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
-import '../report/report_form_constants.dart';
-import '../report/report_list_page.dart';
-import '../report/report_form.dart';
+import '../report/pages/report_list_page.dart';
+import '../report/pages/report_form.dart';
 
-const _emasColor = Color(0xFFe85d6a);
+import '../shared/constants/emas_colors.dart';
+import '../shared/constants/map_constants.dart';
 
+// App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency) [MainPage]
 class MainPage extends StatefulWidget {
   final int initialIndex;
 
@@ -28,16 +28,13 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+
+  /// ============================== [State] ==============================
   late int _selectedIndex;
   bool _isAdmin = false;
-  
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = widget.initialIndex;
-    _checkAdmin();
-  }
-  
+
+  /// ============================== [Data] ==============================
+  // Tab titles, indexed by _selectedIndex (index 0 = Home has no AppBar) [_titles]
   static const _titles = [
     'Home',
     'รายการแจ้งปัญหา',
@@ -45,6 +42,7 @@ class _MainPageState extends State<MainPage> {
     'โปรไฟล์'
   ];
 
+  // Bottom nav icons, same order as _titles [_navItems]
   static const _navItems = [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
     BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
@@ -52,6 +50,18 @@ class _MainPageState extends State<MainPage> {
     BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
   ];
 
+  /// ============================== [Life Cycle] ==============================
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+    _checkAdmin();
+  }
+
+  /// ============================== [Admin Check Logic] ==============================
+  // Reads users/{uid}.role to decide whether to show the Admin Panel drawer item.
+  // NOTE: this only gates UI visibility — real admin authorization must still
+  // come from Firestore security rules, not this client-side check. [_checkAdmin]
   Future<void> _checkAdmin() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -77,6 +87,7 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     final isHome = _selectedIndex == 0;
@@ -138,7 +149,7 @@ class _MainPageState extends State<MainPage> {
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
         backgroundColor: const Color(0xFFFFFFFF),
-        selectedItemColor: _emasColor,
+        selectedItemColor: emasColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         showSelectedLabels: false,
@@ -149,7 +160,7 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// Drawer
+// Side drawer: nav shortcuts + conditional Admin Panel entry [_AppDrawer]
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
@@ -163,6 +174,7 @@ class _AppDrawer extends StatelessWidget {
   final VoidCallback onAdmin;
   final bool isAdmin;
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -170,10 +182,10 @@ class _AppDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           const DrawerHeader(
-            decoration: BoxDecoration(color: _emasColor),
+            decoration: BoxDecoration(color: emasColor),
             child: Text('EMAS', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             ),
-          
+
         if (isAdmin)
           _DrawerItem(icon: Icons.admin_panel_settings, label: 'Admin Panel', onTap: onAdmin),
 
@@ -194,6 +206,7 @@ class _AppDrawer extends StatelessWidget {
   }
 }
 
+// Single drawer row [_DrawerItem]
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
     required this.icon,
@@ -207,6 +220,7 @@ class _DrawerItem extends StatelessWidget {
   final VoidCallback onTap;
   final Color? color;
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -220,7 +234,7 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-// Home Page
+// Home tab: full-screen campus map + report shortcut button [_HomePage]
 class _HomePage extends StatefulWidget {
   const _HomePage();
 
@@ -229,11 +243,23 @@ class _HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<_HomePage> {
+
+  /// ============================== [Controllers & Services] ==============================
   final MapController _mapController = MapController();
 
+  /// ============================== [State] ==============================
   LatLng? _userPosition;
   MapMode _mapMode = MapMode.normal;
 
+  /// ============================== [Life Cycle] ==============================
+  @override
+  void initState() {
+    super.initState();
+    _getUserLocation();
+  }
+
+  /// ============================== [Location & Map Logic] ==============================
+  // Switch to next map display mode [_cycleMapType]
   void _cycleMapType() {
     HapticFeedback.selectionClick();
     final modes = MapMode.values;
@@ -241,12 +267,7 @@ class _HomePageState extends State<_HomePage> {
     setState(() => _mapMode = modes[next]);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _getUserLocation();
-  }
-
+  // Request GPS permission and move map to user location [_getUserLocation]
   Future<void> _getUserLocation() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -272,6 +293,9 @@ class _HomePageState extends State<_HomePage> {
     }
   }
 
+  /// ============================== [Build] ==============================
+  // NOTE: menu button / map-mode switch / report button are inline here rather
+  // than extracted to _build... methods, unlike report_form.dart's pattern.
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -287,6 +311,8 @@ class _HomePageState extends State<_HomePage> {
           ),
           children: [
             TileLayer(
+              // NOTE: package name here is 'com.example.app' — differs from
+              // 'com.example.plan_alert' used in report_form.dart / admin_report_form.dart
               urlTemplate: mapModeTileUrl(_mapMode),
               userAgentPackageName: 'com.example.app',
             ),
@@ -338,7 +364,7 @@ class _HomePageState extends State<_HomePage> {
               ),
               child: Row(
                 children: [
-                  Icon(mapModeIcon(_mapMode), size: 16, color: _emasColor),
+                  Icon(mapModeIcon(_mapMode), size: 16, color: emasColor),
                   const SizedBox(width: 6),
                   Text(mapModeLabel(_mapMode)),
                 ],
@@ -354,7 +380,7 @@ class _HomePageState extends State<_HomePage> {
           right: 24,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: _emasColor,
+              backgroundColor: emasColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(

@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../report/report_form_constants.dart'
-    hide emasColor, emasColorDarker;
-import '../report/report_list_constants.dart'
-    hide emasColor, emasColorDarker;
-import '../report/report_form_widgets.dart';
-
-const emasColor = Color(0xFFe85d6a);
-const emasColorDarker = Color(0xFFc4394a);
+import '../services/admin_service.dart';
+import '../../shared/constants/emas_colors.dart';
+import '../../shared/constants/map_constants.dart';
+import '../../shared/constants/report_constants.dart';
+import '../../shared/widgets/buttons.dart';
+import '../../shared/widgets/form_widgets.dart';
+import '../../shared/widgets/glass_card.dart';
+import '../../shared/widgets/image_widgets.dart';
+import '../../shared/widgets/map_widgets.dart';
 
 // Bottom sheet: Admin [showAdminReportForm]
 Future<void> showAdminReportForm(BuildContext context) {
@@ -24,6 +24,7 @@ Future<void> showAdminReportForm(BuildContext context) {
   );
 }
 
+// Admin-created report form (building/floor/room, status, severity, description, map pin) [AdminReportForm]
 class AdminReportForm extends StatefulWidget {
   const AdminReportForm({super.key});
 
@@ -33,11 +34,24 @@ class AdminReportForm extends StatefulWidget {
 
 class _AdminReportFormState extends State<AdminReportForm>
     with TickerProviderStateMixin {
-  // Controllers [_roomController, _descController, _mapController]
+
+  /// ============================== [Controllers & Services] ==============================
+  // Text/map controllers [_roomController, _descController, _mapController]
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
+  final _adminService = AdminService();
 
+  // Staggered entrance animation [_fadeController, _fadeList, _slideList]
+  late final AnimationController _fadeController;
+  late final List<Animation<double>> _fadeList;
+  late final List<Animation<Offset>> _slideList;
+
+  // Map expand/collapse animation [_mapAnimController, _mapHeightAnimation]
+  late final AnimationController _mapAnimController;
+  late final Animation<double> _mapHeightAnimation;
+
+  /// ============================== [State] ==============================
   // Map State [_pickedLocation, _isPickingMode, _isMapExpanded, _mapMode]
   LatLng? _pickedLocation;
   bool _isPickingMode = false;
@@ -51,15 +65,7 @@ class _AdminReportFormState extends State<AdminReportForm>
   String _selectedStatus = ReportStatus.pending;
   bool _isSaving = false;
 
-  // Staggered Entrance Animations [_fadeController, _fadeList, _slideList]
-  late final AnimationController _fadeController;
-  late final List<Animation<double>> _fadeList;
-  late final List<Animation<Offset>> _slideList;
-
-  // Map Expand / Collapse Animation [_mapAnimController, _mapHeightAnimation]
-  late final AnimationController _mapAnimController;
-  late final Animation<double> _mapHeightAnimation;
-
+  /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
@@ -72,7 +78,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     _slideList = _buildStaggeredSlideList();
     _fadeController.forward();
 
-    // Map Animations height: 200 → 520 [_mapAnimController]
+    // Map height animation: 200 → 520 [_mapAnimController]
     _mapAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -96,6 +102,8 @@ class _AdminReportFormState extends State<AdminReportForm>
     super.dispose();
   }
 
+  /// ============================== [Animation Logic] ==============================
+  // Staggered fade-in per form section [_buildStaggeredFadeList]
   List<Animation<double>> _buildStaggeredFadeList() {
     return List.generate(5, (i) {
       final start = (i * 0.1).clamp(0.0, 0.9);
@@ -108,6 +116,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
+  // Same as above but slide-up motion [_buildStaggeredSlideList]
   List<Animation<Offset>> _buildStaggeredSlideList() {
     return List.generate(5, (i) {
       final start = (i * 0.1).clamp(0.0, 0.9);
@@ -120,7 +129,16 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
-  // Toggle Expand Mode + Picking Mode [_toggleMapExpand]
+  // Apply fade + slide animation to a form section [_buildAnimatedSection]
+  Widget _buildAnimatedSection(int index, Widget child) {
+    return FadeTransition(
+      opacity: _fadeList[index],
+      child: SlideTransition(position: _slideList[index], child: child),
+    );
+  }
+
+  /// ============================== [Location & Map Logic] ==============================
+  // Expand / collapse map and optionally enter picking mode [_toggleMapExpand]
   void _toggleMapExpand({bool enterPickingMode = false}) {
     HapticFeedback.lightImpact();
     setState(() {
@@ -141,6 +159,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
+  // Handle map tap and set pin location [_onMapTapped]
   void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
     if (!_isPickingMode) return;
 
@@ -155,13 +174,14 @@ class _AdminReportFormState extends State<AdminReportForm>
     _mapController.move(tappedPosition, 18);
   }
 
-  // Confirm Pin → Zoom Out Map [_confirmPin]
+  // Confirm selected pin location [_confirmPin]
   void _confirmPin() {
     HapticFeedback.mediumImpact();
     _toggleMapExpand();
     _showSnack('ปักหมุดสำเร็จ ✓', Colors.green.shade600);
   }
 
+  // Switch to next map mode [_cycleMapMode]
   void _cycleMapMode() {
     HapticFeedback.selectionClick();
     setState(() {
@@ -170,6 +190,8 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
+  /// ============================== [Submit Logic] ==============================
+  // Validate + create the admin report [_submit]
   Future<void> _submit() async {
     if (_selectedBuilding == null || _selectedFloor == null) {
       _showSnack('กรุณาเลือกอาคารและชั้น', Colors.red.shade600);
@@ -188,19 +210,16 @@ class _AdminReportFormState extends State<AdminReportForm>
     setState(() => _isSaving = true);
 
     try {
-      await FirebaseFirestore.instance.collection('reports').add({
-        'building': _selectedBuilding,
-        'floor': _selectedFloor,
-        'room': _roomController.text.trim(),
-        'description': _descController.text.trim(),
-        'severity': _selectedSeverity,
-        'status': _selectedStatus,
-        'lat': _pickedLocation?.latitude,
-        'lng': _pickedLocation?.longitude,
-        'username': 'Admin',
-        'createdBy': 'admin',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _adminService.createReport(
+        building: _selectedBuilding!,
+        floor: _selectedFloor!,
+        room: _roomController.text.trim(),
+        description: _descController.text.trim(),
+        severity: _selectedSeverity!,
+        status: _selectedStatus,
+        lat: _pickedLocation?.latitude,
+        lng: _pickedLocation?.longitude,
+      );
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -212,6 +231,8 @@ class _AdminReportFormState extends State<AdminReportForm>
     }
   }
 
+  /// ============================== [UI Helpers] ==============================
+  // Show snackbar message [_showSnack]
   void _showSnack(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -224,6 +245,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
+  /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -273,13 +295,8 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  Widget _buildAnimatedSection(int index, Widget child) {
-    return FadeTransition(
-      opacity: _fadeList[index],
-      child: SlideTransition(position: _slideList[index], child: child),
-    );
-  }
-
+  /// ============================== [Widgets] ==============================
+  // Drag handle at top of the sheet [_buildHandle]
   Widget _buildHandle() {
     return Container(
       margin: const EdgeInsets.only(top: 10, bottom: 6),
@@ -292,6 +309,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
+  // Title row with Admin badge + close button [_buildHeader]
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 12, 10),
@@ -329,6 +347,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
+  // Map section with pin picking, expand/collapse animation, and mode toggle [_buildMapSection]
   Widget _buildMapSection() {
     return GlassCard(
       child: Column(
@@ -340,7 +359,7 @@ class _AdminReportFormState extends State<AdminReportForm>
           ),
           const SizedBox(height: 12),
 
-          // Height Animations 200 → 520 [_mapHeightAnimation]
+          // Map height changes with animation.
           AnimatedBuilder(
             animation: _mapAnimController,
             builder: (_, child) => SizedBox(
@@ -384,7 +403,7 @@ class _AdminReportFormState extends State<AdminReportForm>
                     ],
                   ),
 
-                  // Map Mode
+                  // Map Mode Button
                   Positioned(
                     top: _isMapExpanded ? 50 : 10,
                     left: 10,
@@ -404,7 +423,7 @@ class _AdminReportFormState extends State<AdminReportForm>
                       child: Center(child: PickingBanner()),
                     ),
 
-                  // Botton "ปุ่มยืนยันตำแหน่ง"
+                  // Confirm Picking Location
                   if (_isPickingMode && _pickedLocation != null)
                     Positioned(
                       bottom: 12,
@@ -428,7 +447,7 @@ class _AdminReportFormState extends State<AdminReportForm>
                       ),
                     ),
 
-                  // Botton "X"
+                  // Close Map
                   if (_isMapExpanded && !_isPickingMode)
                     Positioned(
                       top: 10,
@@ -442,7 +461,7 @@ class _AdminReportFormState extends State<AdminReportForm>
 
           const SizedBox(height: 12),
 
-          // Botton "เลือกตำแหน่ง" / "เปลี่ยนตำแหน่ง"
+          // Button Below Map (ปักหมุดแล้ว)
           if (!_isMapExpanded)
             Row(
               children: [
@@ -464,6 +483,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
+  // Location section: building/floor dropdown + room number [_buildLocationSection]
   Widget _buildLocationSection() {
     return GlassCard(
       child: Column(
@@ -508,7 +528,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  // [ADMIN] Report Status ("รอดำเนินการ" / "กำลังดำเนินการ") [_buildStatusSection]
+  // [ADMIN] Report status picker: "รอดำเนินการ" / "กำลังดำเนินการ" [_buildStatusSection]
   Widget _buildStatusSection() {
     final options = [
       (
@@ -599,7 +619,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  // [ADMIN] Report Severity ("อันตรายมาก" / "อันตรายปานกลาง" / "อันตรายต่ำ") -- Import Constants from 'report_list_constants.dart' [_buildSeveritySection]
+  // [ADMIN] Severity picker: uses severityLevels from report_constants.dart [_buildSeveritySection]
   Widget _buildSeveritySection() {
     final options = severityLevels.entries
         .where((e) => e.key != 'none')
@@ -635,6 +655,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
+  // Single severity chip used inside _buildSeveritySection [_buildSeverityOption]
   Widget _buildSeverityOption(String key, SeverityInfo info) {
     final isSelected = _selectedSeverity == key;
     return GestureDetector(
@@ -675,6 +696,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
+  // Problem description section (free text) [_buildDescriptionSection]
   Widget _buildDescriptionSection() {
     return GlassCard(
       child: Column(
@@ -704,6 +726,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
+  // Submit button bar pinned at bottom, shows loading spinner while saving [_buildSubmitBar]
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -743,7 +766,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     );
   }
 
-  // Admin Badge [_buildAdminBadge]
+  // Small "Admin" pill shown on admin-only sections [_buildAdminBadge]
   Widget _buildAdminBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),

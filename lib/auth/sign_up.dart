@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-const signupColor = Color(0xFFe85d6a);
-const signupColorDarker = Color(0xFFc94756);
+import '../../shared/constants/emas_colors.dart';
 
 const usersCollection = 'users';
 const defaultNewUserRole = 'user';
@@ -162,7 +161,7 @@ class SignupTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: signupColor, width: 1.5),
+          borderSide: const BorderSide(color: emasColor, width: 1.5),
         ),
       ),
       validator: validator,
@@ -203,7 +202,7 @@ class SignupPasswordField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: signupColor, width: 1.5),
+          borderSide: const BorderSide(color: emasColor, width: 1.5),
         ),
       ),
       validator: validator,
@@ -228,7 +227,7 @@ class SignupSubmitButton extends StatelessWidget {
       height: 40,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: signupColor,
+          backgroundColor: emasColor,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -266,7 +265,7 @@ class SignupLoginLink extends StatelessWidget {
           child: const Text(
             'Login',
             style: TextStyle(
-              color: signupColor,
+              color: emasColor,
               fontWeight: FontWeight.bold,
             ),
           ),
