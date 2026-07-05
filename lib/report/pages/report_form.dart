@@ -273,6 +273,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         room: _roomController.text,
         description: _descController.text,
         location: _pickedLocation,
+        image: _selectedImage,
       );
 
       if (!mounted) return;
