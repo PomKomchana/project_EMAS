@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../report/report_list_constants.dart';
+
+import '../../shared/constants/emas_colors.dart';
+import '../../shared/constants/map_constants.dart';
+import '../../shared/constants/report_constants.dart';
 
 class ReportDetailSheet extends StatelessWidget {
   final Map<String, dynamic> report;

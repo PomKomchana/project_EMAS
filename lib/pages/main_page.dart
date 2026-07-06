@@ -11,10 +11,10 @@ import '../admin/pages/admin_main.dart';
 import 'news_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
-import '../report/pages/report_list_page.dart';
-import '../report/pages/report_form.dart';
 import 'mark.dart';
 import 'report_sheet.dart';
+import '../report/pages/report_list_page.dart';
+import '../report/pages/report_form.dart';
 
 import '../shared/constants/emas_colors.dart';
 import '../shared/constants/map_constants.dart';
@@ -236,7 +236,7 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-// Home tab: full-screen campus map + report shortcut button [_HomePage]
+// Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
 class _HomePage extends StatefulWidget {
   const _HomePage();
 
@@ -252,6 +252,8 @@ class _HomePageState extends State<_HomePage> {
   /// ============================== [State] ==============================
   LatLng? _userPosition;
   MapMode _mapMode = MapMode.normal;
+  // Currently tapped report marker; drives the bottom detail sheet [_selectedReport]
+  Map<String, dynamic>? _selectedReport;
 
   /// ============================== [Life Cycle] ==============================
   @override
@@ -318,6 +320,15 @@ class _HomePageState extends State<_HomePage> {
               urlTemplate: mapModeTileUrl(_mapMode),
               userAgentPackageName: 'com.example.app',
             ),
+
+            ReportMarkerLayer(
+              onTapMarker: (data) {
+                setState(() {
+                  _selectedReport = data;
+                });
+              },
+            ),
+
             if (_userPosition != null)
               MarkerLayer(
                 markers: [
@@ -396,6 +407,13 @@ class _HomePageState extends State<_HomePage> {
             ),
           ),
         ),
+
+        // Report detail sheet, shown when a marker on the map is tapped
+        if (_selectedReport != null)
+          ReportDetailSheet(
+            report: _selectedReport!,
+            onClose: () => setState(() => _selectedReport = null),
+          ),
       ],
     );
   }
