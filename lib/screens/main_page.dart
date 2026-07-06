@@ -15,6 +15,7 @@ import 'emergency_page.dart';
 import '../report/report_form_constants.dart';
 import '../report/report_list_page.dart';
 import '../report/report_form.dart';
+import 'report_sheet.dart';
 import 'mark.dart';
 
 const _emasColor = Color(0xFFe85d6a);
@@ -367,9 +368,9 @@ class _HomePageState extends State<_HomePage> {
               onTapMarker: (data) {
                 setState(() {
                   _selectedReport = data;
-                  });
-                  },
-                  ),
+                });
+              },
+            ),
 
             if (_userPosition != null)
               MarkerLayer(
@@ -449,58 +450,12 @@ class _HomePageState extends State<_HomePage> {
             ),
           ),
         ),
+
         if (_selectedReport != null)
-  Positioned(
-    bottom: 100, // ขยับขึ้นกันชนปุ่มล่าง
-    left: 20,
-    right: 20,
-    child: Material(
-      borderRadius: BorderRadius.circular(16),
-      elevation: 10,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+        ReportDetailSheet(
+          report: _selectedReport!,
+          onClose: () => setState(() => _selectedReport = null),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _selectedReport?['title'] ?? 'ไม่มีชื่อ',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              _selectedReport?['description'] ?? 'ไม่มีรายละเอียด',
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedReport = null;
-                    });
-                  },
-                  child: const Text('ปิด'),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-    ),
-  ),
       ],
     );
   }
