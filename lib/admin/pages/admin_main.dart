@@ -57,7 +57,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
         onDestinationSelected: (i) => setState(() => _selectedIndex = i),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),t
+            icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
             label: 'แดชบอร์ด',
           ),

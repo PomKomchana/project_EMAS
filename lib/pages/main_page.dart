@@ -138,7 +138,7 @@ class _MainPageState extends State<MainPage> {
 
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
+        children: [
           _HomePage(isAdmin: _isAdmin),
           const ReportListPage(),
           const NewsPage(),
@@ -306,7 +306,7 @@ class _HomePageState extends State<_HomePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const AdminMainPage(autoOpenReportForm: true),
+          builder: (_) => const AdminMainPage(),
         ),
       );
     } else {
