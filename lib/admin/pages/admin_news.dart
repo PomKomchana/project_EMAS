@@ -19,7 +19,7 @@ class AdminNewsPage extends StatelessWidget {
         backgroundColor: emasColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('เพิ่มข่าวสาร'),
+        label: const Text('แจ้งข่าวสาร (Admin)'),
         onPressed: () => _showNewsDialog(context),
       ),
       body: StreamBuilder<QuerySnapshot>(

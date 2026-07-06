@@ -386,7 +386,7 @@ class _HomePageState extends State<_HomePage> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18)),
             ),
-            icon: const Icon(Icons.add_circle_outline),
+            icon: const Icon(Icons.add),
             label: const Text('แจ้งปัญหาใหม่'),
             onPressed: () => Navigator.push(
               context,

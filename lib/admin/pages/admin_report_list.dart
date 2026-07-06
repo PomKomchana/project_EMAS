@@ -43,7 +43,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
         backgroundColor: emasColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('เพิ่มรายการแจ้งซ่อม'),
+        label: const Text('แจ้งปัญหาใหม่ (Admin)'),
         onPressed: () => showAdminReportForm(context),
       ),
 
