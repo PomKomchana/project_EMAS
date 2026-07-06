@@ -265,6 +265,8 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
       setState(() => _isSubmitting = true);
 
       await _reportService.submitReport(
+        location: _pickedLocation,
+        image: _selectedImage,
         date: _dateController.text,
         username: _usernameController.text,
         phone: _phoneController.text,
@@ -272,8 +274,6 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         floor: _selectedFloor!,
         room: _roomController.text,
         description: _descController.text,
-        location: _pickedLocation,
-        image: _selectedImage,
       );
 
       if (!mounted) return;

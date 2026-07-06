@@ -35,7 +35,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.logout),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,

@@ -117,19 +117,19 @@ class _MainPageState extends State<MainPage> {
           setState(() => _selectedIndex = i);
         },
 
-        onEmergency: () {
-          Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const EmergencyPage()),
-          );
-        },
-
         onAdmin: () {
           Navigator.pop(context);
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AdminMainPage()),
+          );
+        },
+
+        onEmergency: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EmergencyPage()),
           );
         },
       ),
@@ -164,15 +164,15 @@ class _MainPageState extends State<MainPage> {
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
-    required this.onEmergency,
     required this.onAdmin,
     required this.isAdmin,
+    required this.onEmergency,
   });
 
   final void Function(int) onTap;
-  final VoidCallback onEmergency;
   final VoidCallback onAdmin;
   final bool isAdmin;
+  final VoidCallback onEmergency;
 
   /// ============================== [Build] ==============================
   @override

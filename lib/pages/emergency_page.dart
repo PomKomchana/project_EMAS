@@ -75,8 +75,12 @@ class EmergencyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('เบอร์โทรฉุกเฉิน',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
+      ),
+      title: const Text('เบอร์โทรฉุกเฉิน',
+        style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: emasColor,
         foregroundColor: Colors.white,
