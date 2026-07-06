@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -12,13 +13,22 @@ class ReportService {
 
   /// ============================== [Image Upload] ==============================
   // Upload a picked image to Storage, return its download URL. Returns null if image is null. [_uploadImage]
-  Future<String?> _uploadImage(File image) async {
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
-    final ref = _storage.ref().child('report_images/$fileName');
+ Future<String?> _uploadImage(File image) async {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
 
-    final uploadTask = await ref.putFile(image);
-    return uploadTask.ref.getDownloadURL();
-  }
+  final fileName =
+      '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
+
+  final ref = _storage
+      .ref()
+      .child('reports')
+      .child(uid)
+      .child(fileName);
+
+  final uploadTask = await ref.putFile(image);
+
+  return uploadTask.ref.getDownloadURL();
+}
 
   /// ============================== [Report Write] ==============================
   // Submit new report to Firestore. Uploads image first (if provided) so imageUrl
@@ -48,6 +58,7 @@ class ReportService {
       'lat': location?.latitude,
       'lng': location?.longitude,
       'imageUrl': imageUrl,
+      'userId': FirebaseAuth.instance.currentUser!.uid,
       'createdBy': 'user',
       'createdAt': FieldValue.serverTimestamp(),
     });

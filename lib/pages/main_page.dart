@@ -139,10 +139,10 @@ class _MainPageState extends State<MainPage> {
       body: IndexedStack(
         index: _selectedIndex,
         children: const [
-          _HomePage(),
-          ReportListPage(),
-          NewsPage(),
-          ProfilePage(),
+          _HomePage(isAdmin: _isAdmin),
+          const ReportListPage(),
+          const NewsPage(),
+          const ProfilePage(),
         ],
       ),
 
@@ -238,7 +238,9 @@ class _DrawerItem extends StatelessWidget {
 
 // Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
 class _HomePage extends StatefulWidget {
-  const _HomePage();
+  final bool isAdmin;
+
+  const _HomePage({required this.isAdmin});
 
   @override
   State<_HomePage> createState() => _HomePageState();
@@ -294,6 +296,24 @@ class _HomePageState extends State<_HomePage> {
       }
     } catch (e) {
       debugPrint("Location error: $e");
+    }
+  }
+  
+  /// ============================== [Navigation Logic] ==============================
+  // Route to the correct report form depending on the user's role [_onNewReportTap]
+  void _onNewReportTap(BuildContext context) {
+    if (widget.isAdmin) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AdminMainPage(autoOpenReportForm: true),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ReportForm()),
+      );
     }
   }
 
@@ -401,10 +421,7 @@ class _HomePageState extends State<_HomePage> {
             ),
             icon: const Icon(Icons.add),
             label: const Text('แจ้งปัญหาใหม่'),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ReportForm()),
-            ),
+            onPressed: () => _onNewReportTap(context),
           ),
         ),
 
