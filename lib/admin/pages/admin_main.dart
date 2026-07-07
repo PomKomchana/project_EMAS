@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'admin_report_list.dart';
 import 'admin_news.dart';
+import 'admin_report_list.dart';
+import 'admin_report_form.dart';
 import '../services/admin_service.dart';
 import '../../pages/main_page.dart';
 
@@ -10,7 +11,9 @@ import '../../shared/constants/emas_colors.dart';
 
 // Admin shell: bottom nav across Dashboard / Report List / News [AdminMainPage]
 class AdminMainPage extends StatefulWidget {
-  const AdminMainPage({super.key});
+  final bool autoOpenReportForm;
+
+  const AdminMainPage({super.key, this.autoOpenReportForm = false});
 
   @override
   State<AdminMainPage> createState() => _AdminMainPageState();
@@ -27,6 +30,17 @@ class _AdminMainPageState extends State<AdminMainPage> {
     const AdminReportListPage(),
     const AdminNewsPage(),
   ];
+  
+  /// ============================== [Life Cycle] ==============================
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoOpenReportForm) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showAdminReportForm(context);
+      });
+    }
+  }
 
   /// ============================== [Build] ==============================
   @override

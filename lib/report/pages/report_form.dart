@@ -55,10 +55,10 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
   /// ============================== [State] ==============================
   // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
-  bool _isMapExpanded = false;        // Whether the map is currently expanded
-  bool _isPickingMode = false;        // Whether the user is in pin selection mode (waiting for map tap)
-  MapMode _mapMode = MapMode.normal;  // Current map display mode
-  LatLng? _pickedLocation;            // Selected pinned location on the map
+  bool _isMapExpanded = false;        // whether the map is currently expanded
+  bool _isPickingMode = false;        // whether the user is in pin selection mode (waiting for map tap)
+  MapMode _mapMode = MapMode.normal;  // current map display mode
+  LatLng? _pickedLocation;            // selected pinned location on the map
 
   // Form State [_selectedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
   String? _selectedBuilding;
@@ -72,8 +72,8 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _setupAnimations();
-    _sectionFadeController.forward(); // Start animation
-    _requestLocationAndMove();        // Request GPS and move the camera
+    _sectionFadeController.forward(); // start animation
+    _requestLocationAndMove();        // request GPS and move the camera
   }
 
   // Dispose (Return resource when you leave this page)

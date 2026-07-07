@@ -306,7 +306,8 @@ class _HomePageState extends State<_HomePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const AdminMainPage(),
+          // Auto-open report form on entry
+          builder: (_) => const AdminMainPage(autoOpenReportForm: true),
         ),
       );
     } else {
