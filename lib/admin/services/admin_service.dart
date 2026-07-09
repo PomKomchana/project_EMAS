@@ -52,10 +52,12 @@ class AdminService {
   Future<void> updateReportStatus({
     required String reportId,
     required String status,
+    required String severity,
     required String note,
   }) {
     return _reportsRef.doc(reportId).update({
       'status': status,
+      'severity': severity,
       'adminNote': note,
       'updatedAt': FieldValue.serverTimestamp(),
     });

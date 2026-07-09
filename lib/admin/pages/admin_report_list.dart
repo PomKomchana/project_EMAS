@@ -38,24 +38,47 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF2F2F7),
       // เพิ่มรายการแจ้งซ่อม (Admin) [showAdminReportForm]
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: emasColor,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('แจ้งปัญหาใหม่ (Admin)'),
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('แจ้งปัญหาใหม่ (Admin)', style: TextStyle(fontWeight: FontWeight.w600)),
         onPressed: () => showAdminReportForm(context),
       ),
 
       body: Column(
         children: [
           Container(
-            color: emasColor.withOpacity(0.05),
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
             child: TabBar(
               controller: _tabCtrl,
-              labelColor: emasColor,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: emasColor,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.grey.shade500,
+              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
+              indicator: BoxDecoration(
+                color: emasColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              dividerColor: Colors.transparent,
               tabs: const [
                 Tab(text: 'รอดำเนินการ'),
                 Tab(text: 'กำลังดำเนินการ'),
@@ -88,14 +111,34 @@ class _FilteredList extends StatelessWidget {
   /// ============================== [Controllers & Services] ==============================
   static final _adminService = AdminService();
 
+  /// ============================== [UI Helpers] ==============================
+  // Accent color per status, used for avatar + left border [_statusColor]
+  Color _statusColor(String s) {
+    switch (s) {
+      case 'รอดำเนินการ': return Colors.orange;
+      case 'กำลังดำเนินการ': return Colors.blue;
+      case 'เสร็จสิ้น': return Colors.green;
+      default: return emasColor;
+    }
+  }
+
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
+    final color = _statusColor(status);
+
     return StreamBuilder<QuerySnapshot>(
       stream: _adminService.reportsByStatusStream(status),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล',
+                style: TextStyle(color: Colors.red.shade400)),
+          );
         }
 
         final docs = snapshot.data?.docs ?? [];
@@ -105,17 +148,24 @@ class _FilteredList extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.inbox, size: 48, color: Colors.grey),
-                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: emasColor.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.inbox_rounded, size: 40, color: emasColor.withValues(alpha: 0.6)),
+                ),
+                const SizedBox(height: 14),
                 Text('ไม่มีรายการ "$status"',
-                    style: const TextStyle(color: Colors.grey)),
+                    style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
               ],
             ),
           );
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 90),
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final doc = docs[index];
@@ -124,66 +174,101 @@ class _FilteredList extends StatelessWidget {
             // รายการที่ admin สร้างเอง (ไม่ใช่ user แจ้ง) [createdBy]
             final isAdminCreated = data['createdBy'] == 'admin';
 
-            return Card(
+            return Container(
               margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border(left: BorderSide(color: color, width: 4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(14),
-                leading: Icon(
-                  isAdminCreated
-                      ? Icons.admin_panel_settings_rounded
-                      : Icons.location_on,
-                  color: emasColor,
-                ),
-                title: Text(
-                  '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  data['description'] ?? '-',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                // ป้ายเล็กบอกว่า admin เป็นคนสร้างรายการนี้เอง
-                trailing: isAdminCreated
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: emasColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Admin',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: emasColor,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right),
-                        ],
-                      )
-                    : const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AdminReportDetailPage(
-                        reportId: doc.id,
-                        data: data,
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminReportDetailPage(
+                          reportId: doc.id,
+                          data: data,
+                        ),
                       ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isAdminCreated
+                                ? Icons.admin_panel_settings_rounded
+                                : Icons.location_on_rounded,
+                            color: color,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                  ),
+                                  if (isAdminCreated)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: emasColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        'Admin',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: emasColorDarker,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${data['description'] ?? '-'}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             );
           },
