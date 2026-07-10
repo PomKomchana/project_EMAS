@@ -294,37 +294,26 @@ class _NewsPageState extends State<NewsPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
 
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Container(
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: false,
+        foregroundColor: Colors.white,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
+        title: const Text(
+          'ข่าวสาร',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
+        flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [emasColor, emasColorDarker],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
-              child: Row(
-                children: [
-
-                  const SizedBox(width: 4),
-
-                  const Text(
-                    'ข่าวสาร',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+              colors: [emasColor, emasColorDarker],
             ),
           ),
         ),
@@ -339,9 +328,7 @@ class _NewsPageState extends State<NewsPage>
 
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                'เกิดข้อผิดพลาด: ${snapshot.error}',
-              ),
+              child: Text('เกิดข้อผิดพลาด: ${snapshot.error}'),
             );
           }
 
@@ -366,22 +353,13 @@ class _NewsPageState extends State<NewsPage>
             color: emasColor,
             onRefresh: _handleRefresh,
             child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                24,
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               itemCount: docs.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: 12),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final doc = docs[index];
-                final data =
-                    doc.data() as Map<String, dynamic>;
-
-                final animIndex =
-                    index % _fadeList.length;
+                final data = doc.data() as Map<String, dynamic>;
+                final animIndex = index % _fadeList.length;
 
                 return FadeTransition(
                   opacity: _fadeList[animIndex],

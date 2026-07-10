@@ -7,8 +7,8 @@ import 'report_detail_page.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
-// Lists all submitted reports. Three tabs ("ทั้งหมด" / "ของฉัน" / "ข่าวสาร") + status filter
-// News tab reads the same Firestore 'news' collection admin_news.dart writes to — read-only here
+// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status filter
+// AppBar is now owned by MainPage — this page only renders the tab bar + list body
 class ReportListPage extends StatefulWidget {
   const ReportListPage({super.key});
 
@@ -152,7 +152,6 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Build] ==============================
-  // App bar + tab bar with two lists ("ทั้งหมด" / "ของฉัน")
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -164,103 +163,94 @@ class _ReportListPageState extends State<ReportListPage>
         children: [
           _buildTabBar(),
 
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildList(myReportsOnly: false),
-              _buildList(myReportsOnly: true),
-            ],
-          ),  
-        ),
-      ],
-    ),
-  );
-}
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildList(myReportsOnly: false),
+                _buildList(myReportsOnly: true),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// ============================== [Widgets] ==============================
-  // App Bar with title, status filter button, and tab bar [_buildAppBar]
+  // App bar: hamburger (opens MainPage drawer) + title + status filter [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(60),
-      child: Container(
+    return AppBar(
+      elevation: 0,
+      centerTitle: false,
+      foregroundColor: Colors.white,
+      leading: Builder(
+        builder: (ctx) => IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(ctx).openDrawer(),
+        ),
+      ),
+      title: const Text(
+        'รายการแจ้งปัญหา',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+      ),
+      flexibleSpace: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [emasColor, emasColorDarker],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: [
-                    const Text(
-                      'รายการแจ้งปัญหา',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    // Status filter only applies to report tabs, not news
-                    AnimatedBuilder(
-                      animation: _tabController.animation!,
-                      builder: (_, __) => _buildFilterButton(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            colors: [emasColor, emasColorDarker],
           ),
         ),
       ),
+      actions: [
+        AnimatedBuilder(
+          animation: _tabController.animation!,
+          builder: (_, __) => Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _buildFilterButton(),
+          ),
+        ),
+      ],
     );
   }
 
   // Tab selector: "ทั้งหมด" / "ของฉัน" [_buildTabBar]
   Widget _buildTabBar() {
-  return Container(
-    margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    child: TabBar(
-      controller: _tabController,
-      labelColor: Colors.white,
-      unselectedLabelColor: Colors.grey.shade500,
-      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-      unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-      indicatorSize: TabBarIndicatorSize.tab,
-      indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
-      indicator: BoxDecoration(
-        color: emasColor,
-        borderRadius: BorderRadius.circular(10),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      dividerColor: Colors.transparent,
-      tabs: const [
-        Tab(text: 'ทั้งหมด'),
-        Tab(text: 'ของฉัน'),
-      ],
-    ),
-  );
-}
+      child: TabBar(
+        controller: _tabController,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.grey.shade500,
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
+        indicator: BoxDecoration(
+          color: emasColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        dividerColor: Colors.transparent,
+        tabs: const [
+          Tab(text: 'ทั้งหมด'),
+          Tab(text: 'ของฉัน'),
+        ],
+      ),
+    );
+  }
 
   // Filter pill button, opens the filter sheet [_buildFilterButton]
   Widget _buildFilterButton() {
@@ -278,12 +268,9 @@ class _ReportListPageState extends State<ReportListPage>
               border: Border.all(color: Colors.white.withOpacity(0.4)),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.filter_list_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
                   _filterStatus ?? 'ทุกสถานะ',
@@ -300,7 +287,6 @@ class _ReportListPageState extends State<ReportListPage>
       ),
     );
   }
-
   // Filter sheet: every status option + "ทุกสถานะ" (all) [_buildFilterSheetContent]
   Widget _buildFilterSheetContent() {
     return ClipRRect(

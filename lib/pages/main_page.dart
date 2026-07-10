@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -19,7 +18,8 @@ import '../report/pages/report_form.dart';
 import '../shared/constants/emas_colors.dart';
 import '../shared/constants/map_constants.dart';
 
-// App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency) [MainPage]
+// App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency)
+// No AppBar here — each tab that needs one (ReportListPage/NewsPage) owns its own [MainPage]
 class MainPage extends StatefulWidget {
   final int initialIndex;
 
@@ -36,15 +36,7 @@ class _MainPageState extends State<MainPage> {
   bool _isAdmin = false;
 
   /// ============================== [Data] ==============================
-  // Tab titles, indexed by _selectedIndex (index 0 = Home has no AppBar) [_titles]
-  static const _titles = [
-    'Home',
-    'รายการแจ้งปัญหา',
-    'ข่าวสาร',
-    'โปรไฟล์'
-  ];
-
-  // Bottom nav icons, same order as _titles [_navItems]
+  // Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
   static const _navItems = [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
     BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
@@ -92,26 +84,8 @@ class _MainPageState extends State<MainPage> {
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
-    final isHome = _selectedIndex == 0;
-
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: isHome
-          ? null
-          : AppBar(
-              leading: Builder(
-                builder: (ctx) => IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => Scaffold.of(ctx).openDrawer(),
-                ),
-              ),
-              title: Text(
-                _titles[_selectedIndex],
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              centerTitle: true,
-            ),
-
+      // No AppBar here — each tab (ReportListPage/NewsPage) owns its own AppBar now
       drawer: _AppDrawer(
         isAdmin: _isAdmin,
         onTap: (i) {
@@ -298,7 +272,7 @@ class _HomePageState extends State<_HomePage> {
       debugPrint("Location error: $e");
     }
   }
-  
+
   /// ============================== [Navigation Logic] ==============================
   // Route to the correct report form depending on the user's role [_onNewReportTap]
   void _onNewReportTap(BuildContext context) {
