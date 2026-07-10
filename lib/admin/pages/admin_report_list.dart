@@ -19,18 +19,18 @@ class _AdminReportListPageState extends State<AdminReportListPage>
     with SingleTickerProviderStateMixin {
 
   /// ============================== [Controllers & Services] ==============================
-  late final TabController _tabCtrl;
+  late final TabController _tabController;
 
   /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabCtrl.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -67,7 +67,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
               ],
             ),
             child: TabBar(
-              controller: _tabCtrl,
+              controller: _tabController,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.grey.shade500,
               labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
@@ -89,7 +89,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
 
           Expanded(
             child: TabBarView(
-              controller: _tabCtrl,
+              controller: _tabController,
               children: const [
                 _FilteredList(status: 'รอดำเนินการ'),
                 _FilteredList(status: 'กำลังดำเนินการ'),
@@ -104,7 +104,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
 }
 
 // One tab's content: reports filtered by status, newest first [_FilteredList]
-class _FilteredList extends StatelessWidget {
+  class _FilteredList extends StatelessWidget {
   final String status;
   const _FilteredList({required this.status});
 

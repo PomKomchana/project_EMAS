@@ -157,22 +157,32 @@ class _ReportListPageState extends State<ReportListPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
+
       appBar: _buildAppBar(),
-      body: TabBarView(
-        controller: _tabController,
+
+      body: Column(
         children: [
-          _buildList(myReportsOnly: false),
-          _buildList(myReportsOnly: true),
-        ],
-      ),
-    );
-  }
+          _buildTabBar(),
+
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildList(myReportsOnly: false),
+              _buildList(myReportsOnly: true),
+            ],
+          ),  
+        ),
+      ],
+    ),
+  );
+}
 
   /// ============================== [Widgets] ==============================
   // App Bar with title, status filter button, and tab bar [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
-      preferredSize: const Size.fromHeight(56 + 48),
+      preferredSize: const Size.fromHeight(60),
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -208,7 +218,6 @@ class _ReportListPageState extends State<ReportListPage>
                   ],
                 ),
               ),
-              _buildTabBar(),
             ],
           ),
         ),
@@ -218,18 +227,40 @@ class _ReportListPageState extends State<ReportListPage>
 
   // Tab selector: "ทั้งหมด" / "ของฉัน" [_buildTabBar]
   Widget _buildTabBar() {
-    return TabBar(
-      controller: _tabController,
-      indicatorColor: Colors.white,
-      indicatorWeight: 3,
-      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
-      tabs: const [
-        Tab(child: Text('ทั้งหมด', style: TextStyle(color: Colors.white))),
-        Tab(child: Text('ของฉัน', style: TextStyle(color: Colors.white))),
+  return Container(
+    margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+    padding: const EdgeInsets.all(4),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
       ],
-    );
-  }
+    ),
+    child: TabBar(
+      controller: _tabController,
+      labelColor: Colors.white,
+      unselectedLabelColor: Colors.grey.shade500,
+      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+      indicatorSize: TabBarIndicatorSize.tab,
+      indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
+      indicator: BoxDecoration(
+        color: emasColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      dividerColor: Colors.transparent,
+      tabs: const [
+        Tab(text: 'ทั้งหมด'),
+        Tab(text: 'ของฉัน'),
+      ],
+    ),
+  );
+}
 
   // Filter pill button, opens the filter sheet [_buildFilterButton]
   Widget _buildFilterButton() {
