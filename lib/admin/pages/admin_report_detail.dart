@@ -374,6 +374,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   // Single severity chip, same pattern as AdminReportForm [_buildSeverityChip]
   Widget _buildSeverityChip(String key, SeverityInfo info) {
     final isSelected = _currentSeverity == key;
+    final isHigh = key == 'high';
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -392,11 +393,21 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
         ),
         child: Column(
           children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(color: info.color, shape: BoxShape.circle),
-            ),
+            isHigh
+                ? Text(
+                    '!',
+                    style: TextStyle(
+                      color: info.color,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  )
+                : Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: info.color, shape: BoxShape.circle),
+                  ),
             const SizedBox(height: 6),
             Text(
               info.label,

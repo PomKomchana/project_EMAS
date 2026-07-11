@@ -151,6 +151,17 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  /// ============================== [UI Helpers] ==============================
+  // Accent color per status, mirrors AdminReportListPage's _statusColor [_statusBorderColor]
+  Color _statusBorderColor(String status) {
+    switch (status) {
+      case ReportStatus.pending: return Colors.orange;
+      case ReportStatus.inProgress: return Colors.blue;
+      case ReportStatus.done: return Colors.green;
+      default: return emasColor;
+    }
+  }
+
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
@@ -432,6 +443,7 @@ class _ReportListPageState extends State<ReportListPage>
     return GestureDetector(
       onTap: () => _openDetailPage(context, data, id),
       child: _buildCardGlassContainer(
+        borderColor: _statusBorderColor(status),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -457,7 +469,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   // Glass background for the card (duplicate of detail page's glass card) [_buildCardGlassContainer]
-  Widget _buildCardGlassContainer({required Widget child}) {
+  Widget _buildCardGlassContainer({required Widget child, required Color borderColor}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
@@ -467,7 +479,7 @@ class _ReportListPageState extends State<ReportListPage>
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.78),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.6)),
+            border: Border(left: BorderSide(color: borderColor, width: 4)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -566,6 +578,7 @@ class _ReportListPageState extends State<ReportListPage>
 
   // Severity dot + label (duplicate of detail page's version) [_buildSeverityBadge]
   Widget _buildSeverityBadge(SeverityInfo severity) {
+    final isHigh = severity.label == severityLevels['high']!.label;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -576,14 +589,24 @@ class _ReportListPageState extends State<ReportListPage>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: severity.color,
-              shape: BoxShape.circle,
-            ),
-          ),
+          isHigh
+              ? Text(
+                  '!',
+                  style: TextStyle(
+                    color: severity.color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                )
+              : Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: severity.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
           const SizedBox(width: 4),
           Text(
             severity.label,

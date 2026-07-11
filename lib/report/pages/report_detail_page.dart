@@ -187,6 +187,7 @@ class ReportDetailPage extends StatelessWidget {
 
   // Severity dot + label (duplicate of list page's version) [_buildSeverityBadge]
   Widget _buildSeverityBadge(SeverityInfo severity) {
+    final isHigh = severity.label == severityLevels['high']!.label;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -197,14 +198,24 @@ class ReportDetailPage extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: severity.color,
-              shape: BoxShape.circle,
-            ),
-          ),
+          isHigh
+              ? Text(
+                  '!',
+                  style: TextStyle(
+                    color: severity.color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                )
+              : Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: severity.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
           const SizedBox(width: 5),
           Text(
             severity.label,

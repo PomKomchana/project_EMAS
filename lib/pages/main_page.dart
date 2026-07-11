@@ -310,8 +310,6 @@ class _HomePageState extends State<_HomePage> {
           ),
           children: [
             TileLayer(
-              // NOTE: package name here is 'com.example.app' — differs from
-              // 'com.example.plan_alert' used in report_form.dart / admin_report_form.dart
               urlTemplate: mapModeTileUrl(_mapMode),
               userAgentPackageName: 'com.example.app',
             ),
@@ -342,7 +340,7 @@ class _HomePageState extends State<_HomePage> {
           ],
         ),
 
-        //  menu (ของเดิม)
+        //  3lines Menu
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           left: 12,
