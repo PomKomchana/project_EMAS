@@ -150,53 +150,25 @@ class _LoginPageState extends State<LoginPage> {
                       ],
 
                       /// EMAIL
-                      TextFormField(
+                      SignupTextField(
                         controller: _emailCtrl,
+                        label: 'Email',
+                        icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: 'example@gmail.com',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'กรุณากรอกอีเมล';
                           if (!v.contains('@')) return 'รูปแบบอีเมลไม่ถูกต้อง';
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 16),
 
                       /// PASSWORD
-                      TextFormField(
+                      SignupPasswordField(
                         controller: _passCtrl,
-                        obscureText: _obscure,
-                        decoration: InputDecoration(
-                          hintText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
+                        label: 'Password',
+                        obscure: _obscure,
+                        onToggleObscure: () => setState(() => _obscure = !_obscure),
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'กรุณากรอกรหัสผ่าน';
                           if (v.length < 6) return 'ต้องมีอย่างน้อย 6 ตัว';
@@ -215,7 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                             backgroundColor: emasColor,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           onPressed: _isLoading ? null : _login,

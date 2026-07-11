@@ -306,8 +306,8 @@ class _HomePageState extends State<_HomePage> {
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            initialCenter: mapLocation,
-            initialZoom: 15.5,
+            initialCenter: const LatLng(14.1076, 100.9833),
+            initialZoom: 14.8,
             minZoom: 14,
             maxZoom: 20,
             cameraConstraint: CameraConstraint.contain(bounds: mapBounds),
