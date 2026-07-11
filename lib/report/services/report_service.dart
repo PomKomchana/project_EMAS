@@ -58,8 +58,7 @@ class ReportService {
       'lat': location?.latitude,
       'lng': location?.longitude,
       'imageUrl': imageUrl,
-      'userId': FirebaseAuth.instance.currentUser!.uid,
-      'createdBy': 'user',
+      'createdBy': FirebaseAuth.instance.currentUser!.uid,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }

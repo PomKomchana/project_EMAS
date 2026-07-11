@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'report_detail_page.dart';
@@ -92,12 +93,20 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Data] ==============================
-  // Reports stream, newest first [_reportsStream]
-  Stream<QuerySnapshot> _reportsStream() {
-    return FirebaseFirestore.instance
-        .collection('reports')
-        .orderBy('createdAt', descending: true)
-        .snapshots();
+  // Reports stream, newest first. If myReportsOnly, filter by current user's uid [_reportsStream]
+  Stream<QuerySnapshot> _reportsStream({required bool myReportsOnly}) {
+    Query query = FirebaseFirestore.instance.collection('reports');
+
+    if (myReportsOnly) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      // Show nothing if not logged in
+      if (uid == null) {
+        return const Stream.empty();
+      }
+      query = query.where('createdBy', isEqualTo: uid);
+    }
+
+    return query.orderBy('createdAt', descending: true).snapshots();
   }
 
   // Filters docs by _filterStatus (null = no filter) [_applyStatusFilter]
@@ -354,10 +363,9 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   // Tab content: loading/error/empty states, or the report list. [_buildList]
-  // NOTE: myReportsOnly is unused — both tabs show the same stream.
   Widget _buildList({required bool myReportsOnly}) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _reportsStream(),
+      stream: _reportsStream(myReportsOnly: myReportsOnly),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
