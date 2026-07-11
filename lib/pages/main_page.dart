@@ -310,7 +310,7 @@ class _HomePageState extends State<_HomePage> {
             initialZoom: 14.8,
             minZoom: 14,
             maxZoom: 20,
-            cameraConstraint: CameraConstraint.contain(bounds: mapBounds),
+            cameraConstraint: CameraConstraint.containCenter(bounds: mapBounds),
           ),
           children: [
             TileLayer(
