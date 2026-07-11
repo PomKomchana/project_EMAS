@@ -6,7 +6,9 @@ import '../shared/constants/emas_colors.dart';
 
 // News feed: realtime list + tap-to-expand bottom sheet detail [NewsPage]
 class NewsPage extends StatefulWidget {
-  const NewsPage({super.key});
+  final VoidCallback onMenuTap;
+
+  const NewsPage({super.key, required this.onMenuTap});
 
   @override
   State<NewsPage> createState() => _NewsPageState();
@@ -298,11 +300,9 @@ class _NewsPageState extends State<NewsPage>
         elevation: 0,
         centerTitle: false,
         foregroundColor: Colors.white,
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: widget.onMenuTap,
         ),
         title: const Text(
           'ข่าวสาร',

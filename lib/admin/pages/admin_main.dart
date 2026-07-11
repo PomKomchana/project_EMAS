@@ -5,7 +5,6 @@ import 'admin_news.dart';
 import 'admin_report_list.dart';
 import 'admin_report_form.dart';
 import '../services/admin_service.dart';
-import '../../pages/main_page.dart';
 
 import '../../shared/constants/emas_colors.dart';
 
@@ -59,13 +58,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const MainPage()),
-              (route) => false,
-            );
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Admin Panel',

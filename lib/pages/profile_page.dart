@@ -10,7 +10,9 @@ import '../shared/constants/emas_colors.dart';
 
 // User profile: avatar picker (local only, not yet persisted), account info, logout [ProfilePage]
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final VoidCallback onMenuTap;
+
+  const ProfilePage({super.key, required this.onMenuTap});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -58,6 +60,18 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
+
+      appBar: AppBar(
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        backgroundColor: emasColor,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: widget.onMenuTap,
+        ),
+        foregroundColor: Colors.white,
+      ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -65,7 +79,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
                 decoration: const BoxDecoration(
                   color: emasColor,
                   borderRadius: BorderRadius.only(

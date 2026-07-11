@@ -11,7 +11,9 @@ import '../../shared/constants/report_constants.dart';
 // Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status filter
 // AppBar is now owned by MainPage — this page only renders the tab bar + list body
 class ReportListPage extends StatefulWidget {
-  const ReportListPage({super.key});
+  final VoidCallback onMenuTap;
+
+  const ReportListPage({super.key, required this.onMenuTap});
 
   @override
   State<ReportListPage> createState() => _ReportListPageState();
@@ -204,11 +206,9 @@ class _ReportListPageState extends State<ReportListPage>
       elevation: 0,
       centerTitle: false,
       foregroundColor: Colors.white,
-      leading: Builder(
-        builder: (ctx) => IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => Scaffold.of(ctx).openDrawer(),
-        ),
+      leading: IconButton(
+        icon: const Icon(Icons.menu),
+        onPressed: widget.onMenuTap,
       ),
       title: const Text(
         'รายการแจ้งปัญหา',

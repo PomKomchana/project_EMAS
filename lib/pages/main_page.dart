@@ -30,6 +30,9 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  // Key to reach MainPage's own Scaffold (the one that owns the Drawer)
+  // from child tab pages that have their own Scaffold [_scaffoldKey]
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   /// ============================== [State] ==============================
   late int _selectedIndex;
@@ -85,6 +88,7 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       // No AppBar here — each tab (ReportListPage/NewsPage) owns its own AppBar now
       drawer: _AppDrawer(
         isAdmin: _isAdmin,
@@ -114,9 +118,9 @@ class _MainPageState extends State<MainPage> {
         index: _selectedIndex,
         children: [
           _HomePage(isAdmin: _isAdmin),
-          const ReportListPage(),
-          const NewsPage(),
-          const ProfilePage(),
+          ReportListPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
+          NewsPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
+          ProfilePage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
         ],
       ),
 
