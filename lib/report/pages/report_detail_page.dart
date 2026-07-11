@@ -169,7 +169,7 @@ class ReportDetailPage extends StatelessWidget {
         Row(
           children: [
             _buildInfoChip(
-              Icons.info_outline_rounded,
+              _statusIcon(status),
               status,
               getStatusTextColor(status),
             ),
@@ -183,6 +183,20 @@ class ReportDetailPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  // Icon for the status chip, matches AdminReportDetailPage's _statusOptions [_statusIcon]
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case ReportStatus.pending:
+        return Icons.hourglass_empty_rounded;
+      case ReportStatus.inProgress:
+        return Icons.construction_rounded;
+      case ReportStatus.done:
+        return Icons.check_circle_rounded;
+      default:
+        return Icons.info_outline_rounded;
+    }
   }
 
   // Severity dot + label (duplicate of list page's version) [_buildSeverityBadge]

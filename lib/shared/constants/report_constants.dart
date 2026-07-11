@@ -62,8 +62,10 @@ class ReportStatus {
 // bg/fg color pair for a status chip [getStatusColors]
 ({Color bg, Color fg}) getStatusColors(String status) {
   switch (status) {
-    case ReportStatus.inProgress:
+    case ReportStatus.pending:
       return (bg: Colors.orange.shade50, fg: Colors.orange.shade700);
+    case ReportStatus.inProgress:
+      return (bg: Colors.blue.shade50, fg: Colors.blue.shade700);
     case ReportStatus.done:
       return (bg: Colors.green.shade50, fg: Colors.green.shade700);
     default:
@@ -74,8 +76,10 @@ class ReportStatus {
 // Text-only color for a status (Used on detail page) [getStatusTextColor]
 Color getStatusTextColor(String status) {
   switch (status) {
-    case ReportStatus.inProgress:
+    case ReportStatus.pending:
       return Colors.orange.shade700;
+    case ReportStatus.inProgress:
+      return Colors.blue.shade700;
     case ReportStatus.done:
       return Colors.green.shade700;
     default:
