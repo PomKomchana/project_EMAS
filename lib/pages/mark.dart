@@ -59,16 +59,25 @@ class _ReportMarkerLayerState extends State<ReportMarkerLayer> {
     });
   }
 
-  // ไอคอนหมุด: สีตามระดับความอันตราย, high มี badge ตกใจ (!) เหมือน severity badge ใน list
+  // ไอคอนหมุด: สีตามระดับความอันตราย + มี outline สีขาวรอบไอคอน, high มี badge ตกใจ (!)
   Widget _buildMarkerIcon(SeverityInfo severity, bool isHigh) {
+    final iconSize = isHigh ? 44.0 : 40.0;
+
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
+        // Outline: ไอคอนสีขาวขนาดใหญ่กว่าเล็กน้อยอยู่ด้านหลัง ทำหน้าที่เป็นขอบ
+        Icon(
+          Icons.location_on,
+          color: Colors.black,,
+          size: iconSize + 4,
+        ),
+        // ไอคอนจริงสีตาม severity วางทับด้านบน
         Icon(
           Icons.location_on,
           color: severity.color,
-          size: isHigh ? 44 : 40,
+          size: iconSize,
         ),
         if (isHigh)
           Positioned(
