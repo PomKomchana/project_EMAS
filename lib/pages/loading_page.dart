@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../auth/login.dart';
+import 'main_page.dart';
 
-// Splash screen: fade in logo, hold, then transition to LoginPage [LoadingPage]
+// Splash screen: fade in logo, hold, then transition to LoginPage or MainPage [LoadingPage]
 class LoadingPage extends StatefulWidget {
   const LoadingPage({super.key});
 
@@ -52,13 +54,17 @@ class _LoadingPageState extends State<LoadingPage>
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Fade-transition to LoginPage after the splash delay [_go]
+  // Fade-transition to MainPage if already logged in, otherwise LoginPage [_go]
   void _go() {
     if (!mounted) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    final destination = user != null ? const MainPage() : const LoginPage();
+
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoginPage(),
+        pageBuilder: (_, __, ___) => destination,
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 400),

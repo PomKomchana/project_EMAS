@@ -120,7 +120,10 @@ class _MainPageState extends State<MainPage> {
           _HomePage(isAdmin: _isAdmin),
           ReportListPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
           AnnouncementPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
-          ProfilePage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
+          ProfilePage(
+            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+            isAdmin: _isAdmin,
+          ),
         ],
       ),
 
