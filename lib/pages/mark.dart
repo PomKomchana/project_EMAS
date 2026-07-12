@@ -70,7 +70,7 @@ class _ReportMarkerLayerState extends State<ReportMarkerLayer> {
         // Outline: ไอคอนสีขาวขนาดใหญ่กว่าเล็กน้อยอยู่ด้านหลัง ทำหน้าที่เป็นขอบ
         Icon(
           Icons.location_on,
-          color: Colors.black,,
+          color: Colors.grey.shade600.withOpacity(0.6),
           size: iconSize + 4,
         ),
         // ไอคอนจริงสีตาม severity วางทับด้านบน
