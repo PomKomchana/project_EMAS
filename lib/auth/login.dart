@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../pages/main_page.dart';
 import 'sign_up.dart';
@@ -19,9 +20,43 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  static const _kRememberMeKey = 'remember_me';
+  static const _kSavedEmailKey = 'saved_email';
+
   bool _isLoading = false;
   bool _obscure = true;
+  bool _rememberMe = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final remembered = prefs.getBool(_kRememberMeKey) ?? false;
+    final savedEmail = prefs.getString(_kSavedEmailKey);
+
+    if (remembered && savedEmail != null) {
+      setState(() {
+        _rememberMe = true;
+        _emailCtrl.text = savedEmail;
+      });
+    }
+  }
+
+  Future<void> _saveRememberMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setBool(_kRememberMeKey, true);
+      await prefs.setString(_kSavedEmailKey, _emailCtrl.text.trim());
+    } else {
+      await prefs.setBool(_kRememberMeKey, false);
+      await prefs.remove(_kSavedEmailKey);
+    }
+  }
 
   @override
   void dispose() {
@@ -50,6 +85,9 @@ class _LoginPageState extends State<LoginPage> {
           .get();
 
       final role = doc.data()?['role'] ?? 'user';
+
+      // บันทึกสถานะ remember me หลัง login สำเร็จ
+      await _saveRememberMe();
 
       if (!mounted) return;
 
@@ -116,8 +154,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      //const SizedBox(height: 20),
-
                       const Text(
                         'Hi welcome to EMAS',
                         style: TextStyle(
@@ -176,7 +212,40 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
 
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 8),
+
+                      /// REMEMBER ME
+                      Row(
+                        children: [
+                          SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: Checkbox(
+                              value: _rememberMe,
+                              activeColor: emasColor,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              onChanged: (v) {
+                                setState(() => _rememberMe = v ?? false);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() => _rememberMe = !_rememberMe);
+                            },
+                            child: const Text(
+                              'Remember me',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
 
                       /// LOGIN BUTTON
                       SizedBox(
