@@ -1,14 +1,15 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'admin_news.dart';
+import 'admin_announcements.dart';
 import 'admin_report_list.dart';
 import 'admin_report_form.dart';
 import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
 
-// Admin shell: bottom nav across Dashboard / Report List / News [AdminMainPage]
+// Admin shell: bottom nav across Dashboard / Report List / Announcements [AdminMainPage]
 class AdminMainPage extends StatefulWidget {
   final bool autoOpenReportForm;
 
@@ -23,18 +24,14 @@ class _AdminMainPageState extends State<AdminMainPage> {
   /// ============================== [State] ==============================
   int _selectedIndex = 0;
 
-  // Tab pages, indexed by the bottom nav [_pages]
-  final List<Widget> _pages = [
-    const _AdminDashboard(),
-    const AdminReportListPage(),
-    const AdminNewsPage(),
-  ];
+  // Filter for the announcements feed — owned here so it can be shown in the shared AppBar [_feedFilter]
+  FeedFilter _feedFilter = FeedFilter.all;
 
   // Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
     (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'แดชบอร์ด'),
     (icon: Icons.list_alt_outlined, selectedIcon: Icons.list_alt_rounded, label: 'รายการแจ้งซ่อม'),
-    (icon: Icons.newspaper_outlined, selectedIcon: Icons.newspaper_rounded, label: 'ข่าวสาร'),
+    (icon: Icons.newspaper_outlined, selectedIcon: Icons.newspaper_rounded, label: 'ประกาศ'),
   ];
 
   /// ============================== [Life Cycle] ==============================
@@ -45,6 +42,20 @@ class _AdminMainPageState extends State<AdminMainPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) showAdminReportForm(context);
       });
+    }
+  }
+
+  /// ============================== [Navigation Logic] ==============================
+  // Current tab's page, rebuilt so _AdminAnnouncementsPage gets the latest filter [_currentPage]
+  Widget _currentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return const _AdminDashboard();
+      case 1:
+        return const AdminReportListPage();
+      case 2:
+      default:
+        return AdminAnnouncementsPage(filter: _feedFilter);
     }
   }
 
@@ -75,13 +86,57 @@ class _AdminMainPageState extends State<AdminMainPage> {
           ),
         ),
         foregroundColor: Colors.white,
+        actions: [
+          // Filter pill only shows on the "ประกาศ" tab [_selectedIndex == 2]
+          if (_selectedIndex == 2)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _buildFeedFilterButton(),
+            ),
+        ],
       ),
-      body: _pages[_selectedIndex],
+      body: _currentPage(),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   /// ============================== [Widgets] ==============================
+  // Glass filter pill, matches ReportListPage's status filter button style [_buildFeedFilterButton]
+  Widget _buildFeedFilterButton() {
+    return GestureDetector(
+      onTap: () => showFeedFilterSheet(
+        context,
+        _feedFilter,
+        (f) => setState(() => _feedFilter = f),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  feedFilterLabel(_feedFilter),
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // Themed bottom nav bar, pill-style selected indicator matching brand color [_buildBottomNav]
   Widget _buildBottomNav() {
     return Container(

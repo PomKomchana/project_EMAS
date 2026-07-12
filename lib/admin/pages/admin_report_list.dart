@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_detail.dart';
-import 'admin_report_form.dart';
 import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
 
-// Admin report list: tabbed by status ("รอดำเนินการ" / "กำลังดำเนินการ" / "เสร็จสิ้น") [AdminReportListPage]
+// Admin report list: tabbed by status ("รอดำเนินการ" / "กำลังดำเนินการ" / "เสร็จสิ้น").
+// Read/manage only — creating new reports now happens from the "ประกาศ" tab. [AdminReportListPage]
 class AdminReportListPage extends StatefulWidget {
   const AdminReportListPage({super.key});
 
@@ -39,17 +39,6 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
-      // เพิ่มรายการแจ้งซ่อม (Admin) [showAdminReportForm]
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: emasColor,
-        foregroundColor: Colors.white,
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('แจ้งปัญหาใหม่ (Admin)', style: TextStyle(fontWeight: FontWeight.w600)),
-        onPressed: () => showAdminReportForm(context),
-      ),
-
       body: Column(
         children: [
           Container(
@@ -104,7 +93,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
 }
 
 // One tab's content: reports filtered by status, newest first [_FilteredList]
-  class _FilteredList extends StatelessWidget {
+class _FilteredList extends StatelessWidget {
   final String status;
   const _FilteredList({required this.status});
 
@@ -112,7 +101,6 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   static final _adminService = AdminService();
 
   /// ============================== [UI Helpers] ==============================
-  // Accent color per status, used for avatar + left border [_statusColor]
   Color _statusColor(String s) {
     switch (s) {
       case 'รอดำเนินการ': return Colors.orange;
@@ -165,14 +153,11 @@ class _AdminReportListPageState extends State<AdminReportListPage>
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 90),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final doc = docs[index];
             final data = doc.data() as Map<String, dynamic>;
-
-            // รายการที่ admin สร้างเอง (ไม่ใช่ user แจ้ง) [createdBy]
-            final isAdminCreated = data['createdBy'] == 'admin';
 
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
@@ -215,9 +200,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            isAdminCreated
-                                ? Icons.admin_panel_settings_rounded
-                                : Icons.location_on_rounded,
+                            Icons.location_on_rounded,
                             color: color,
                             size: 20,
                           ),
@@ -235,22 +218,6 @@ class _AdminReportListPageState extends State<AdminReportListPage>
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
                                   ),
-                                  if (isAdminCreated)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: emasColor.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        'Admin',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: emasColorDarker,
-                                        ),
-                                      ),
-                                    ),
                                 ],
                               ),
                               const SizedBox(height: 4),

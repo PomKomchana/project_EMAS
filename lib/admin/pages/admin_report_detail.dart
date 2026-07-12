@@ -125,7 +125,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
       await _adminService.deleteReport(widget.reportId);
 
       if (!mounted) return;
-      _showSnack('ลบแล้ว', Colors.orange.shade700);
+      _showSnack('ลบแล้ว', Colors.red.shade700);
       Navigator.pop(context);
     } catch (e) {
       _showSnack('ลบไม่ได้: $e', Colors.red.shade600);

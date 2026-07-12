@@ -21,6 +21,14 @@ class AdminService {
         .snapshots();
   }
 
+  // Reports created by admin, newest first — used by the merged announcements feed [adminReportsStream]
+  Stream<QuerySnapshot> adminReportsStream() {
+    return _reportsRef
+        .where('createdBy', isEqualTo: 'admin')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
   /// ============================== [Report Writes] ==============================
   // Create a report on behalf of the admin (username fixed to 'Admin') [createReport]
   Future<void> createReport({
