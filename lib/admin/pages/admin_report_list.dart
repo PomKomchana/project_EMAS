@@ -5,9 +5,10 @@ import 'admin_report_detail.dart';
 import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
+import '../../shared/constants/report_constants.dart';
 
 // Admin report list: tabbed by status ("รอดำเนินการ" / "กำลังดำเนินการ" / "เสร็จสิ้น").
-// Read/manage only — creating new reports now happens from the "ประกาศ" tab. [AdminReportListPage]
+// Shows only user-submitted reports — admin-created ones live in the "ประกาศ" tab. [AdminReportListPage]
 class AdminReportListPage extends StatefulWidget {
   const AdminReportListPage({super.key});
 
@@ -92,7 +93,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   }
 }
 
-// One tab's content: reports filtered by status, newest first [_FilteredList]
+// One tab's content: reports filtered by status, excludes admin-created, newest first [_FilteredList]
 class _FilteredList extends StatelessWidget {
   final String status;
   const _FilteredList({required this.status});
@@ -108,6 +109,20 @@ class _FilteredList extends StatelessWidget {
       case 'เสร็จสิ้น': return Colors.green;
       default: return emasColor;
     }
+  }
+
+  // Admin-created reports live in the "ประกาศ" tab now — exclude them here [_excludeAdminCreated]
+  List<QueryDocumentSnapshot> _excludeAdminCreated(List<QueryDocumentSnapshot> docs) {
+    return docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['createdBy'] != 'admin';
+    }).toList();
+  }
+
+  String _formatDate(dynamic createdAt) {
+    if (createdAt is! Timestamp) return '-';
+    final d = createdAt.toDate();
+    return '${d.day}/${d.month}/${d.year}';
   }
 
   /// ============================== [Build] ==============================
@@ -129,7 +144,7 @@ class _FilteredList extends StatelessWidget {
           );
         }
 
-        final docs = snapshot.data?.docs ?? [];
+        final docs = _excludeAdminCreated(snapshot.data?.docs ?? []);
 
         if (docs.isEmpty) {
           return Center(
@@ -158,89 +173,164 @@ class _FilteredList extends StatelessWidget {
           itemBuilder: (context, index) {
             final doc = docs[index];
             final data = doc.data() as Map<String, dynamic>;
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border(left: BorderSide(color: color, width: 4)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AdminReportDetailPage(
-                          reportId: doc.id,
-                          data: data,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.location_on_rounded,
-                            color: color,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${data['description'] ?? '-'}',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
+            return _buildReportCard(context, doc.id, data, color);
           },
         );
       },
+    );
+  }
+
+  /// ============================== [Widgets] ==============================
+  // Full-info card: thumbnail, severity badge, status chip + date [_buildReportCard]
+  Widget _buildReportCard(
+    BuildContext context,
+    String docId,
+    Map<String, dynamic> data,
+    Color borderColor,
+  ) {
+    final building = data['building'] ?? '-';
+    final floor = data['floor'] ?? '-';
+    final room = data['room'] ?? '-';
+    final desc = data['description'] ?? '-';
+    final imageUrl = data['imageUrl'] as String?;
+    final severity = getSeverityInfo(data['severity'] as String?);
+    final date = _formatDate(data['createdAt']);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border(left: BorderSide(color: borderColor, width: 4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AdminReportDetailPage(reportId: docId, data: data),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildThumbnail(imageUrl),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '$building · $floor · ห้อง $room',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildSeverityBadge(severity),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        desc,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildStatusChip(status),
+                          const SizedBox(width: 8),
+                          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                          const SizedBox(width: 4),
+                          Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnail(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+        child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        imageUrl,
+        width: 52,
+        height: 52,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeverityBadge(SeverityInfo severity) {
+    final isHigh = severity.label == severityLevels['high']!.label;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: severity.color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: severity.color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          isHigh
+              ? Text('!', style: TextStyle(color: severity.color, fontSize: 12, fontWeight: FontWeight.w900, height: 1))
+              : Container(width: 7, height: 7, decoration: BoxDecoration(color: severity.color, shape: BoxShape.circle)),
+          const SizedBox(width: 4),
+          Text(severity.label, style: TextStyle(color: severity.color, fontSize: 10.5, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String status) {
+    final colors = getStatusColors(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: colors.bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(status, style: TextStyle(color: colors.fg, fontSize: 10.5, fontWeight: FontWeight.w600)),
     );
   }
 }

@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../admin/pages/admin_main.dart';
-import 'news_page.dart';
+import 'annoucement_page.dart';
 import 'profile_page.dart';
 import 'emergency_page.dart';
 import 'mark.dart';
@@ -19,7 +19,7 @@ import '../shared/constants/emas_colors.dart';
 import '../shared/constants/map_constants.dart';
 
 // App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency)
-// No AppBar here — each tab that needs one (ReportListPage/NewsPage) owns its own [MainPage]
+// No AppBar here — each tab that needs one (ReportListPage/AnnouncementPage) owns its own [MainPage]
 class MainPage extends StatefulWidget {
   final int initialIndex;
 
@@ -89,7 +89,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      // No AppBar here — each tab (ReportListPage/NewsPage) owns its own AppBar now
+      // No AppBar here — each tab (ReportListPage/AnnouncementPage) owns its own AppBar now
       drawer: _AppDrawer(
         isAdmin: _isAdmin,
         onTap: (i) {
@@ -119,7 +119,7 @@ class _MainPageState extends State<MainPage> {
         children: [
           _HomePage(isAdmin: _isAdmin),
           ReportListPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
-          NewsPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
+          AnnouncementPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
           ProfilePage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
         ],
       ),

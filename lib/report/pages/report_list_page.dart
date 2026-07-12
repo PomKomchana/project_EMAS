@@ -8,7 +8,7 @@ import 'report_detail_page.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
-// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status filter
+// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status/severity filter
 // AppBar is now owned by MainPage — this page only renders the tab bar + list body
 class ReportListPage extends StatefulWidget {
   final VoidCallback onMenuTap;
@@ -32,6 +32,9 @@ class _ReportListPageState extends State<ReportListPage>
 
   // Status filter [_filterStatus] — null = show all statuses
   String? _filterStatus;
+
+  // Severity filter [_filterSeverity] — null = show all severities
+  String? _filterSeverity;
 
   /// ============================== [Life Cycle] ==============================
   @override
@@ -111,20 +114,20 @@ class _ReportListPageState extends State<ReportListPage>
     return query.orderBy('createdAt', descending: true).snapshots();
   }
 
-  // Filters docs by _filterStatus (null = no filter) [_applyStatusFilter]
-  List<QueryDocumentSnapshot> _applyStatusFilter(
+  // Filters docs by _filterStatus + _filterSeverity (null = no filter on that field) [_applyFilters]
+  List<QueryDocumentSnapshot> _applyFilters(
     List<QueryDocumentSnapshot> docs,
   ) {
-    if (_filterStatus == null) return docs;
-
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      return data['status'] == _filterStatus;
+      final matchesStatus = _filterStatus == null || data['status'] == _filterStatus;
+      final matchesSeverity = _filterSeverity == null || data['severity'] == _filterSeverity;
+      return matchesStatus && matchesSeverity;
     }).toList();
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Opens the status filter sheet [_showFilterSheet]
+  // Opens the status/severity filter sheet [_showFilterSheet]
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
@@ -200,7 +203,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Widgets] ==============================
-  // App bar: hamburger (opens MainPage drawer) + title + status filter [_buildAppBar]
+  // App bar: hamburger (opens MainPage drawer) + title + status/severity filter [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       elevation: 0,
@@ -272,8 +275,11 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Filter pill button, opens the filter sheet [_buildFilterButton]
+  // Filter pill button, shows active filter count, opens the filter sheet [_buildFilterButton]
   Widget _buildFilterButton() {
+    final activeCount = (_filterStatus != null ? 1 : 0) + (_filterSeverity != null ? 1 : 0);
+    final label = activeCount == 0 ? 'ทุกสถานะ' : 'ตัวกรอง ($activeCount)';
+
     return GestureDetector(
       onTap: _showFilterSheet,
       child: ClipRRect(
@@ -293,7 +299,7 @@ class _ReportListPageState extends State<ReportListPage>
                 const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
-                  _filterStatus ?? 'ทุกสถานะ',
+                  label,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -307,7 +313,8 @@ class _ReportListPageState extends State<ReportListPage>
       ),
     );
   }
-  // Filter sheet: every status option + "ทุกสถานะ" (all) [_buildFilterSheetContent]
+
+  // Filter sheet: status options + severity options, each with "ทั้งหมด" (all) [_buildFilterSheetContent]
   Widget _buildFilterSheetContent() {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -316,28 +323,42 @@ class _ReportListPageState extends State<ReportListPage>
         child: Container(
           color: Colors.white.withOpacity(0.9),
           child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'กรองตามสถานะ',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                for (final option in ReportStatus.filterOptions)
-                  _buildFilterOptionTile(option),
-                const SizedBox(height: 8),
-              ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    'กรองตามสถานะ',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  for (final option in ReportStatus.filterOptions)
+                    _buildStatusOptionTile(option),
+
+                  Divider(color: Colors.grey.shade200, height: 24, indent: 20, endIndent: 20),
+
+                  const Text(
+                    'กรองตามระดับความรุนแรง',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildSeverityOptionTile(null, 'ทั้งหมด'),
+                  for (final entry in severityLevels.entries)
+                    _buildSeverityOptionTile(entry.key, entry.value.label),
+
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
           ),
         ),
@@ -345,8 +366,8 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // One row in the filter sheet. null = "show all". [_buildFilterOptionTile]
-  Widget _buildFilterOptionTile(String? option) {
+  // One row in the status group. null = "show all". [_buildStatusOptionTile]
+  Widget _buildStatusOptionTile(String? option) {
     return ListTile(
       leading: Icon(
         _filterStatus == option
@@ -357,6 +378,23 @@ class _ReportListPageState extends State<ReportListPage>
       title: Text(option ?? 'ทุกสถานะ'),
       onTap: () {
         setState(() => _filterStatus = option);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  // One row in the severity group. null = "show all". [_buildSeverityOptionTile]
+  Widget _buildSeverityOptionTile(String? key, String label) {
+    return ListTile(
+      leading: Icon(
+        _filterSeverity == key
+            ? Icons.radio_button_checked
+            : Icons.radio_button_unchecked,
+        color: emasColor,
+      ),
+      title: Text(label),
+      onTap: () {
+        setState(() => _filterSeverity = key);
         Navigator.pop(context);
       },
     );
@@ -377,7 +415,7 @@ class _ReportListPageState extends State<ReportListPage>
           return Center(child: Text('เกิดข้อผิดพลาด: ${snapshot.error}'));
         }
 
-        final docs = _applyStatusFilter(snapshot.data?.docs ?? []);
+        final docs = _applyFilters(snapshot.data?.docs ?? []);
 
         if (docs.isEmpty) {
           return _buildEmptyState();
