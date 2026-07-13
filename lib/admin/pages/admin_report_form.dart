@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
@@ -24,7 +26,7 @@ Future<void> showAdminReportForm(BuildContext context) {
   );
 }
 
-// Admin-created report form (building/floor/room, status, severity, description, map pin) [AdminReportForm]
+// Admin-created report form (building/floor/room, status, severity, image, description, map pin) [AdminReportForm]
 class AdminReportForm extends StatefulWidget {
   const AdminReportForm({super.key});
 
@@ -41,6 +43,7 @@ class _AdminReportFormState extends State<AdminReportForm>
   final _descController = TextEditingController();
   final _mapController = MapController();
   final _adminService = AdminService();
+  final _imagePicker = ImagePicker();
 
   // Staggered entrance animation [_fadeController, _fadeList, _slideList]
   late final AnimationController _fadeController;
@@ -58,12 +61,16 @@ class _AdminReportFormState extends State<AdminReportForm>
   bool _isMapExpanded = false;
   MapMode _mapMode = MapMode.normal;
 
-  // Form State [_selectedBuilding, _selectedFloor, _selectedSeverity, _selectedStatus, _isSaving]
+  // Form State [_selectedBuilding, _selectedFloor, _selectedSeverity, _selectedStatus, _selectedImage, _isSaving]
   String? _selectedBuilding;
   String? _selectedFloor;
   String? _selectedSeverity;
   String _selectedStatus = ReportStatus.pending;
+  File? _selectedImage;
   bool _isSaving = false;
+
+  // Number of staggered sections: Map, Image, Location, Status, Severity, Description
+  static const _sectionCount = 6;
 
   /// ============================== [Life Cycle] ==============================
   @override
@@ -105,7 +112,7 @@ class _AdminReportFormState extends State<AdminReportForm>
   /// ============================== [Animation Logic] ==============================
   // Staggered fade-in per form section [_buildStaggeredFadeList]
   List<Animation<double>> _buildStaggeredFadeList() {
-    return List.generate(5, (i) {
+    return List.generate(_sectionCount, (i) {
       final start = (i * 0.1).clamp(0.0, 0.9);
       return Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(
@@ -118,7 +125,7 @@ class _AdminReportFormState extends State<AdminReportForm>
 
   // Same as above but slide-up motion [_buildStaggeredSlideList]
   List<Animation<Offset>> _buildStaggeredSlideList() {
-    return List.generate(5, (i) {
+    return List.generate(_sectionCount, (i) {
       final start = (i * 0.1).clamp(0.0, 0.9);
       return Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
         CurvedAnimation(
@@ -190,6 +197,25 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
+  /// ============================== [Image Picker Logic] ==============================
+  // Show image picker bottom sheet [_showImagePickerSheet]
+  void _showImagePickerSheet() {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _buildImagePickerSheet(),
+    );
+  }
+
+  // Pick image from selected source [_pickImageFrom]
+  Future<void> _pickImageFrom(ImageSource source) async {
+    final picked = await _imagePicker.pickImage(source: source);
+    if (picked != null) {
+      setState(() => _selectedImage = File(picked.path));
+    }
+  }
+
   /// ============================== [Submit Logic] ==============================
   // Validate + create the admin report [_submit]
   Future<void> _submit() async {
@@ -210,6 +236,8 @@ class _AdminReportFormState extends State<AdminReportForm>
     setState(() => _isSaving = true);
 
     try {
+      // NOTE: AdminService.createReport() ต้องรองรับพารามิเตอร์ `image` (File?)
+      // และอัปโหลดขึ้น Firebase Storage แบบเดียวกับ ReportService.submitReport()
       await _adminService.createReport(
         building: _selectedBuilding!,
         floor: _selectedFloor!,
@@ -219,6 +247,7 @@ class _AdminReportFormState extends State<AdminReportForm>
         status: _selectedStatus,
         lat: _pickedLocation?.latitude,
         lng: _pickedLocation?.longitude,
+        image: _selectedImage,
       );
 
       if (!mounted) return;
@@ -274,13 +303,15 @@ class _AdminReportFormState extends State<AdminReportForm>
                       children: [
                         _buildAnimatedSection(0, _buildMapSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(1, _buildLocationSection()),
+                        _buildAnimatedSection(1, _buildImageSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(2, _buildStatusSection()),
+                        _buildAnimatedSection(2, _buildLocationSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(3, _buildSeveritySection()),
+                        _buildAnimatedSection(3, _buildStatusSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(4, _buildDescriptionSection()),
+                        _buildAnimatedSection(4, _buildSeveritySection()),
+                        const SizedBox(height: 14),
+                        _buildAnimatedSection(5, _buildDescriptionSection()),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -479,6 +510,112 @@ class _AdminReportFormState extends State<AdminReportForm>
               ],
             ),
         ],
+      ),
+    );
+  }
+
+  // Image upload section, shows placeholder or selected image with change button (same pattern as ReportForm) [_buildImageSection]
+  Widget _buildImageSection() {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CardHeader(icon: Icons.camera_alt_rounded, title: 'รูปภาพ'),
+          const SizedBox(height: 12),
+
+          // If an image is already present → display the image with a change button
+          if (_selectedImage != null) ...[
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.file(
+                    _selectedImage!,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: ChangeImageButton(onTap: _showImagePickerSheet),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // But if an image not present → show Placeholder box
+          if (_selectedImage == null) ImagePlaceholder(onTap: _showImagePickerSheet),
+        ],
+      ),
+    );
+  }
+
+  // Bottom sheet to choose image source: camera or gallery (same pattern as ReportForm) [_buildImagePickerSheet]
+  Widget _buildImagePickerSheet() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.85),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'เพิ่มรูปภาพ',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SheetOption(
+                          icon: Icons.camera_alt_rounded,
+                          label: 'ถ่ายรูป',
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _pickImageFrom(ImageSource.camera);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SheetOption(
+                          icon: Icons.photo_library_rounded,
+                          label: 'คลังภาพ',
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _pickImageFrom(ImageSource.gallery);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

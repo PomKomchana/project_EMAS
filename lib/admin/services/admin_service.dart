@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 // Centralizes all admin-side Firestore access for 'reports' and 'news'.
 // User-facing report creation stays in report/services/report_service.dart —
@@ -6,6 +9,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AdminService {
   final _reportsRef = FirebaseFirestore.instance.collection('reports');
   final _newsRef = FirebaseFirestore.instance.collection('news');
+  final _storage = FirebaseStorage.instance;
+
+  /// ============================== [Image Upload] ==============================
+  // Upload a picked image to Storage, return its download URL. Stored under
+  // reports/admin/<uid>/ to keep admin-created report images separate from
+  // user-submitted ones. Same pattern as ReportService._uploadImage. [_uploadImage]
+  Future<String?> _uploadImage(File image) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final fileName =
+        '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
+
+    final ref = _storage
+        .ref()
+        .child('reports')
+        .child('admin')
+        .child(uid)
+        .child(fileName);
+
+    final uploadTask = await ref.putFile(image);
+
+    return uploadTask.ref.getDownloadURL();
+  }
 
   /// ============================== [Report Reads] ==============================
   // Raw reports stream, unfiltered — used by the dashboard for stat counts [reportsStream]
@@ -30,7 +56,9 @@ class AdminService {
   }
 
   /// ============================== [Report Writes] ==============================
-  // Create a report on behalf of the admin (username fixed to 'Admin') [createReport]
+  // Create a report on behalf of the admin (username fixed to 'Admin').
+  // Uploads image first (if provided) so imageUrl is written in the same
+  // add() call — avoids a partial doc with no image. [createReport]
   Future<void> createReport({
     required String building,
     required String floor,
@@ -40,8 +68,11 @@ class AdminService {
     required String status,
     double? lat,
     double? lng,
-  }) {
-    return _reportsRef.add({
+    File? image,
+  }) async {
+    final imageUrl = image != null ? await _uploadImage(image) : null;
+
+    await _reportsRef.add({
       'building': building,
       'floor': floor,
       'room': room,
@@ -50,6 +81,7 @@ class AdminService {
       'status': status,
       'lat': lat,
       'lng': lng,
+      'imageUrl': imageUrl,
       'username': 'Admin',
       'createdBy': 'admin',
       'createdAt': FieldValue.serverTimestamp(),
