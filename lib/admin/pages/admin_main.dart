@@ -73,7 +73,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Admin Panel',
+          'Admin Dashboard',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: false,
