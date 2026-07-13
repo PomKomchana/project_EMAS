@@ -56,7 +56,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   /// ============================== [Admin Check Logic] ==============================
-  // Reads users/{uid}.role to decide whether to show the Admin Panel drawer item.
+  // Reads users/{uid}.role to decide whether to show the Admin Dashboard drawer item.
   // NOTE: this only gates UI visibility — real admin authorization must still
   // come from Firestore security rules, not this client-side check. [_checkAdmin]
   Future<void> _checkAdmin() async {
@@ -143,7 +143,7 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// Side drawer: nav shortcuts + conditional Admin Panel entry [_AppDrawer]
+// Side drawer: nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
@@ -170,7 +170,7 @@ class _AppDrawer extends StatelessWidget {
             ),
 
         if (isAdmin)
-          _DrawerItem(icon: Icons.admin_panel_settings, label: 'Admin Panel', onTap: onAdmin),
+          _DrawerItem(icon: Icons.space_dashboard_rounded, label: 'Admin Dashboard', onTap: onAdmin),
 
         if (isAdmin)
           const Divider(height: 1),
