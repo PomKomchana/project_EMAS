@@ -125,6 +125,13 @@ class _FilteredList extends StatelessWidget {
     return '${d.day}/${d.month}/${d.year}';
   }
 
+  // "ใหม่" badge if posted within the last 24 hours [_isRecent]
+  bool _isRecent(dynamic createdAt) {
+    if (createdAt is! Timestamp) return false;
+    final diff = DateTime.now().difference(createdAt.toDate());
+    return diff.inHours < 24 && !diff.isNegative;
+  }
+
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
@@ -195,6 +202,7 @@ class _FilteredList extends StatelessWidget {
     final imageUrl = data['imageUrl'] as String?;
     final severity = getSeverityInfo(data['severity'] as String?);
     final date = _formatDate(data['createdAt']);
+    final isRecent = _isRecent(data['createdAt']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -244,6 +252,10 @@ class _FilteredList extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
+                          if (isRecent) ...[
+                            _buildNewBadge(),
+                            const SizedBox(width: 6),
+                          ],
                           _buildSeverityBadge(severity),
                         ],
                       ),
@@ -322,6 +334,15 @@ class _FilteredList extends StatelessWidget {
           Text(severity.label, style: TextStyle(color: severity.color, fontSize: 10.5, fontWeight: FontWeight.w600)),
         ],
       ),
+    );
+  }
+
+  // Small pink "ใหม่" pill for reports created within the last 24 hours [_buildNewBadge]
+  Widget _buildNewBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
+      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
     );
   }
 

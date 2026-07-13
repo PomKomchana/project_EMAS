@@ -176,6 +176,14 @@ class _ReportListPageState extends State<ReportListPage>
     }
   }
 
+  // "ใหม่" badge if the report was created within the last 24 hours — reads createdAt
+  // (Timestamp) rather than the display-only `date` string field [_isRecent]
+  bool _isRecent(dynamic createdAt) {
+    if (createdAt is! Timestamp) return false;
+    final diff = DateTime.now().difference(createdAt.toDate());
+    return diff.inHours < 24 && !diff.isNegative;
+  }
+
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
@@ -482,6 +490,7 @@ class _ReportListPageState extends State<ReportListPage>
     final status = data['status'] ?? ReportStatus.pending;
     final date = data['date'] ?? '-';
     final imageUrl = data['imageUrl'] as String?;
+    final isRecent = _isRecent(data['createdAt']);
 
     final severityKey = data['severity'] as String?;
     final severity = getSeverityInfo(severityKey);
@@ -504,6 +513,7 @@ class _ReportListPageState extends State<ReportListPage>
                 status: status,
                 date: date,
                 severity: severity,
+                isRecent: isRecent,
               ),
             ),
             const SizedBox(width: 4),
@@ -571,6 +581,7 @@ class _ReportListPageState extends State<ReportListPage>
     required String status,
     required String date,
     required SeverityInfo severity,
+    required bool isRecent,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,6 +598,10 @@ class _ReportListPageState extends State<ReportListPage>
                 ),
               ),
             ),
+            if (isRecent) ...[
+              _buildNewBadge(),
+              const SizedBox(width: 6),
+            ],
             _buildSeverityBadge(severity),
           ],
         ),
@@ -667,6 +682,15 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  // Small pink "ใหม่" pill for reports created within the last 24 hours [_buildNewBadge]
+  Widget _buildNewBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
+      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+    );
+  }
+  
   // Status pill (pending/in-progress/done) [_buildStatusChip]
   Widget _buildStatusChip(String status) {
     final colors = getStatusColors(status);

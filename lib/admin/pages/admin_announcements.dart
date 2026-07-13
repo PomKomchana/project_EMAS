@@ -198,6 +198,13 @@ class AdminAnnouncementsPage extends StatelessWidget {
     return '${time.day}/${time.month}/${time.year}';
   }
 
+  // "ใหม่" badge if posted within the last 24 hours — applies to both news and report items [_isRecent]
+  bool _isRecent(DateTime? time) {
+    if (time == null) return false;
+    final diff = DateTime.now().difference(time);
+    return diff.inHours < 24 && !diff.isNegative;
+  }
+
   /// ============================== [Navigation Logic] ==============================
   // Open the admin management detail page — lets admin change status/severity or delete [_openReportDetail]
   void _openReportDetail(BuildContext context, _FeedItem item) {
@@ -290,6 +297,8 @@ class AdminAnnouncementsPage extends StatelessWidget {
   }
 
   Widget _buildNewsCard(BuildContext context, _FeedItem item) {
+    final isRecent = _isRecent(item.time);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -314,7 +323,18 @@ class AdminAnnouncementsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                      if (isRecent) ...[
+                        const SizedBox(width: 6),
+                        _buildNewBadge(),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text(item.subtitle,
                       maxLines: 2,
@@ -362,6 +382,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
     final isAdminCreated = data['createdBy'] == 'admin';
     final statusColor = getStatusColors(item.status ?? ReportStatus.pending).fg;
     final severity = getSeverityInfo(item.severity);
+    final isRecent = _isRecent(item.time);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -418,7 +439,10 @@ class AdminAnnouncementsPage extends StatelessWidget {
                               ),
                             ),
                           ],
-                          const SizedBox(width: 6),
+                          if (isRecent) ...[
+                            _buildNewBadge(),
+                            const SizedBox(width: 6),
+                          ],
                           _buildSeverityBadge(severity),
                         ],
                       ),
@@ -473,6 +497,15 @@ class AdminAnnouncementsPage extends StatelessWidget {
           child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
         ),
       ),
+    );
+  }
+
+  // Small pink "ใหม่" pill for feed items posted within the last 24 hours [_buildNewBadge]
+  Widget _buildNewBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
+      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
     );
   }
 
