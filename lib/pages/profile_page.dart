@@ -2,32 +2,76 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'main_page.dart';
 import '../auth/login.dart';
+import 'profile_detail_page.dart';
 
 import '../shared/constants/emas_colors.dart';
 
 // User profile: avatar picker (local only, not yet persisted), account info, logout [ProfilePage]
 class ProfilePage extends StatefulWidget {
   final VoidCallback onMenuTap;
+  final bool isAdmin;
 
-  const ProfilePage({super.key, required this.onMenuTap});
+  const ProfilePage({
+    super.key,
+    required this.onMenuTap,
+    this.isAdmin = false,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-
   /// ============================== [Controllers & Services] ==============================
   final _imagePicker = ImagePicker();
 
   /// ============================== [State] ==============================
   File? _profileImage;
+  String? _firstName;
+  String? _lastName;
 
-  // NOTE: hardcoded placeholder — not the signed-in user's real account id [_accountId]
-  final String _accountId = '968641516';
+  User? get _user => FirebaseAuth.instance.currentUser;
+
+  // Prefer firstName + lastName from Firestore; fall back to a placeholder
+  // if the user hasn't filled in their profile yet. [_displayName]
+  String get _displayName {
+    final full = '${_firstName ?? ''} ${_lastName ?? ''}'.trim();
+    return full.isNotEmpty ? full : 'ผู้ใช้งาน';
+  }
+
+  String get _email => _user?.email ?? '-';
+
+  /// ============================== [Life Cycle] ==============================
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  /// ============================== [Data Loading Logic] ==============================
+  // Reads users/{uid}.firstName / lastName to build the display name shown
+  // under the avatar. Same fields written by ProfileDetailPage. [_loadUserName]
+  Future<void> _loadUserName() async {
+    final uid = _user?.uid;
+    if (uid == null) return;
+
+    try {
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data == null || !mounted) return;
+
+      setState(() {
+        _firstName = data['firstName'] as String?;
+        _lastName = data['lastName'] as String?;
+      });
+    } catch (e) {
+      debugPrint('Load profile name error: $e');
+    }
+  }
 
   /// ============================== [Image Picker Logic] ==============================
   // Pick a profile image from camera/gallery.
@@ -55,6 +99,16 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => LoginPage()),
+      (route) => false,
+    );
+  }
+
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
@@ -69,6 +123,11 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: const Icon(Icons.menu),
           onPressed: widget.onMenuTap,
         ),
+        title: Text(
+          widget.isAdmin ? 'ADMIN' : 'USER',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
         foregroundColor: Colors.white,
       ),
 
@@ -77,9 +136,10 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ---------- Header ----------
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                 decoration: const BoxDecoration(
                   color: emasColor,
                   borderRadius: BorderRadius.only(
@@ -119,9 +179,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'โปรไฟล์ของฉัน',
-                      style: TextStyle(
+                    Text(
+                      _displayName,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -129,7 +189,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'ID: $_accountId',
+                      _email,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withOpacity(0.75),
@@ -141,96 +201,52 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 24),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+              // ---------- โปรไฟล์ ----------
+              _CardGroup(
+                children: [
+                  _InfoTile(
+                    icon: Icons.person_outline_rounded,
+                    label: 'โปรไฟล์',
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFFBBBBBB),
+                    ),
+                    isLast: true,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ProfileDetailPage(),
+                        ),
+                      );
+                      // Refresh name in case it was edited on ProfileDetailPage
+                      _loadUserName();
+                    },
                   ),
-                  child: Column(
-                    children: [
-                      _InfoTile(
-                        icon: Icons.person_outline_rounded,
-                        label: 'รูปโปรไฟล์',
-                        trailing: GestureDetector(
-                          onTap: _pickProfileImage,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor:
-                                    const Color(0xFFB39DDB).withOpacity(0.2),
-                                backgroundImage: _profileImage != null
-                                    ? FileImage(_profileImage!)
-                                    : null,
-                                child: _profileImage == null
-                                    ? const Icon(
-                                        Icons.person,
-                                        color: Color(0xFFB39DDB),
-                                        size: 20,
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: Color(0xFFBBBBBB),
-                                size: 22,
-                              ),
-                            ],
-                          ),
-                        ),
-                        isLast: false,
-                      ),
-
-                      _InfoTile(
-                        icon: Icons.badge_outlined,
-                        label: 'บัญชี',
-                        trailing: Text(
-                          _accountId,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF999999),
-                          ),
-                        ),
-                        isLast: false,
-                      ),
-
-                      _InfoTile(
-                        icon: Icons.admin_panel_settings_outlined,
-                        label: 'Logout',
-                        trailing: const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFBBBBBB),
-                        ),
-                        isLast: true,
-                        onTap: () async {
-                          await FirebaseAuth.instance.signOut();
-
-                          if (!mounted) return;
-
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LoginPage(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
+
+              const SizedBox(height: 16),
+
+              // ---------- Logout ----------
+              _CardGroup(
+                children: [
+                  _InfoTile(
+                    icon: Icons.logout_rounded,
+                    label: 'Logout',
+                    labelColor: Colors.redAccent,
+                    iconColor: Colors.redAccent,
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFFBBBBBB),
+                    ),
+                    isLast: true,
+                    onTap: _logout,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -239,7 +255,34 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-// One row in the info card [_InfoTile]
+// White rounded card wrapping a group of _InfoTile rows [_CardGroup]
+class _CardGroup extends StatelessWidget {
+  const _CardGroup({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(children: children),
+      ),
+    );
+  }
+}
+
+// One row in an info card [_InfoTile]
 class _InfoTile extends StatelessWidget {
   const _InfoTile({
     required this.icon,
@@ -247,6 +290,8 @@ class _InfoTile extends StatelessWidget {
     required this.trailing,
     required this.isLast,
     this.onTap,
+    this.labelColor,
+    this.iconColor,
   });
 
   final IconData icon;
@@ -254,10 +299,13 @@ class _InfoTile extends StatelessWidget {
   final Widget trailing;
   final bool isLast;
   final VoidCallback? onTap;
+  final Color? labelColor;
+  final Color? iconColor;
 
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
+    final iconTint = iconColor ?? const Color(0xFFe85d6a);
     return Column(
       children: [
         InkWell(
@@ -275,19 +323,18 @@ class _InfoTile extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    // NOTE: hardcoded hex duplicates emasColor — file already imports it above
-                    color: const Color(0xFFe85d6a).withOpacity(0.08),
+                    color: iconTint.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: const Color(0xFFe85d6a), size: 20),
+                  child: Icon(icon, color: iconTint, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF1A1A1A),
+                    color: labelColor ?? const Color(0xFF1A1A1A),
                   ),
                 ),
                 const Spacer(),
@@ -382,7 +429,6 @@ class _SheetTile extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          // NOTE: hardcoded hex duplicates emasColor — same as _InfoTile above
           color: (color ?? const Color(0xFFe85d6a)).withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
         ),
