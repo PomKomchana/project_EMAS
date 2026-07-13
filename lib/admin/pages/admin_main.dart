@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_announcements.dart';
 import 'admin_report_list.dart';
 import 'admin_report_form.dart';
+import 'admin_report_detail.dart';
 import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
@@ -297,7 +298,7 @@ class _AdminDashboard extends StatelessWidget {
                   const Text('กิจกรรมล่าสุด',
                       style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  _buildActivityCard(activity),
+                  _buildActivityCard(context, activity),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -325,6 +326,8 @@ class _AdminDashboard extends StatelessWidget {
         subtitle: data['description'] ?? '-',
         time: ts is Timestamp ? ts.toDate() : null,
         status: data['status'],
+        docId: doc.id,
+        data: data,
       ));
     }
 
@@ -336,6 +339,8 @@ class _AdminDashboard extends StatelessWidget {
         title: data['title'] ?? '-',
         subtitle: data['content'] ?? '-',
         time: ts is Timestamp ? ts.toDate() : null,
+        docId: doc.id,
+        data: data,
       ));
     }
 
@@ -383,6 +388,26 @@ class _AdminDashboard extends StatelessWidget {
     if (diff.inHours < 24) return '${diff.inHours} ชม.ที่แล้ว';
     if (diff.inDays < 7) return '${diff.inDays} วันที่แล้ว';
     return '${time.day}/${time.month}/${time.year}';
+  }
+
+  // "ใหม่" badge if posted within the last 24 hours [_isRecent]
+  bool _isRecent(DateTime? time) {
+    if (time == null) return false;
+    final diff = DateTime.now().difference(time);
+    return diff.inHours < 24 && !diff.isNegative;
+  }
+
+  /// ============================== [Navigation Logic] ==============================
+  // Report items → AdminReportDetailPage. News items have no dedicated detail page here. [_openActivityDetail]
+  void _openActivityDetail(BuildContext context, _ActivityItem item) {
+    if (item.type != _ActivityType.report) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminReportDetailPage(reportId: item.docId, data: item.data),
+      ),
+    );
   }
 
   /// ============================== [Widgets] ==============================
@@ -488,7 +513,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   // Recent activity card: report + news items merged into one feed [_buildActivityCard]
-  Widget _buildActivityCard(List<_ActivityItem> items) {
+  Widget _buildActivityCard(BuildContext context, List<_ActivityItem> items) {
     if (items.isEmpty) {
       return Container(
         width: double.infinity,
@@ -507,76 +532,110 @@ class _AdminDashboard extends StatelessWidget {
       );
     }
 
+    return Column(
+      children: [
+        for (final item in items) ...[
+          _buildActivityTile(context, item),
+          const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+
+  // Single activity row: left border by status/news, badge for recent items,
+  // tappable → detail page for reports only [_buildActivityTile]
+  Widget _buildActivityTile(BuildContext context, _ActivityItem item) {
+    final isReport = item.type == _ActivityType.report;
+    final borderColor = isReport ? _reportStatusColor(item.status) : emasColor;
+    final isRecent = _isRecent(item.time);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
+        border: Border(left: BorderSide(color: borderColor, width: 4)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          for (var i = 0; i < items.length; i++) ...[
-            _buildActivityTile(items[i]),
-            if (i != items.length - 1)
-              Divider(height: 1, indent: 56, color: Colors.grey.shade100),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // Single activity row: icon badge, title/subtitle, relative time [_buildActivityTile]
-  Widget _buildActivityTile(_ActivityItem item) {
-    final isReport = item.type == _ActivityType.report;
-    final iconColor = isReport ? _reportStatusColor(item.status) : emasColor;
-
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isReport ? Icons.report_rounded : Icons.campaign_rounded,
-              size: 17,
-              color: iconColor,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: isReport ? () => _openActivityDetail(context, item) : null,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.title,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
-                const SizedBox(height: 2),
-                Text(item.subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12.5)),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: borderColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isReport ? Icons.report_rounded : Icons.campaign_rounded,
+                    size: 17,
+                    color: borderColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(item.title,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                          ),
+                          if (isRecent) ...[
+                            const SizedBox(width: 6),
+                            _buildNewBadge(),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(item.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 12.5)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(_relativeTime(item.time),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
+                if (isReport) ...[
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 18),
+                ],
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(_relativeTime(item.time),
-              style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
-        ],
+        ),
       ),
     );
   }
 
-  // Accent color per report status, used for the activity icon badge [_reportStatusColor]
+  // Small pink "ใหม่" pill for items posted within the last 24 hours [_buildNewBadge]
+  Widget _buildNewBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
+      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  // Accent color per report status, used for the activity icon badge + left border [_reportStatusColor]
   Color _reportStatusColor(String? status) {
     switch (status) {
       case 'รอดำเนินการ': return Colors.orange;
@@ -597,12 +656,16 @@ class _ActivityItem {
   final String subtitle;
   final DateTime? time;
   final String? status;
+  final String docId;
+  final Map<String, dynamic> data;
 
   _ActivityItem({
     required this.type,
     required this.title,
     required this.subtitle,
     required this.time,
+    required this.docId,
+    required this.data,
     this.status,
   });
 }

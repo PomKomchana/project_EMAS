@@ -199,7 +199,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   bool _isRecent(DateTime? createdAt) {
     if (createdAt == null) return false;
     final diff = DateTime.now().difference(createdAt);
-    return diff.inHours < 48 && !diff.isNegative;
+    return diff.inHours < 24 && !diff.isNegative;
   }
 
   String _formatDate(DateTime? createdAt) {
@@ -674,18 +674,18 @@ void _showFeedFilterSheet() {
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                           ),
 
-                          if (isRecent) ...[
-                            _buildNewBadge(),
-                            const SizedBox(width: 6),
-                          ],
+                          const SizedBox(width: 6),
+                          _buildAdminBadge(),
+                          const SizedBox(width: 6),
+
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               _buildSeverityBadge(severity),
-
-                              const SizedBox(height: 4),
-
-                              _buildAdminBadge(),
+                              if (isRecent) ...[
+                                const SizedBox(height: 4),
+                                _buildNewBadge(),
+                              ],
                             ],
                           ),
                         ],
