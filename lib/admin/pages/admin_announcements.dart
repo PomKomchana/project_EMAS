@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'admin_report_detail.dart';
 import 'admin_report_form.dart';
@@ -156,6 +161,8 @@ class AdminAnnouncementsPage extends StatelessWidget {
           title: data['title'] ?? '-',
           subtitle: data['content'] ?? '-',
           time: ts is Timestamp ? ts.toDate() : null,
+          imageUrl: data['imageUrl'] as String?,
+          link: data['link'] as String?,
         ));
       }
     }
@@ -196,6 +203,17 @@ class AdminAnnouncementsPage extends StatelessWidget {
   String _formatDate(DateTime? time) {
     if (time == null) return '-';
     return '${time.day}/${time.month}/${time.year}';
+  }
+
+  Future<void> _openLink(String url) async {
+    var normalized = url.trim();
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      normalized = 'https://$normalized';
+    }
+    final uri = Uri.tryParse(normalized);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   /// ============================== [Navigation Logic] ==============================
@@ -241,7 +259,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
               subtitle: 'ประกาศทั่วไปสำหรับผู้ใช้',
               onTap: () {
                 Navigator.pop(ctx);
-                _showNewsDialog(context);
+                _openNewsForm(context);
               },
             ),
             const SizedBox(height: 12),
@@ -290,6 +308,9 @@ class AdminAnnouncementsPage extends StatelessWidget {
   }
 
   Widget _buildNewsCard(BuildContext context, _FeedItem item) {
+    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
+    final hasLink = item.link != null && item.link!.isNotEmpty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -301,56 +322,94 @@ class AdminAnnouncementsPage extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: const Icon(Icons.campaign_rounded, color: emasColor, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  const SizedBox(height: 4),
-                  Text(item.subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
-                  const SizedBox(height: 6),
-                  Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (hasImage) ...[
+                  _buildThumbnail(item.imageUrl),
+                  const SizedBox(width: 12),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.campaign_rounded, color: emasColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
-                      const SizedBox(width: 4),
-                      Text(_formatDate(item.time), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const SizedBox(height: 4),
+                      Text(item.subtitle,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                          const SizedBox(width: 4),
+                          Text(_formatDate(item.time), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            Column(
-              children: [
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _showNewsDialog(context, doc: item.doc),
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Icon(Icons.edit_rounded, size: 19, color: Colors.grey.shade500),
-                  ),
                 ),
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _deleteNews(context, item.doc.id),
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red.shade400),
-                  ),
+                Column(
+                  children: [
+                    InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => _openNewsForm(context, doc: item.doc),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(Icons.edit_rounded, size: 19, color: Colors.grey.shade500),
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => _deleteNews(context, item.doc.id),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red.shade400),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+            if (hasLink) ...[
+              const SizedBox(height: 10),
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => _openLink(item.link!),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.link_rounded, size: 16, color: Colors.blue),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          item.link!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12.5, color: Colors.blue, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -549,83 +608,12 @@ class AdminAnnouncementsPage extends StatelessWidget {
   }
 
   /// ============================== [News Logic] ==============================
-  void _showNewsDialog(BuildContext context, {QueryDocumentSnapshot? doc}) {
-    final titleCtrl = TextEditingController(
-        text: doc != null ? (doc.data() as Map<String, dynamic>)['title'] ?? '' : '');
-    final contentCtrl = TextEditingController(
-        text: doc != null ? (doc.data() as Map<String, dynamic>)['content'] ?? '' : '');
-    final isEdit = doc != null;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        icon: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-          child: Icon(isEdit ? Icons.edit_rounded : Icons.add_circle_outline_rounded, color: emasColor),
-        ),
-        title: Text(isEdit ? 'แก้ไขข่าวสาร' : 'เพิ่มข่าวสารใหม่', textAlign: TextAlign.center),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleCtrl,
-                decoration: InputDecoration(
-                  labelText: 'หัวข้อ *',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: emasColor, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: contentCtrl,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  labelText: 'เนื้อหา',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: emasColor, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('ยกเลิก')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: emasColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () async {
-              if (titleCtrl.text.trim().isEmpty) return;
-
-              if (isEdit) {
-                await _adminService.updateNews(
-                  docId: doc!.id,
-                  title: titleCtrl.text.trim(),
-                  content: contentCtrl.text.trim(),
-                );
-              } else {
-                await _adminService.addNews(
-                  title: titleCtrl.text.trim(),
-                  content: contentCtrl.text.trim(),
-                );
-              }
-
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: Text(isEdit ? 'บันทึก' : 'เพิ่ม', style: const TextStyle(color: Colors.white)),
-          ),
-        ],
+  // Opens the full-page news composer (create or edit) instead of the old small AlertDialog [_openNewsForm]
+  void _openNewsForm(BuildContext context, {QueryDocumentSnapshot? doc}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _NewsFormPage(adminService: _adminService, doc: doc),
       ),
     );
   }
@@ -674,6 +662,7 @@ class _FeedItem {
   final String? severity;
   final String? status;
   final String? imageUrl;
+  final String? link;
 
   _FeedItem({
     required this.type,
@@ -684,5 +673,342 @@ class _FeedItem {
     this.severity,
     this.status,
     this.imageUrl,
+    this.link,
   });
+}
+
+/// ============================== [News Form Page] ==============================
+// Full-page composer for adding/editing a news item — bigger layout with image + link attachment [_NewsFormPage]
+class _NewsFormPage extends StatefulWidget {
+  final AdminService adminService;
+  final QueryDocumentSnapshot? doc;
+
+  const _NewsFormPage({required this.adminService, this.doc});
+
+  @override
+  State<_NewsFormPage> createState() => _NewsFormPageState();
+}
+
+class _NewsFormPageState extends State<_NewsFormPage> {
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _contentCtrl;
+  late final TextEditingController _linkCtrl;
+
+  File? _pickedImage;
+  String? _existingImageUrl;
+  bool _saving = false;
+
+  bool get _isEdit => widget.doc != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final data = widget.doc?.data() as Map<String, dynamic>?;
+    _titleCtrl = TextEditingController(text: data?['title'] ?? '');
+    _contentCtrl = TextEditingController(text: data?['content'] ?? '');
+    _linkCtrl = TextEditingController(text: data?['link'] ?? '');
+    _existingImageUrl = data?['imageUrl'] as String?;
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _contentCtrl.dispose();
+    _linkCtrl.dispose();
+    super.dispose();
+  }
+
+  /// ============================== [Image Attachment] ==============================
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 80, maxWidth: 1600);
+    if (picked != null) {
+      setState(() {
+        _pickedImage = File(picked.path);
+        _existingImageUrl = null; // will be replaced on save
+      });
+    }
+  }
+
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 18),
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: emasColor),
+              title: const Text('เลือกรูปจากคลังภาพ'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: emasColor),
+              title: const Text('ถ่ายรูปใหม่'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _removeImage() {
+    setState(() {
+      _pickedImage = null;
+      _existingImageUrl = null;
+    });
+  }
+
+  Future<String?> _uploadImageIfNeeded() async {
+    if (_pickedImage == null) return _existingImageUrl;
+    final ref = FirebaseStorage.instance
+        .ref('news_images/${DateTime.now().millisecondsSinceEpoch}_${widget.hashCode}.jpg');
+    await ref.putFile(_pickedImage!);
+    return ref.getDownloadURL();
+  }
+
+  /// ============================== [Save] ==============================
+  Future<void> _save() async {
+    if (_titleCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กรุณากรอกหัวข้อข่าวสาร')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final imageUrl = await _uploadImageIfNeeded();
+      final link = _linkCtrl.text.trim();
+
+      if (_isEdit) {
+        await widget.adminService.updateNews(
+          docId: widget.doc!.id,
+          title: _titleCtrl.text.trim(),
+          content: _contentCtrl.text.trim(),
+          imageUrl: imageUrl,
+          link: link.isEmpty ? null : link,
+        );
+      } else {
+        await widget.adminService.addNews(
+          title: _titleCtrl.text.trim(),
+          content: _contentCtrl.text.trim(),
+          imageUrl: imageUrl,
+          link: link.isEmpty ? null : link,
+        );
+      }
+
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// ============================== [Build] ==============================
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2F2F7),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+        title: Text(_isEdit ? 'แก้ไขข่าวสาร' : 'เพิ่มข่าวสารใหม่',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionLabel('รูปภาพประกอบ'),
+              const SizedBox(height: 10),
+              _buildImagePicker(),
+              const SizedBox(height: 22),
+              _buildSectionLabel('หัวข้อ *'),
+              const SizedBox(height: 10),
+              _buildTextField(
+                controller: _titleCtrl,
+                hint: 'ระบุหัวข้อข่าวสาร',
+              ),
+              const SizedBox(height: 22),
+              _buildSectionLabel('เนื้อหา'),
+              const SizedBox(height: 10),
+              _buildTextField(
+                controller: _contentCtrl,
+                hint: 'รายละเอียดของข่าวสาร...',
+                maxLines: 10,
+                minLines: 6,
+              ),
+              const SizedBox(height: 22),
+              _buildSectionLabel('ลิงก์แนบ (ถ้ามี)'),
+              const SizedBox(height: 10),
+              _buildTextField(
+                controller: _linkCtrl,
+                hint: 'https://...',
+                icon: Icons.link_rounded,
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: emasColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.4),
+                        )
+                      : Text(_isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มข่าวสาร',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15.5)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String text) {
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: Colors.black87));
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    int maxLines = 1,
+    int? minLines,
+    IconData? icon,
+    TextInputType? keyboardType,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        minLines: minLines,
+        keyboardType: keyboardType,
+        style: const TextStyle(fontSize: 15),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+          prefixIcon: icon != null ? Icon(icon, color: emasColor, size: 20) : null,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: emasColor, width: 1.6),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    final hasNewImage = _pickedImage != null;
+    final hasExistingImage = !hasNewImage && _existingImageUrl != null && _existingImageUrl!.isNotEmpty;
+
+    if (!hasNewImage && !hasExistingImage) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: _showImageSourceSheet,
+        child: Container(
+          width: double.infinity,
+          height: 160,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_photo_alternate_outlined, size: 34, color: Colors.grey.shade400),
+              const SizedBox(height: 8),
+              Text('แตะเพื่อแนบรูปภาพ', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            width: double.infinity,
+            height: 180,
+            child: hasNewImage
+                ? Image.file(_pickedImage!, fit: BoxFit.cover)
+                : Image.network(_existingImageUrl!, fit: BoxFit.cover),
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Row(
+            children: [
+              _buildImageActionButton(Icons.edit_rounded, _showImageSourceSheet),
+              const SizedBox(width: 8),
+              _buildImageActionButton(Icons.close_rounded, _removeImage),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageActionButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(7),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), shape: BoxShape.circle),
+        child: Icon(icon, size: 17, color: Colors.white),
+      ),
+    );
+  }
 }
