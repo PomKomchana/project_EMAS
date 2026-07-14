@@ -150,6 +150,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
+    final imageUrl = data['imageUrl'] as String?;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
@@ -186,6 +187,10 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                // รูปภาพ
+                _buildHeroImage(imageUrl),
+                const SizedBox(height: 14),
+
                 // ข้อมูลรายงาน
                 GlassCard(
                   child: Column(
@@ -297,6 +302,46 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Widgets] ==============================
+  // Hero photo. NOTE: Hero tag 'img_${widget.reportId}' must match the tag used
+  // on the admin report list thumbnail for the hero animation to work — adjust
+  // if the admin list page uses a different tag pattern [_buildHeroImage]
+  Widget _buildHeroImage(String? imageUrl) {
+    return Hero(
+      tag: 'img_${widget.reportId}',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: imageUrl != null
+            ? Image.network(
+                imageUrl,
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              )
+            : _buildNoImagePlaceholder(),
+      ),
+    );
+  }
+
+  // Shown when there's no photo [_buildNoImagePlaceholder]
+  Widget _buildNoImagePlaceholder() {
+    return Container(
+      height: 220,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.image_outlined, size: 48, color: Colors.grey.shade400),
+          const SizedBox(height: 8),
+          Text('ไม่มีรูปภาพ', style: TextStyle(color: Colors.grey.shade500)),
+        ],
+      ),
+    );
+  }
+
   // Icon + label + value row for the report info card [_info]
   Widget _info(IconData icon, String label, String value) {
     return Padding(

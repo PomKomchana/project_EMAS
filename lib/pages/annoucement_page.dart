@@ -199,7 +199,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   bool _isRecent(DateTime? createdAt) {
     if (createdAt == null) return false;
     final diff = DateTime.now().difference(createdAt);
-    return diff.inHours < 48 && !diff.isNegative;
+    return diff.inHours < 24 && !diff.isNegative;
   }
 
   String _formatDate(DateTime? createdAt) {
@@ -211,70 +211,61 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     await Future.delayed(const Duration(milliseconds: 600));
   }
 
-  // Opens feed filter sheet [showFeedFilterSheet]
+// Opens feed filter sheet [showFeedFilterSheet]
 void _showFeedFilterSheet() {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (_) => ClipRRect(
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(24),
-      ),
-      child: Container(
-        color: Colors.white,
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              const Text(
-                'กรองประเภทประกาศ',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              for (final f in FeedFilter.values)
-                ListTile(
-                  leading: Icon(
-                    _currentFilter == f
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    color: emasColor,
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            color: Colors.white.withValues(alpha: 0.85),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  title: Text(feedFilterLabel(f)),
-                  onTap: () {
-                    setState(() {
-                      _currentFilter = f;
-                    });
-
-                    Navigator.pop(context);
-                  },
-                ),
-
-              const SizedBox(height: 8),
-            ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    'กรองประเภทประกาศ',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  for (final f in FeedFilter.values)
+                    ListTile(
+                      leading: Icon(
+                        _currentFilter == f
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: emasColor,
+                      ),
+                      title: Text(feedFilterLabel(f)),
+                      onTap: () {
+                        setState(() {
+                          _currentFilter = f;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   /// ============================== [Navigation Logic] ==============================
   // Report items → shared ReportDetailPage (same page the "รายการแจ้งปัญหา" tab uses) [_openReportDetail]
@@ -387,11 +378,8 @@ void _showFeedFilterSheet() {
       ),
 
       actions: [
-        IconButton(
-          icon: const Icon(Icons.filter_list_rounded),
-          tooltip: 'กรองประกาศ',
-          onPressed: _showFeedFilterSheet,
-        ),
+        _buildFilterChip(),
+        const SizedBox(width: 12),
       ],
 
       flexibleSpace: Container(
@@ -473,6 +461,36 @@ void _showFeedFilterSheet() {
   }
 
   /// ============================== [Widgets] ==============================
+  // Pill-shaped filter chip in AppBar showing current filter label [_buildFilterChip]
+  Widget _buildFilterChip() {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: _showFeedFilterSheet,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.filter_list_rounded, size: 17, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(
+                feedFilterLabel(_currentFilter),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
   Widget _buildSkeletonList() {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -674,18 +692,18 @@ void _showFeedFilterSheet() {
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                           ),
 
-                          if (isRecent) ...[
-                            _buildNewBadge(),
-                            const SizedBox(width: 6),
-                          ],
+                          const SizedBox(width: 6),
+                          _buildAdminBadge(),
+                          const SizedBox(width: 6),
+
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               _buildSeverityBadge(severity),
-
-                              const SizedBox(height: 4),
-
-                              _buildAdminBadge(),
+                              if (isRecent) ...[
+                                const SizedBox(height: 4),
+                                _buildNewBadge(),
+                              ],
                             ],
                           ),
                         ],
