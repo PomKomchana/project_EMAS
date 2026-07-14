@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -33,35 +34,38 @@ void showFeedFilterSheet(
     backgroundColor: Colors.transparent,
     builder: (_) => ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Container(
-        color: Colors.white,
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-              ),
-              const SizedBox(height: 16),
-              const Text('กรองประเภทประกาศ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              for (final f in FeedFilter.values)
-                ListTile(
-                  leading: Icon(
-                    current == f ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                    color: emasColor,
-                  ),
-                  title: Text(feedFilterLabel(f)),
-                  onTap: () {
-                    onSelect(f);
-                    Navigator.pop(context);
-                  },
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          color: Colors.white.withValues(alpha: 0.85),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
                 ),
-              const SizedBox(height: 8),
-            ],
+                const SizedBox(height: 16),
+                const Text('กรองประเภทประกาศ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8),
+                for (final f in FeedFilter.values)
+                  ListTile(
+                    leading: Icon(
+                      current == f ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                      color: emasColor,
+                    ),
+                    title: Text(feedFilterLabel(f)),
+                    onTap: () {
+                      onSelect(f);
+                      Navigator.pop(context);
+                    },
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
