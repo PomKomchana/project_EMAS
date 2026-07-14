@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -25,8 +24,13 @@ class _AdminMainPageState extends State<AdminMainPage> {
   /// ============================== [State] ==============================
   int _selectedIndex = 0;
 
-  // Filter for the announcements feed — owned here so it can be shown in the shared AppBar [_feedFilter]
-  FeedFilter _feedFilter = FeedFilter.all;
+  // Which status tab AdminReportListPage should open on, and which scope
+  // (ทั้งหมด/ผู้ใช้/แอดมิน) sub-tab it starts on. Both set together from the
+  // dashboard's scope-chooser bottom sheet (_openReportList). Bumping either
+  // changes the page's key below, forcing a fresh TabController + sub-tab
+  // state with the new initial values. [_reportListTabIndex, _reportListScope]
+  int _reportListTabIndex = 0;
+  ReportScopeFilter _reportListScope = ReportScopeFilter.all;
 
   // Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
@@ -47,17 +51,33 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Current tab's page, rebuilt so _AdminAnnouncementsPage gets the latest filter [_currentPage]
+  // Current tab's page [_currentPage]
   Widget _currentPage() {
     switch (_selectedIndex) {
       case 0:
-        return const _AdminDashboard();
+        return _AdminDashboard(onOpenReportList: _openReportList);
       case 1:
-        return const AdminReportListPage();
+        return AdminReportListPage(
+          key: ValueKey('$_reportListTabIndex-$_reportListScope'),
+          initialTabIndex: _reportListTabIndex,
+          initialScope: _reportListScope,
+        );
       case 2:
       default:
-        return AdminAnnouncementsPage(filter: _feedFilter);
+        return const AdminAnnouncementsPage();
     }
+  }
+
+  // Called after the dashboard's scope-chooser bottom sheet resolves — switch
+  // to the "รายการแจ้งซ่อม" bottom-nav tab directly on the matching status +
+  // scope. No push, no back button — the bottom nav bar stays visible, same
+  // as tapping the nav item manually. [_openReportList]
+  void _openReportList(int tabIndex, ReportScopeFilter scope) {
+    setState(() {
+      _selectedIndex = 1;
+      _reportListTabIndex = tabIndex;
+      _reportListScope = scope;
+    });
   }
 
   /// ============================== [Build] ==============================
@@ -87,14 +107,6 @@ class _AdminMainPageState extends State<AdminMainPage> {
           ),
         ),
         foregroundColor: Colors.white,
-        actions: [
-          // Filter pill only shows on the "ประกาศ" tab [_selectedIndex == 2]
-          if (_selectedIndex == 2)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: _buildFeedFilterButton(),
-            ),
-        ],
       ),
       body: _currentPage(),
       bottomNavigationBar: _buildBottomNav(),
@@ -102,42 +114,6 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 
   /// ============================== [Widgets] ==============================
-  // Glass filter pill, matches ReportListPage's status filter button style [_buildFeedFilterButton]
-  Widget _buildFeedFilterButton() {
-    return GestureDetector(
-      onTap: () => showFeedFilterSheet(
-        context,
-        _feedFilter,
-        (f) => setState(() => _feedFilter = f),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  feedFilterLabel(_feedFilter),
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   // Themed bottom nav bar, pill-style selected indicator matching brand color [_buildBottomNav]
   Widget _buildBottomNav() {
     return Container(
@@ -203,9 +179,21 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 }
 
+// Per-status counts split by who created the report — feeds the stat card's
+// "user/admin" display. Purely informational now; tapping a card always
+// opens "ทั้งหมด" and the admin can switch scope from the sub-tabs there. [_StatusCount]
+class _StatusCount {
+  final int user;
+  final int admin;
+  const _StatusCount({this.user = 0, this.admin = 0});
+  int get total => user + admin;
+}
+
 // Dashboard tab: stats + trend chart + recent activity, all live from Firestore streams [_AdminDashboard]
 class _AdminDashboard extends StatelessWidget {
-  const _AdminDashboard();
+  final void Function(int tabIndex, ReportScopeFilter scope) onOpenReportList;
+
+  const _AdminDashboard({required this.onOpenReportList});
 
   /// ============================== [Controllers & Services] ==============================
   static final _adminService = AdminService();
@@ -228,19 +216,29 @@ class _AdminDashboard extends StatelessWidget {
 
         final reportDocs = reportSnap.data?.docs ?? [];
 
-        // Status counts tallied client-side from the raw stream [pending, inProgress, done]
-        int pending = 0, inProgress = 0, done = 0;
+        // Status counts tallied client-side from the raw stream, split by
+        // who created each report (user vs admin) [pending, inProgress, done]
+        int pendingUser = 0, pendingAdmin = 0;
+        int inProgressUser = 0, inProgressAdmin = 0;
+        int doneUser = 0, doneAdmin = 0;
+
         for (final doc in reportDocs) {
           final data = doc.data() as Map<String, dynamic>;
           final status = data['status'] ?? '';
+          final isAdminCreated = data['createdBy'] == 'admin';
+
           if (status == 'รอดำเนินการ') {
-            pending++;
+            isAdminCreated ? pendingAdmin++ : pendingUser++;
           } else if (status == 'กำลังดำเนินการ') {
-            inProgress++;
+            isAdminCreated ? inProgressAdmin++ : inProgressUser++;
           } else if (status == 'เสร็จสิ้น') {
-            done++;
+            isAdminCreated ? doneAdmin++ : doneUser++;
           }
         }
+
+        final pending = _StatusCount(user: pendingUser, admin: pendingAdmin);
+        final inProgress = _StatusCount(user: inProgressUser, admin: inProgressAdmin);
+        final done = _StatusCount(user: doneUser, admin: doneAdmin);
 
         return StreamBuilder<QuerySnapshot>(
           stream: _adminService.newsStream(),
@@ -264,26 +262,32 @@ class _AdminDashboard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _StatCard(
-                            title: 'รอดำเนินการ',
-                            count: pending,
-                            color: Colors.orange,
-                            icon: Icons.pending_actions_rounded),
+                          title: 'รอดำเนินการ',
+                          counts: pending,
+                          color: Colors.orange,
+                          icon: Icons.pending_actions_rounded,
+                          onTap: () => _openScopeChooser(context, 0, 'รอดำเนินการ', pending),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: _StatCard(
-                            title: 'กำลังดำเนินการ',
-                            count: inProgress,
-                            color: Colors.blue,
-                            icon: Icons.engineering_rounded),
+                          title: 'กำลังดำเนินการ',
+                          counts: inProgress,
+                          color: Colors.blue,
+                          icon: Icons.engineering_rounded,
+                          onTap: () => _openScopeChooser(context, 1, 'กำลังดำเนินการ', inProgress),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: _StatCard(
-                            title: 'เสร็จสิ้น',
-                            count: done,
-                            color: Colors.green,
-                            icon: Icons.check_circle_rounded),
+                          title: 'เสร็จสิ้น',
+                          counts: done,
+                          color: Colors.green,
+                          icon: Icons.check_circle_rounded,
+                          onTap: () => _openScopeChooser(context, 2, 'เสร็จสิ้น', done),
+                        ),
                       ),
                     ],
                   ),
@@ -406,6 +410,81 @@ class _AdminDashboard extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => AdminReportDetailPage(reportId: item.docId, data: item.data),
+      ),
+    );
+  }
+
+  // Bottom sheet: choose ทั้งหมด/ผู้ใช้/แอดมิน before switching to the
+  // "รายการแจ้งซ่อม" tab on the given status. Skips the sheet when only one
+  // scope has any items — no point asking when there's only one place to go. [_openScopeChooser]
+  void _openScopeChooser(
+    BuildContext context,
+    int tabIndex,
+    String status,
+    _StatusCount counts,
+  ) {
+    if (counts.total == 0) return;
+
+    if (counts.admin == 0) {
+      onOpenReportList(tabIndex, ReportScopeFilter.user);
+      return;
+    }
+    if (counts.user == 0) {
+      onOpenReportList(tabIndex, ReportScopeFilter.admin);
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 18),
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+            ),
+            Text('ดูรายการ "$status"', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 18),
+            _buildScopeOption(
+              icon: Icons.apps_rounded,
+              label: 'ทั้งหมด',
+              subtitle: '${counts.total} รายการทั้งหมด',
+              onTap: () {
+                Navigator.pop(ctx);
+                onOpenReportList(tabIndex, ReportScopeFilter.all);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildScopeOption(
+              icon: Icons.person_rounded,
+              label: 'ผู้ใช้',
+              subtitle: '${counts.user} รายการที่ผู้ใช้แจ้งเข้ามา',
+              onTap: () {
+                Navigator.pop(ctx);
+                onOpenReportList(tabIndex, ReportScopeFilter.user);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildScopeOption(
+              icon: Icons.admin_panel_settings_rounded,
+              label: 'แอดมิน',
+              subtitle: '${counts.admin} รายการที่แอดมินสร้างเอง',
+              onTap: () {
+                Navigator.pop(ctx);
+                onOpenReportList(tabIndex, ReportScopeFilter.admin);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -644,6 +723,49 @@ class _AdminDashboard extends StatelessWidget {
       default: return emasColor;
     }
   }
+
+  // Row inside the scope-chooser bottom sheet — matches _buildChooserOption's
+  // style in admin_announcements.dart [_buildScopeOption]
+  Widget _buildScopeOption({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: emasColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Feed entry kind: report or news [_ActivityType]
@@ -737,56 +859,69 @@ class _TrendChartPainter extends CustomPainter {
   }
 }
 
-// Single stat tile: icon + count + label [_StatCard]
+// Single stat tile: icon + user/admin split count + label. Tappable —
+// pushes AdminReportListPage on the matching status tab, "ทั้งหมด" sub-tab. [_StatCard]
 class _StatCard extends StatelessWidget {
   final String title;
-  final int count;
+  final _StatusCount counts;
   final Color color;
   final IconData icon;
+  final VoidCallback onTap;
 
   const _StatCard({
     required this.title,
-    required this.count,
+    required this.counts,
     required this.color,
     required this.icon,
+    required this.onTap,
   });
 
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+        onTap: counts.total == 0 ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 22),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 10),
+              Text('${counts.user}/${counts.admin}',
+                  style: TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+              const SizedBox(height: 2),
+              Text('ผู้ใช้/แอดมิน',
+                  style: TextStyle(fontSize: 9.5, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 6),
+              Text(title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+            ],
           ),
-          const SizedBox(height: 10),
-          Text('$count',
-              style: TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-          const SizedBox(height: 4),
-          Text(title,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
-        ],
+        ),
       ),
     );
   }

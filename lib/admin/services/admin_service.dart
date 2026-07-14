@@ -39,18 +39,11 @@ class AdminService {
     return _reportsRef.snapshots();
   }
 
-  // Reports filtered by status, newest first — used by the admin tabbed list [reportsByStatusStream]
+  // Reports filtered by status, newest first — used by the admin tabbed list.
+  // Scope (user/admin) is applied client-side on top of this in AdminReportListPage. [reportsByStatusStream]
   Stream<QuerySnapshot> reportsByStatusStream(String status) {
     return _reportsRef
         .where('status', isEqualTo: status)
-        .orderBy('createdAt', descending: true)
-        .snapshots();
-  }
-
-  // Reports created by admin, newest first — used by the merged announcements feed [adminReportsStream]
-  Stream<QuerySnapshot> adminReportsStream() {
-    return _reportsRef
-        .where('createdBy', isEqualTo: 'admin')
         .orderBy('createdAt', descending: true)
         .snapshots();
   }

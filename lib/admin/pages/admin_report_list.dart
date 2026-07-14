@@ -7,10 +7,39 @@ import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
+// Which subset of reports a status tab is showing — drives the nested
+// scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) inside each status page. [ReportScopeFilter]
+enum ReportScopeFilter { all, user, admin }
+
+extension ReportScopeFilterLabel on ReportScopeFilter {
+  String get label {
+    switch (this) {
+      case ReportScopeFilter.all: return 'ทั้งหมด';
+      case ReportScopeFilter.user: return 'ผู้ใช้';
+      case ReportScopeFilter.admin: return 'แอดมิน';
+    }
+  }
+}
+
 // Admin report list: tabbed by status ("รอดำเนินการ" / "กำลังดำเนินการ" / "เสร็จสิ้น").
-// Shows only user-submitted reports — admin-created ones live in the "ประกาศ" tab. [AdminReportListPage]
+// Each status tab carries its own scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) so
+// user-submitted and admin-created reports live in one place. [AdminReportListPage]
+//
+// `showAppBar: false` (default) — embedded inside AdminMainPage's bottom-nav
+// shell, which already provides its own AppBar.
+// `showAppBar: true` — pushed standalone (e.g. from the dashboard stat cards),
+// so this page renders its own AppBar with a back button.
 class AdminReportListPage extends StatefulWidget {
-  const AdminReportListPage({super.key});
+  final int initialTabIndex;
+  final ReportScopeFilter initialScope;
+  final bool showAppBar;
+
+  const AdminReportListPage({
+    super.key,
+    this.initialTabIndex = 0,
+    this.initialScope = ReportScopeFilter.all,
+    this.showAppBar = false,
+  });
 
   @override
   State<AdminReportListPage> createState() => _AdminReportListPageState();
@@ -26,7 +55,11 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
@@ -40,6 +73,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
+      appBar: widget.showAppBar ? _buildAppBar() : null,
       body: Column(
         children: [
           Container(
@@ -80,10 +114,10 @@ class _AdminReportListPageState extends State<AdminReportListPage>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [
-                _FilteredList(status: 'รอดำเนินการ'),
-                _FilteredList(status: 'กำลังดำเนินการ'),
-                _FilteredList(status: 'เสร็จสิ้น'),
+              children: [
+                _StatusTabContent(status: 'รอดำเนินการ', initialScope: widget.initialScope),
+                _StatusTabContent(status: 'กำลังดำเนินการ', initialScope: widget.initialScope),
+                _StatusTabContent(status: 'เสร็จสิ้น', initialScope: widget.initialScope),
               ],
             ),
           ),
@@ -91,12 +125,158 @@ class _AdminReportListPageState extends State<AdminReportListPage>
       ),
     );
   }
+
+  /// ============================== [Widgets] ==============================
+  // Gradient AppBar matching AdminMainPage's style — used only when pushed standalone [_buildAppBar]
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: const Text(
+        'รายการแจ้งซ่อม',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+      ),
+      centerTitle: false,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [emasColor, emasColorDarker],
+          ),
+        ),
+      ),
+      foregroundColor: Colors.white,
+    );
+  }
 }
 
-// One tab's content: reports filtered by status, excludes admin-created, newest first [_FilteredList]
+// One status tab's content: scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) + the
+// filtered list beneath. Keeps its own scope selection alive when the user
+// swipes between status tabs. [_StatusTabContent]
+class _StatusTabContent extends StatefulWidget {
+  final String status;
+  final ReportScopeFilter initialScope;
+
+  const _StatusTabContent({required this.status, required this.initialScope});
+
+  @override
+  State<_StatusTabContent> createState() => _StatusTabContentState();
+}
+
+class _StatusTabContentState extends State<_StatusTabContent>
+    with AutomaticKeepAliveClientMixin {
+  late ReportScopeFilter _scope = widget.initialScope;
+
+  /// ============================== [Life Cycle] ==============================
+  @override
+  bool get wantKeepAlive => true;
+
+  /// ============================== [Build] ==============================
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: _buildScopeTabs(),
+        ),
+        Expanded(
+          child: _FilteredList(status: widget.status, scope: _scope),
+        ),
+      ],
+    );
+  }
+
+  /// ============================== [Widgets] ==============================
+  // Segmented control for ทั้งหมด/ผู้ใช้/แอดมิน within this status — an
+  // emasColor pill slides between segments via AnimatedPositioned, with
+  // labels crossfading between grey and white on top. [_buildScopeTabs]
+  Widget _buildScopeTabs() {
+    final selectedIndex = ReportScopeFilter.values.indexOf(_scope);
+
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final segmentWidth = constraints.maxWidth / ReportScopeFilter.values.length;
+          return Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                left: segmentWidth * selectedIndex,
+                width: segmentWidth,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: emasColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: emasColor.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  for (final s in ReportScopeFilter.values) Expanded(child: _buildScopeChip(s)),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildScopeChip(ReportScopeFilter s) {
+    final isSelected = _scope == s;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _scope = s),
+      child: Center(
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : Colors.grey.shade500,
+          ),
+          child: Text(s.label),
+        ),
+      ),
+    );
+  }
+}
+
+// Status + scope filtered list, newest first [_FilteredList]
 class _FilteredList extends StatelessWidget {
   final String status;
-  const _FilteredList({required this.status});
+  final ReportScopeFilter scope;
+  const _FilteredList({required this.status, required this.scope});
 
   /// ============================== [Controllers & Services] ==============================
   static final _adminService = AdminService();
@@ -111,11 +291,14 @@ class _FilteredList extends StatelessWidget {
     }
   }
 
-  // Admin-created reports live in the "ประกาศ" tab now — exclude them here [_excludeAdminCreated]
-  List<QueryDocumentSnapshot> _excludeAdminCreated(List<QueryDocumentSnapshot> docs) {
+  // Apply the ทั้งหมด/ผู้ใช้/แอดมิน sub-filter on top of the status stream [_filterByScope]
+  List<QueryDocumentSnapshot> _filterByScope(List<QueryDocumentSnapshot> docs) {
+    if (scope == ReportScopeFilter.all) return docs;
+
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      return data['createdBy'] != 'admin';
+      final isAdminCreated = data['createdBy'] == 'admin';
+      return scope == ReportScopeFilter.admin ? isAdminCreated : !isAdminCreated;
     }).toList();
   }
 
@@ -151,7 +334,7 @@ class _FilteredList extends StatelessWidget {
           );
         }
 
-        final docs = _excludeAdminCreated(snapshot.data?.docs ?? []);
+        final docs = _filterByScope(snapshot.data?.docs ?? []);
 
         if (docs.isEmpty) {
           return Center(
@@ -175,7 +358,7 @@ class _FilteredList extends StatelessWidget {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final doc = docs[index];
@@ -188,7 +371,9 @@ class _FilteredList extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  // Full-info card: thumbnail, severity badge, status chip + date [_buildReportCard]
+  // Full-info card: thumbnail, severity badge, status chip + date. Tags
+  // admin-created reports with a small "Admin" pill so scope is visible
+  // even in the "ทั้งหมด" sub-tab. [_buildReportCard]
   Widget _buildReportCard(
     BuildContext context,
     String docId,
@@ -203,6 +388,7 @@ class _FilteredList extends StatelessWidget {
     final severity = getSeverityInfo(data['severity'] as String?);
     final date = _formatDate(data['createdAt']);
     final isRecent = _isRecent(data['createdAt']);
+    final isAdminCreated = data['createdBy'] == 'admin';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -251,6 +437,10 @@ class _FilteredList extends StatelessWidget {
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                           ),
+                          if (isAdminCreated) ...[
+                            const SizedBox(width: 6),
+                            _buildAdminBadge(),
+                          ],
                           const SizedBox(width: 6),
                           if (isRecent) ...[
                             _buildNewBadge(),
@@ -343,6 +533,21 @@ class _FilteredList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
       child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  // Small "Admin" pill so admin-created reports are still identifiable in the "ทั้งหมด" sub-tab [_buildAdminBadge]
+  Widget _buildAdminBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: emasColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'Admin',
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: emasColorDarker),
+      ),
     );
   }
 
