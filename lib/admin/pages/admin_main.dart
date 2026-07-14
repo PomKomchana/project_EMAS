@@ -32,6 +32,11 @@ class _AdminMainPageState extends State<AdminMainPage> {
   int _reportListTabIndex = 0;
   ReportScopeFilter _reportListScope = ReportScopeFilter.all;
 
+  // Announcements feed filter (ทั้งหมด/ข่าวสาร/แจ้งปัญหา) — owned here so it
+  // can be rendered in the shared AppBar (as a filter action) instead of
+  // living inside AdminAnnouncementsPage itself. [_feedFilter]
+  FeedFilter _feedFilter = FeedFilter.all;
+
   // Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
     (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'แดชบอร์ด'),
@@ -64,7 +69,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
         );
       case 2:
       default:
-        return const AdminAnnouncementsPage();
+        return AdminAnnouncementsPage(filter: _feedFilter);
     }
   }
 
@@ -97,6 +102,20 @@ class _AdminMainPageState extends State<AdminMainPage> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: false,
+        actions: [
+          // Only meaningful on the Announcements tab — filters the merged
+          // ข่าวสาร/แจ้งปัญหา feed via the bottom sheet in admin_announcements.dart [filter action]
+          if (_selectedIndex == 2)
+            IconButton(
+              icon: const Icon(Icons.filter_list_rounded),
+              tooltip: 'กรองประกาศ',
+              onPressed: () => showFeedFilterSheet(
+                context,
+                _feedFilter,
+                (f) => setState(() => _feedFilter = f),
+              ),
+            ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
