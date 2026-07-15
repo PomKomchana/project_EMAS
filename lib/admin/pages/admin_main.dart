@@ -32,11 +32,6 @@ class _AdminMainPageState extends State<AdminMainPage> {
   int _reportListTabIndex = 0;
   ReportScopeFilter _reportListScope = ReportScopeFilter.all;
 
-  // Announcements feed filter (ทั้งหมด/ข่าวสาร/แจ้งปัญหา) — owned here so it
-  // can be rendered in the shared AppBar (as a filter action) instead of
-  // living inside AdminAnnouncementsPage itself. [_feedFilter]
-  FeedFilter _feedFilter = FeedFilter.all;
-
   // Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
     (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'แดชบอร์ด'),
@@ -69,7 +64,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
         );
       case 2:
       default:
-        return AdminAnnouncementsPage(filter: _feedFilter);
+        return const AdminAnnouncementsPage();
     }
   }
 
@@ -83,6 +78,77 @@ class _AdminMainPageState extends State<AdminMainPage> {
       _reportListTabIndex = tabIndex;
       _reportListScope = scope;
     });
+  }
+
+  // Global "เพิ่มประกาศ" bottom sheet — reachable from every admin tab (the
+  // FAB below is at the Scaffold level, not per-page). Finishing either flow
+  // switches straight to the page showing what was just created: a news post
+  // lands on "ประกาศ", a report lands on "รายการแจ้งซ่อม". [_showCreateChooser]
+  void _showCreateChooser() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 18),
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+            ),
+            const Text('เพิ่มประกาศใหม่', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 18),
+            _buildChooserOption(
+              icon: Icons.campaign_rounded,
+              label: 'ข่าวสาร',
+              subtitle: 'ประกาศทั่วไปสำหรับผู้ใช้',
+              onTap: () {
+                Navigator.pop(ctx);
+                _createNews();
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildChooserOption(
+              icon: Icons.report_rounded,
+              label: 'แจ้งปัญหา',
+              subtitle: 'สร้างรายการแจ้งซ่อม',
+              onTap: () {
+                Navigator.pop(ctx);
+                _createReport();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Push NewsFormPage; it pops `true` on successful save, so land on ประกาศ [_createNews]
+  Future<void> _createNews() async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => NewsFormPage(adminService: AdminService())),
+    );
+    if (saved == true && mounted) {
+      setState(() => _selectedIndex = 2);
+    }
+  }
+
+  // showAdminReportForm now resolves `true` only on a real save (its
+  // _submit pops with true; closing via the X button pops null) — so this
+  // only switches tabs when a report was actually created. [_createReport]
+  Future<void> _createReport() async {
+    final saved = await showAdminReportForm(context);
+    if (saved == true && mounted) {
+      setState(() => _selectedIndex = 1);
+    }
   }
 
   /// ============================== [Build] ==============================
@@ -102,20 +168,6 @@ class _AdminMainPageState extends State<AdminMainPage> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: false,
-        actions: [
-          // Only meaningful on the Announcements tab — filters the merged
-          // ข่าวสาร/แจ้งปัญหา feed via the bottom sheet in admin_announcements.dart [filter action]
-          if (_selectedIndex == 2)
-            IconButton(
-              icon: const Icon(Icons.filter_list_rounded),
-              tooltip: 'กรองประกาศ',
-              onPressed: () => showFeedFilterSheet(
-                context,
-                _feedFilter,
-                (f) => setState(() => _feedFilter = f),
-              ),
-            ),
-        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -128,11 +180,62 @@ class _AdminMainPageState extends State<AdminMainPage> {
         foregroundColor: Colors.white,
       ),
       body: _currentPage(),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: emasColor,
+        foregroundColor: Colors.white,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('เพิ่มประกาศ', style: TextStyle(fontWeight: FontWeight.w600)),
+        onPressed: _showCreateChooser,
+      ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   /// ============================== [Widgets] ==============================
+  // Row inside the create-chooser bottom sheet [_buildChooserOption]
+  Widget _buildChooserOption({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: emasColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Themed bottom nav bar, pill-style selected indicator matching brand color [_buildBottomNav]
   Widget _buildBottomNav() {
     return Container(

@@ -52,6 +52,24 @@ class AdminService {
     return uploadTask.ref.getDownloadURL();
   }
 
+  /// ============================== [Auth] ==============================
+  // Re-verify the signed-in admin's password before a destructive action
+  // (delete news/report). Used by showDeleteConfirmDialog. Returns false on
+  // any failure (wrong password, no email/password account, network error)
+  // rather than throwing, so callers can just check the bool. [reauthenticate]
+  Future<bool> reauthenticate(String password) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.email == null) return false;
+
+    try {
+      final credential = EmailAuthProvider.credential(email: user.email!, password: password);
+      await user.reauthenticateWithCredential(credential);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// ============================== [Report Reads] ==============================
   // Raw reports stream, unfiltered — used by the dashboard for stat counts [reportsStream]
   Stream<QuerySnapshot> reportsStream() {
@@ -66,15 +84,6 @@ class AdminService {
         .orderBy('createdAt', descending: true)
         .snapshots();
   }
-
-  // Reports created by an admin (via createReport), newest first — used to
-// merge admin-created reports into the announcements feed. [adminReportsStream]
-Stream<QuerySnapshot> adminReportsStream() {
-  return _reportsRef
-      .where('createdBy', isEqualTo: 'admin')
-      .orderBy('createdAt', descending: true)
-      .snapshots();
-}
 
   /// ============================== [Report Writes] ==============================
   // Create a report on behalf of the admin (username fixed to 'Admin').

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_detail.dart';
+import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
@@ -325,6 +326,20 @@ class _FilteredList extends StatelessWidget {
     return diff.inHours < 24 && !diff.isNegative;
   }
 
+  /// ============================== [Report Actions Logic] ==============================
+  // Confirm (via password reauthentication) + delete this report, called
+  // directly from the list row's trash icon [_deleteReport]
+  Future<void> _deleteReport(BuildContext context, String docId) async {
+    final confirmed = await showDeleteConfirmDialog(
+      context,
+      title: 'ยืนยันการลบ',
+      message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการลบรายการนี้ การกระทำนี้ไม่สามารถย้อนกลับได้',
+    );
+
+    if (!confirmed) return;
+    await _adminService.deleteReport(docId);
+  }
+
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
@@ -382,8 +397,10 @@ class _FilteredList extends StatelessWidget {
 
   /// ============================== [Widgets] ==============================
   // Full-info card: thumbnail, severity badge, status chip + date. Tags
-  // admin-created reports with a small "Admin" pill so scope is visible
-  // even in the "ทั้งหมด" sub-tab. [_buildReportCard]
+  // admin-created reports with a small "Admin" pill so scope is visible even
+  // in the "ทั้งหมด" sub-tab. "ใหม่" sits with the status chip at the bottom
+  // rather than crowding the title row. Actions are explicit pencil (open
+  // detail) + trash (delete) icons instead of a whole-card tap. [_buildReportCard]
   Widget _buildReportCard(
     BuildContext context,
     String docId,
@@ -414,76 +431,86 @@ class _FilteredList extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AdminReportDetailPage(reportId: docId, data: data),
-              ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildThumbnail(imageUrl),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildThumbnail(imageUrl),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '$building · $floor · ห้อง $room',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                          ),
-                          if (isAdminCreated) ...[
-                            const SizedBox(width: 6),
-                            _buildAdminBadge(),
-                          ],
-                          const SizedBox(width: 6),
-                          if (isRecent) ...[
-                            _buildNewBadge(),
-                            const SizedBox(width: 6),
-                          ],
-                          _buildSeverityBadge(severity),
-                        ],
+                      Expanded(
+                        child: Text(
+                          '$building · $floor · ห้อง $room',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        desc,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _buildStatusChip(status),
-                          const SizedBox(width: 8),
-                          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
-                          const SizedBox(width: 4),
-                          Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                        ],
-                      ),
+                      if (isAdminCreated) ...[
+                        const SizedBox(width: 6),
+                        _buildAdminBadge(),
+                      ],
+                      const SizedBox(width: 6),
+                      _buildSeverityBadge(severity),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    desc,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildStatusChip(status),
+                      if (isRecent) ...[
+                        const SizedBox(width: 6),
+                        _buildNewBadge(),
+                      ],
+                      const SizedBox(width: 8),
+                      Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminReportDetailPage(reportId: docId, data: data),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(Icons.edit_rounded, size: 19, color: Colors.grey.shade500),
+                  ),
                 ),
-                const SizedBox(width: 4),
-                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _deleteReport(context, docId),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red.shade400),
+                  ),
+                ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -537,7 +564,8 @@ class _FilteredList extends StatelessWidget {
     );
   }
 
-  // Small pink "ใหม่" pill for reports created within the last 24 hours [_buildNewBadge]
+  // Small pink "ใหม่" pill for reports created within the last 24 hours —
+  // now sits next to the status chip instead of the title row [_buildNewBadge]
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

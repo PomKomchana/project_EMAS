@@ -16,9 +16,12 @@ import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/image_widgets.dart';
 import '../../shared/widgets/map_widgets.dart';
 
-// Bottom sheet: Admin [showAdminReportForm]
-Future<void> showAdminReportForm(BuildContext context) {
-  return showModalBottomSheet(
+// Bottom sheet: Admin. Resolves to `true` only when a report was actually
+// saved (see AdminReportForm._submit) — `null`/`false` means the admin
+// closed it without saving. Callers (e.g. AdminMainPage's global FAB) should
+// check this before treating the flow as complete. [showAdminReportForm]
+Future<bool?> showAdminReportForm(BuildContext context) {
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -251,7 +254,10 @@ class _AdminReportFormState extends State<AdminReportForm>
       );
 
       if (!mounted) return;
-      Navigator.pop(context);
+      // Pop `true` — distinguishes a real save from the admin just closing
+      // the sheet, so callers like AdminMainPage's global FAB know whether
+      // to switch to the report list tab. [Navigator.pop(context, true)]
+      Navigator.pop(context, true);
       _showSnack('เพิ่มรายการแจ้งซ่อมสำเร็จ ✓', Colors.green.shade600);
     } catch (e) {
       _showSnack('เกิดข้อผิดพลาด: $e', Colors.red.shade600);

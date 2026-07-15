@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
@@ -85,41 +86,15 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
-  // Confirm + delete this report [_deleteReport]
+  // Confirm (via password reauthentication) + delete this report [_deleteReport]
   Future<void> _deleteReport() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        icon: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-        ),
-        title: const Text('ยืนยันการลบ'),
-        content: const Text('ต้องการลบรายการนี้หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้'),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('ลบ', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmDialog(
+      context,
+      title: 'ยืนยันการลบ',
+      message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการลบรายการนี้ การกระทำนี้ไม่สามารถย้อนกลับได้',
     );
 
-    if (confirm != true) return;
+    if (!confirmed) return;
 
     try {
       await _adminService.deleteReport(widget.reportId);
