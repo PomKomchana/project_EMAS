@@ -4,7 +4,7 @@ import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/map_constants.dart';
 import '../../shared/constants/report_constants.dart';
 
-class ReportDetailSheet extends StatelessWidget {
+class ReportDetailSheet extends StatefulWidget {
   final Map<String, dynamic> report;
   final VoidCallback onClose;
 
@@ -15,135 +15,177 @@ class ReportDetailSheet extends StatelessWidget {
   });
 
   @override
+  State<ReportDetailSheet> createState() => _ReportDetailSheetState();
+}
+
+class _ReportDetailSheetState extends State<ReportDetailSheet> {
+  // [SHEET-CONFIG] ขนาดต่างๆ ของ sheet (สัดส่วนของความสูงหน้าจอ)
+  static const double _initialSize = 0.55;
+  static const double _minSize = 0.15;
+  static const double _maxSize = 1.0;
+  // [SHEET-CLOSE-THRESHOLD] ถ้าลากลงมาต่ำกว่านี้ ให้ถือว่าผู้ใช้ต้องการปิด
+  static const double _closeThreshold = 0.2;
+
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+
+  bool _isClosing = false;
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  void _handleClose() {
+    if (_isClosing) return;
+    _isClosing = true;
+    widget.onClose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Material(
-        color: Colors.transparent,
-        child: GestureDetector(
-          onTap: () {},
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F7F9),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, -6),
+    return Positioned.fill(
+      child: NotificationListener<DraggableScrollableNotification>(
+        onNotification: (notification) {
+          // [SHEET-DRAG-DOWN-TO-CLOSE] เมื่อผู้ใช้ลากลงมาต่ำกว่า threshold ให้ปิด sheet
+          if (notification.extent <= _closeThreshold + 0.001) {
+            _handleClose();
+          }
+          return true;
+        },
+        child: DraggableScrollableSheet(
+          controller: _sheetController,
+          initialChildSize: _initialSize,
+          minChildSize: _minSize,
+          maxChildSize: _maxSize,
+          expand: true,
+          snap: true,
+          // [SHEET-SNAP-POINTS] ระยะที่ sheet จะ snap ไปหาเมื่อปล่อยนิ้ว
+          snapSizes: [_minSize, _initialSize, _maxSize],
+          builder: (context, scrollController) {
+            return Material(
+              color: Colors.transparent,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F7F9),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 24,
+                      offset: const Offset(0, -6),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(child: SizedBox()),
-                      Expanded(
-                        child: Center(
-                          child: Container(
-                            width: 36,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade400,
-                              borderRadius: BorderRadius.circular(10),
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                  physics: const ClampingScrollPhysics(),
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(child: SizedBox()),
+                        Expanded(
+                          child: Center(
+                            child: Container(
+                              width: 36,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade400,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: _closeButton(),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: _buildDetailImage(report['imageUrl']),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.location_on_rounded, size: 20, color: emasColor),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '${report['building'] ?? '-'} · '
-                          '${report['floor'] ?? '-'} · '
-                          'ห้อง ${report['room'] ?? '-'}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            height: 1.3,
-                            letterSpacing: -0.2,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: _closeButton(),
                           ),
                         ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: _buildDetailImage(widget.report['imageUrl']),
                       ),
-                    ],
-                  ),
+                    ),
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 18),
 
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      if (report['severity'] != null)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.location_on_rounded, size: 20, color: emasColor),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${widget.report['building'] ?? '-'} · '
+                            '${widget.report['floor'] ?? '-'} · '
+                            'ห้อง ${widget.report['room'] ?? '-'}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              height: 1.3,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        if (widget.report['severity'] != null)
+                          Builder(builder: (_) {
+                            final severity = getSeverityInfo(widget.report['severity']);
+                            return _dotChip(
+                              severity.label,
+                              dotColor: severity.color,
+                              bg: severity.color.withOpacity(0.12),
+                              fg: severity.color,
+                            );
+                          }),
                         Builder(builder: (_) {
-                          final severity = getSeverityInfo(report['severity']);
-                          return _dotChip(
-                            severity.label,
-                            dotColor: severity.color,
-                            bg: severity.color.withOpacity(0.12),
-                            fg: severity.color,
-                          );
+                          final status = widget.report['status'] ?? ReportStatus.pending;
+                          final colors = getStatusColors(status);
+                          return _chip(status, bg: colors.bg, color: colors.fg);
                         }),
-                      Builder(builder: (_) {
-                        final status = report['status'] ?? ReportStatus.pending;
-                        final colors = getStatusColors(status);
-                        return _chip(status, bg: colors.bg, color: colors.fg);
-                      }),
-                      _chip(
-                        report['date'] ?? '-',
-                        bg: Colors.grey.shade200,
-                        color: Colors.grey.shade700,
-                        icon: Icons.calendar_today_outlined,
-                      ),
-                    ],
-                  ),
+                        _chip(
+                          widget.report['date'] ?? '-',
+                          bg: Colors.grey.shade200,
+                          color: Colors.grey.shade700,
+                          icon: Icons.calendar_today_outlined,
+                        ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 18),
-                  Divider(height: 1, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 18),
+                    Divider(height: 1, color: Colors.grey.shade300),
+                    const SizedBox(height: 16),
 
-                  _sectionSimple(
-                    icon: Icons.description_outlined,
-                    title: "รายละเอียด",
-                    color: Colors.black87,
-                    text: report['description'] ?? 'ไม่มีรายละเอียด',
-                  ),
-                ],
+                    _sectionSimple(
+                      icon: Icons.description_outlined,
+                      title: "รายละเอียด",
+                      color: Colors.black87,
+                      text: widget.report['description'] ?? 'ไม่มีรายละเอียด',
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -151,7 +193,7 @@ class ReportDetailSheet extends StatelessWidget {
 
   Widget _closeButton() {
     return GestureDetector(
-      onTap: onClose,
+      onTap: _handleClose,
       child: Container(
         padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
