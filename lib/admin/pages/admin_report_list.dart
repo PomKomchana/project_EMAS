@@ -51,6 +51,11 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   /// ============================== [Controllers & Services] ==============================
   late final TabController _tabController;
 
+  /// ============================== [State] ==============================
+  // Shared across all 3 status tabs — picking "ผู้ใช้" while on "รอดำเนินการ"
+  // keeps "ผู้ใช้" selected after swiping to "กำลังดำเนินการ" / "เสร็จสิ้น". [_scope]
+  late ReportScopeFilter _scope = widget.initialScope;
+
   /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
@@ -115,9 +120,21 @@ class _AdminReportListPageState extends State<AdminReportListPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _StatusTabContent(status: 'รอดำเนินการ', initialScope: widget.initialScope),
-                _StatusTabContent(status: 'กำลังดำเนินการ', initialScope: widget.initialScope),
-                _StatusTabContent(status: 'เสร็จสิ้น', initialScope: widget.initialScope),
+                _StatusTabContent(
+                  status: 'รอดำเนินการ',
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
+                ),
+                _StatusTabContent(
+                  status: 'กำลังดำเนินการ',
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
+                ),
+                _StatusTabContent(
+                  status: 'เสร็จสิ้น',
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
+                ),
               ],
             ),
           ),
@@ -155,30 +172,23 @@ class _AdminReportListPageState extends State<AdminReportListPage>
 }
 
 // One status tab's content: scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) + the
-// filtered list beneath. Keeps its own scope selection alive when the user
-// swipes between status tabs. [_StatusTabContent]
-class _StatusTabContent extends StatefulWidget {
+// filtered list beneath. `scope` is owned by AdminReportListPage and shared
+// across all 3 status tabs, so picking a scope on one tab carries over when
+// swiping to another. [_StatusTabContent]
+class _StatusTabContent extends StatelessWidget {
   final String status;
-  final ReportScopeFilter initialScope;
+  final ReportScopeFilter scope;
+  final ValueChanged<ReportScopeFilter> onScopeChanged;
 
-  const _StatusTabContent({required this.status, required this.initialScope});
-
-  @override
-  State<_StatusTabContent> createState() => _StatusTabContentState();
-}
-
-class _StatusTabContentState extends State<_StatusTabContent>
-    with AutomaticKeepAliveClientMixin {
-  late ReportScopeFilter _scope = widget.initialScope;
-
-  /// ============================== [Life Cycle] ==============================
-  @override
-  bool get wantKeepAlive => true;
+  const _StatusTabContent({
+    required this.status,
+    required this.scope,
+    required this.onScopeChanged,
+  });
 
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return Column(
       children: [
         Padding(
@@ -186,7 +196,7 @@ class _StatusTabContentState extends State<_StatusTabContent>
           child: _buildScopeTabs(),
         ),
         Expanded(
-          child: _FilteredList(status: widget.status, scope: _scope),
+          child: _FilteredList(status: status, scope: scope),
         ),
       ],
     );
@@ -197,7 +207,7 @@ class _StatusTabContentState extends State<_StatusTabContent>
   // emasColor pill slides between segments via AnimatedPositioned, with
   // labels crossfading between grey and white on top. [_buildScopeTabs]
   Widget _buildScopeTabs() {
-    final selectedIndex = ReportScopeFilter.values.indexOf(_scope);
+    final selectedIndex = ReportScopeFilter.values.indexOf(scope);
 
     return Container(
       height: 38,
@@ -252,10 +262,10 @@ class _StatusTabContentState extends State<_StatusTabContent>
   }
 
   Widget _buildScopeChip(ReportScopeFilter s) {
-    final isSelected = _scope == s;
+    final isSelected = scope == s;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _scope = s),
+      onTap: () => onScopeChanged(s),
       child: Center(
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 220),

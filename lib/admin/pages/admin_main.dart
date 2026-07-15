@@ -198,9 +198,6 @@ class _AdminDashboard extends StatelessWidget {
   /// ============================== [Controllers & Services] ==============================
   static final _adminService = AdminService();
 
-  // Thai short weekday labels, index 0 = Monday, used by the trend chart [_weekdayLabels]
-  static const _weekdayLabels = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
-
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
@@ -245,7 +242,6 @@ class _AdminDashboard extends StatelessWidget {
           builder: (context, newsSnap) {
             final newsDocs = newsSnap.data?.docs ?? [];
             final activity = _buildActivityItems(reportDocs, newsDocs);
-            final trend = _buildTrendData(reportDocs);
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -293,10 +289,7 @@ class _AdminDashboard extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  const Text('แนวโน้มการแจ้งซ่อม (7 วันล่าสุด)',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildTrendCard(trend),
+                  _TrendSection(reportDocs: reportDocs),
                   const SizedBox(height: 24),
 
                   const Text('กิจกรรมล่าสุด',
@@ -356,29 +349,6 @@ class _AdminDashboard extends StatelessWidget {
     });
 
     return items.take(8).toList();
-  }
-
-  // Bucket report counts by day for the last 7 days (oldest → newest) [_buildTrendData]
-  List<int> _buildTrendData(List<QueryDocumentSnapshot> reportDocs) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final counts = List<int>.filled(7, 0);
-
-    for (final doc in reportDocs) {
-      final data = doc.data() as Map<String, dynamic>;
-      final ts = data['createdAt'];
-      if (ts is! Timestamp) continue;
-
-      final d = ts.toDate();
-      final day = DateTime(d.year, d.month, d.day);
-      final diff = today.difference(day).inDays;
-
-      if (diff >= 0 && diff < 7) {
-        counts[6 - diff]++;
-      }
-    }
-
-    return counts;
   }
 
   /// ============================== [UI Helpers] ==============================
@@ -535,57 +505,6 @@ class _AdminDashboard extends StatelessWidget {
           const SizedBox(height: 10),
           Text('รายการทั้งหมด $totalCount รายการ',
               style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
-        ],
-      ),
-    );
-  }
-
-  // Trend chart card wrapping the custom-painted bar chart [_buildTrendCard]
-  Widget _buildTrendCard(List<int> counts) {
-    final maxVal = counts.isEmpty ? 1 : counts.reduce((a, b) => a > b ? a : b);
-    final now = DateTime.now();
-
-    // Weekday label for each of the last 7 days, oldest → newest [labels]
-    final labels = List.generate(7, (i) {
-      final d = now.subtract(Duration(days: 6 - i));
-      return _weekdayLabels[d.weekday - 1];
-    });
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 110,
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: _TrendChartPainter(
-                counts: counts,
-                maxVal: maxVal == 0 ? 1 : maxVal,
-                barColor: emasColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              for (final label in labels)
-                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-            ],
-          ),
         ],
       ),
     );
@@ -855,6 +774,532 @@ class _TrendChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrendChartPainter oldDelegate) {
+    return oldDelegate.counts != counts || oldDelegate.maxVal != maxVal;
+  }
+}
+
+// Date range for the trend chart — week buckets by day, month buckets by
+// 7-day window within the last 4 weeks. [_TrendPeriod]
+enum _TrendPeriod { week, month }
+
+// Bar (existing custom painter) vs line (new below), toggled independently
+// of the period. [_ChartMode]
+enum _ChartMode { bar, line }
+
+// Bucketed counts + their axis labels for whichever period is selected [_TrendData]
+class _TrendData {
+  final List<int> counts;
+  final List<String> labels;
+  const _TrendData({required this.counts, required this.labels});
+}
+
+// Trend chart card: period picker (สัปดาห์/เดือน) + chart-mode toggle
+// (bar/line) sitting above the custom-painted chart. Holds its own local UI
+// state since neither selection needs to survive outside this card. [_TrendSection]
+class _TrendSection extends StatefulWidget {
+  final List<QueryDocumentSnapshot> reportDocs;
+
+  const _TrendSection({required this.reportDocs});
+
+  @override
+  State<_TrendSection> createState() => _TrendSectionState();
+}
+
+class _TrendSectionState extends State<_TrendSection> {
+  /// ============================== [State] ==============================
+  _TrendPeriod _period = _TrendPeriod.week;
+  _ChartMode _mode = _ChartMode.bar;
+
+  // Calendar month shown in "เดือน" mode — defaults to the current month,
+  // changeable via the month/year picker dialog. Only relevant to
+  // _buildMonthData; "สัปดาห์" mode always shows the trailing 7 days. [_selectedMonth]
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
+  // Thai short weekday labels, index 0 = Monday — used in สัปดาห์ mode [_weekdayLabels]
+  static const _weekdayLabels = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+
+  // Thai month names, full + 3-letter abbreviation — no intl dependency,
+  // same approach as the rest of the app's date formatting. [_thaiMonths, _thaiMonthsShort]
+  static const _thaiMonths = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+  ];
+  static const _thaiMonthsShort = [
+    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  ];
+
+  /// ============================== [Data] ==============================
+  // Bucket report counts for the selected period [_buildData]
+  _TrendData _buildData() {
+    return _period == _TrendPeriod.week ? _buildWeekData() : _buildMonthData();
+  }
+
+  // Daily buckets for the last 7 days (oldest → newest) [_buildWeekData]
+  _TrendData _buildWeekData() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final counts = List<int>.filled(7, 0);
+
+    for (final doc in widget.reportDocs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final ts = data['createdAt'];
+      if (ts is! Timestamp) continue;
+
+      final d = ts.toDate();
+      final day = DateTime(d.year, d.month, d.day);
+      final diff = today.difference(day).inDays;
+
+      if (diff >= 0 && diff < 7) {
+        counts[6 - diff]++;
+      }
+    }
+
+    final labels = List.generate(7, (i) {
+      final d = now.subtract(Duration(days: 6 - i));
+      return _weekdayLabels[d.weekday - 1];
+    });
+
+    return _TrendData(counts: counts, labels: labels);
+  }
+
+  // Weekly buckets within the selected calendar month (oldest → newest).
+  // Number of buckets varies with the month's length (4 or 5). [_buildMonthData]
+  _TrendData _buildMonthData() {
+    final year = _selectedMonth.year;
+    final month = _selectedMonth.month;
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final bucketCount = (daysInMonth / 7).ceil();
+    final counts = List<int>.filled(bucketCount, 0);
+
+    for (final doc in widget.reportDocs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final ts = data['createdAt'];
+      if (ts is! Timestamp) continue;
+
+      final d = ts.toDate();
+      if (d.year != year || d.month != month) continue;
+
+      final bucket = ((d.day - 1) ~/ 7).clamp(0, bucketCount - 1);
+      counts[bucket]++;
+    }
+
+    final labels = List.generate(bucketCount, (i) => 'สัปดาห์ ${i + 1}');
+    return _TrendData(counts: counts, labels: labels);
+  }
+
+  /// ============================== [Build] ==============================
+  @override
+  Widget build(BuildContext context) {
+    final data = _buildData();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text('แนวโน้มการแจ้งซ่อม',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            ),
+            _buildModeToggle(),
+          ],
+        ),
+        const SizedBox(height: 10),
+        _buildPeriodTabs(),
+        if (_period == _TrendPeriod.month) ...[
+          const SizedBox(height: 10),
+          _buildMonthSelector(),
+        ],
+        const SizedBox(height: 12),
+        _buildChartCard(data.counts, data.labels),
+      ],
+    );
+  }
+
+  /// ============================== [Widgets] ==============================
+  // Segmented control for สัปดาห์/เดือน — same sliding-pill pattern as the
+  // ทั้งหมด/ผู้ใช้/แอดมิน scope tabs in AdminReportListPage. [_buildPeriodTabs]
+  Widget _buildPeriodTabs() {
+    final selectedIndex = _TrendPeriod.values.indexOf(_period);
+
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final segmentWidth = constraints.maxWidth / _TrendPeriod.values.length;
+          return Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                left: segmentWidth * selectedIndex,
+                width: segmentWidth,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: emasColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: emasColor.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(child: _buildPeriodChip(_TrendPeriod.week, 'สัปดาห์')),
+                  Expanded(child: _buildPeriodChip(_TrendPeriod.month, 'เดือน')),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPeriodChip(_TrendPeriod p, String label) {
+    final isSelected = _period == p;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _period = p),
+      child: Center(
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : Colors.grey.shade500,
+          ),
+          child: Text(label),
+        ),
+      ),
+    );
+  }
+
+  // Chip showing the currently selected calendar month — tap opens the
+  // month/year picker dialog. Only shown in "เดือน" mode. [_buildMonthSelector]
+  Widget _buildMonthSelector() {
+    return GestureDetector(
+      onTap: _showMonthYearPicker,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.calendar_month_rounded, size: 16, color: emasColor),
+            const SizedBox(width: 6),
+            Text(
+              '${_thaiMonths[_selectedMonth.month - 1]} ${_selectedMonth.year}',
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: emasColorDarker),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Colors.grey.shade400),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Custom month/year picker — a year stepper above a 3x4 grid of months.
+  // No calendar package dependency, matches the app's other custom pickers. [_showMonthYearPicker]
+  void _showMonthYearPicker() {
+    int pickerYear = _selectedMonth.year;
+    final now = DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      color: emasColor,
+                      onPressed: () => setDialogState(() => pickerYear--),
+                    ),
+                    SizedBox(
+                      width: 64,
+                      child: Text(
+                        '$pickerYear',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded),
+                      color: emasColor,
+                      // Can't view trend data for years that haven't happened yet [pickerYear < now.year]
+                      onPressed: pickerYear < now.year ? () => setDialogState(() => pickerYear++) : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                GridView.count(
+                  crossAxisCount: 3,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1.8,
+                  children: List.generate(12, (i) {
+                    final m = i + 1;
+                    final isSelected = pickerYear == _selectedMonth.year && m == _selectedMonth.month;
+                    // Same reasoning as the year arrow — no data exists for future months [isFuture]
+                    final isFuture = pickerYear == now.year && m > now.month;
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: isFuture
+                          ? null
+                          : () {
+                              setState(() => _selectedMonth = DateTime(pickerYear, m));
+                              Navigator.pop(ctx);
+                            },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected ? emasColor : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          _thaiMonthsShort[i],
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? Colors.white
+                                : (isFuture ? Colors.grey.shade300 : Colors.grey.shade700),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Bar/line toggle — two small icon buttons, active one filled emasColor [_buildModeToggle]
+  Widget _buildModeToggle() {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildModeButton(_ChartMode.bar, Icons.bar_chart_rounded),
+          _buildModeButton(_ChartMode.line, Icons.show_chart_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeButton(_ChartMode m, IconData icon) {
+    final isSelected = _mode == m;
+    return GestureDetector(
+      onTap: () => setState(() => _mode = m),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: isSelected ? emasColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 18, color: isSelected ? Colors.white : Colors.grey.shade400),
+      ),
+    );
+  }
+
+  // Chart card: swaps between the bar painter and the line painter, labels
+  // beneath adapt to whichever period is selected [_buildChartCard]
+  Widget _buildChartCard(List<int> counts, List<String> labels) {
+    final maxVal = counts.isEmpty ? 1 : counts.reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 110,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: CustomPaint(
+                key: ValueKey('$_mode-$_period'),
+                size: Size.infinite,
+                painter: _mode == _ChartMode.bar
+                    ? _TrendChartPainter(
+                        counts: counts,
+                        maxVal: maxVal == 0 ? 1 : maxVal,
+                        barColor: emasColor,
+                      )
+                    : _LineChartPainter(
+                        counts: counts,
+                        maxVal: maxVal == 0 ? 1 : maxVal,
+                        lineColor: emasColor,
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              for (final label in labels)
+                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Line-chart painter for the trend data: filled area + stroked polyline +
+// dots, count labels above each point. Same no-package-dependency approach
+// as _TrendChartPainter. [_LineChartPainter]
+class _LineChartPainter extends CustomPainter {
+  final List<int> counts;
+  final int maxVal;
+  final Color lineColor;
+
+  _LineChartPainter({
+    required this.counts,
+    required this.maxVal,
+    required this.lineColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (counts.isEmpty) return;
+
+    const topPadding = 22.0; // room for the count label above the highest point
+    final chartHeight = size.height - topPadding;
+    final stepX = counts.length > 1 ? size.width / (counts.length - 1) : size.width;
+
+    final points = <Offset>[];
+    for (var i = 0; i < counts.length; i++) {
+      final ratio = counts[i] / maxVal;
+      final y = topPadding + chartHeight * (1 - ratio.clamp(0.0, 1.0));
+      final x = counts.length > 1 ? i * stepX : size.width / 2;
+      points.add(Offset(x, y));
+    }
+
+    // Filled area under the line [fillPath]
+    final fillPath = Path()..moveTo(points.first.dx, size.height);
+    for (final p in points) {
+      fillPath.lineTo(p.dx, p.dy);
+    }
+    fillPath.lineTo(points.last.dx, size.height);
+    fillPath.close();
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [lineColor.withValues(alpha: 0.18), lineColor.withValues(alpha: 0.0)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Stroked polyline [linePath]
+    final linePath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final p in points.skip(1)) {
+      linePath.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(
+      linePath,
+      Paint()
+        ..color = lineColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    // Dots + count labels [dots]
+    for (var i = 0; i < points.length; i++) {
+      final p = points[i];
+      canvas.drawCircle(p, 4, Paint()..color = lineColor);
+      canvas.drawCircle(p, 4, Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 2);
+
+      if (counts[i] > 0) {
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: '${counts[i]}',
+            style: TextStyle(color: lineColor, fontSize: 11, fontWeight: FontWeight.bold),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        textPainter.paint(canvas, Offset(p.dx - textPainter.width / 2, p.dy - 18));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
     return oldDelegate.counts != counts || oldDelegate.maxVal != maxVal;
   }
 }
