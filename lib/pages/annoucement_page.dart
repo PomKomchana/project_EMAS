@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../report/pages/report_detail_page.dart';
 import '../shared/constants/emas_colors.dart';
@@ -30,6 +31,7 @@ class _FeedItem {
   final String title;
   final String content;
   final String? imageUrl;
+  final String? link;
   final DateTime? createdAt;
   final String? severity;
   final String? status;
@@ -41,6 +43,7 @@ class _FeedItem {
     required this.content,
     required this.createdAt,
     this.imageUrl,
+    this.link,
     this.severity,
     this.status,
   });
@@ -153,6 +156,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             title: data['title'] ?? '-',
             content: data['content'] ?? '',
             imageUrl: data['imageUrl'] as String?,
+            link: data['link'] as String?,
             createdAt: ts is Timestamp ? ts.toDate() : null,
           ),
         );
@@ -209,6 +213,18 @@ class _AnnouncementPageState extends State<AnnouncementPage>
 
   Future<void> _handleRefresh() async {
     await Future.delayed(const Duration(milliseconds: 600));
+  }
+
+  // Opens an external/attached link in the browser [_openLink]
+  Future<void> _openLink(String url) async {
+    var normalized = url.trim();
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+      normalized = 'https://$normalized';
+    }
+    final uri = Uri.tryParse(normalized);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
 // Opens feed filter sheet [showFeedFilterSheet]
@@ -279,9 +295,13 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // News items → bottom sheet (no dedicated news detail page exists) [_openNewsDetail]
+  // News items → bottom sheet (no dedicated news detail page exists).
+  // Now shows the attached image full-width at the top (if any) and a
+  // tappable link row at the bottom (if any). [_openNewsDetail]
   void _openNewsDetail(_FeedItem item) {
     final date = item.createdAt != null ? _formatDate(item.createdAt) : null;
+    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
+    final hasLink = item.link != null && item.link!.isNotEmpty;
 
     showModalBottomSheet(
       context: context,
@@ -289,9 +309,9 @@ void _showFeedFilterSheet() {
       backgroundColor: Colors.transparent,
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.55,
+          initialChildSize: hasImage ? 0.7 : 0.55,
           minChildSize: 0.3,
-          maxChildSize: 0.9,
+          maxChildSize: 0.92,
           expand: false,
           builder: (context, scrollController) {
             return ClipRRect(
@@ -318,6 +338,26 @@ void _showFeedFilterSheet() {
                           ),
                         ),
                       ),
+                      if (hasImage) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: Image.network(
+                                item.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey.shade200,
+                                  child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                         child: Column(
@@ -339,6 +379,10 @@ void _showFeedFilterSheet() {
                             const SizedBox(height: 16),
                             Text(item.content,
                                 style: TextStyle(fontSize: 14, height: 1.6, color: Colors.grey.shade800)),
+                            if (hasLink) ...[
+                              const SizedBox(height: 20),
+                              _buildLinkButton(item.link!),
+                            ],
                           ],
                         ),
                       ),
@@ -576,76 +620,193 @@ void _showFeedFilterSheet() {
     return _buildReportCard(item);
   }
 
-  // News card: circle icon, title/content, date. Matches AdminAnnouncementsPage's news card style [_buildNewsCard]
+  // News card. Two layouts depending on whether an image is attached:
+  // - With image: full-width banner on top, text block below (bigger, more editorial feel)
+  // - Without image: compact icon-row layout (unchanged from before)
+  // A link chip is shown under the content whenever the news item has one. [_buildNewsCard]
   Widget _buildNewsCard(_FeedItem item) {
     final isRecent = _isRecent(item.createdAt);
+    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
+    final hasLink = item.link != null && item.link!.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           onTap: () => _openNewsDetail(item),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
+          child: hasImage
+              ? _buildNewsCardWithImage(item, isRecent, hasLink)
+              : _buildNewsCardCompact(item, isRecent, hasLink),
+        ),
+      ),
+    );
+  }
+
+  // Editorial-style card: banner image on top, title/badge/content/date below [_buildNewsCardWithImage]
+  Widget _buildNewsCardWithImage(_FeedItem item, bool isRecent, bool hasLink) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Image.network(
+              item.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.grey.shade200,
+                child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(item.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                  if (isRecent) ...[
+                    const SizedBox(width: 6),
+                    _buildNewBadge(),
+                  ],
+                ],
+              ),
+              if (item.content.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(item.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
+              ],
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                  const SizedBox(width: 4),
+                  Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  if (hasLink) ...[
+                    const Spacer(),
+                    Icon(Icons.link_rounded, size: 14, color: Colors.blue.shade400),
+                    const SizedBox(width: 3),
+                    Text('มีลิงก์แนบ',
+                        style: TextStyle(fontSize: 11, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Compact icon-row layout, used when the news item has no attached image [_buildNewsCardCompact]
+  Widget _buildNewsCardCompact(_FeedItem item, bool isRecent, bool hasLink) {
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(color: emasColor.withOpacity(0.1), shape: BoxShape.circle),
+            child: const Icon(Icons.campaign_rounded, color: emasColor, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(color: emasColor.withOpacity(0.1), shape: BoxShape.circle),
-                  child: const Icon(Icons.campaign_rounded, color: emasColor, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(item.title,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          ),
-                          if (isRecent) ...[
-                            const SizedBox(width: 6),
-                            _buildNewBadge(),
-                          ],
-                        ],
-                      ),
-                      if (item.content.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(item.content,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
-                      ],
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
-                          const SizedBox(width: 4),
-                          Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                        ],
-                      ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(item.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    ),
+                    if (isRecent) ...[
+                      const SizedBox(width: 6),
+                      _buildNewBadge(),
                     ],
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
+                if (item.content.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(item.content,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
+                ],
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                    const SizedBox(width: 4),
+                    Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    if (hasLink) ...[
+                      const Spacer(),
+                      Icon(Icons.link_rounded, size: 13, color: Colors.blue.shade400),
+                      const SizedBox(width: 3),
+                      Text('มีลิงก์แนบ',
+                          style: TextStyle(fontSize: 10.5, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
+        ],
+      ),
+    );
+  }
+
+  // Tappable link button shown inside the news detail sheet [_buildLinkButton]
+  Widget _buildLinkButton(String link) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => _openLink(link),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: emasColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: emasColor.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.link_rounded, size: 18, color: emasColor),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                link,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13.5, color: emasColor, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.open_in_new_rounded, size: 16, color: emasColor),
+          ],
         ),
       ),
     );
