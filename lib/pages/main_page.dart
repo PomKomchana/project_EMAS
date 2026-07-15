@@ -37,6 +37,8 @@ class _MainPageState extends State<MainPage> {
   /// ============================== [State] ==============================
   late int _selectedIndex;
   bool _isAdmin = false;
+  // Display name shown in the drawer header, built from firstName + lastName [_userName]
+  String? _userName;
 
   /// ============================== [Data] ==============================
   // Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
@@ -52,14 +54,13 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
-    _checkAdmin();
+    _loadUserData();
   }
 
-  /// ============================== [Admin Check Logic] ==============================
-  // Reads users/{uid}.role to decide whether to show the Admin Dashboard drawer item.
-  // NOTE: this only gates UI visibility — real admin authorization must still
-  // come from Firestore security rules, not this client-side check. [_checkAdmin]
-  Future<void> _checkAdmin() async {
+  /// ============================== [User Data Logic] ==============================
+  // Reads users/{uid}.role (admin gating) + firstName/lastName (drawer header),
+  // same fields written/read by ProfilePage / ProfileDetailPage. [_loadUserData]
+  Future<void> _loadUserData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
 
@@ -74,13 +75,16 @@ class _MainPageState extends State<MainPage> {
 
       final data = doc.data();
 
-      if (data?['role'] == 'admin') {
-        setState(() {
-          _isAdmin = true;
-        });
-      }
+      final firstName = data?['firstName'] as String?;
+      final lastName = data?['lastName'] as String?;
+      final fullName = '${firstName ?? ''} ${lastName ?? ''}'.trim();
+
+      setState(() {
+        _isAdmin = data?['role'] == 'admin';
+        _userName = fullName.isNotEmpty ? fullName : 'ผู้ใช้งาน';
+      });
     } catch (e) {
-      debugPrint('Admin check error: $e');
+      debugPrint('User data error: $e');
     }
   }
 
@@ -92,9 +96,15 @@ class _MainPageState extends State<MainPage> {
       // No AppBar here — each tab (ReportListPage/AnnouncementPage) owns its own AppBar now
       drawer: _AppDrawer(
         isAdmin: _isAdmin,
+        userName: _userName,
         onTap: (i) {
           Navigator.pop(context);
           setState(() => _selectedIndex = i);
+        },
+
+        onProfileTap: () {
+          Navigator.pop(context);
+          setState(() => _selectedIndex = 3);
         },
 
         onAdmin: () {
@@ -143,79 +153,206 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// Side drawer: nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
+// Side drawer: profile header + nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
     required this.onAdmin,
     required this.isAdmin,
     required this.onEmergency,
+    required this.onProfileTap,
+    this.userName,
   });
 
   final void Function(int) onTap;
   final VoidCallback onAdmin;
   final bool isAdmin;
   final VoidCallback onEmergency;
+  final VoidCallback onProfileTap;
+  final String? userName;
 
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(color: emasColor),
-            child: Text('EMAS', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+      backgroundColor: const Color(0xFFFAFAFA),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // [DRAWER-HEADER] Profile avatar + user name, tappable to open profile tab
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onProfileTap,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: emasColor,
+                        child: const Icon(Icons.person, color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName ?? 'กำลังโหลด...',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'ดูโปรไฟล์',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                    ],
+                  ),
+                ),
+              ),
             ),
 
-        if (isAdmin)
-          _DrawerItem(icon: Icons.space_dashboard_rounded, label: 'Admin Dashboard', onTap: onAdmin),
+            if (isAdmin) ...[
+              _SectionLabel('จัดการระบบ'),
+              _DrawerItem(
+                icon: Icons.space_dashboard_rounded,
+                label: 'Admin Dashboard',
+                onTap: onAdmin,
+                iconColor: emasColor,
+              ),
+              const SizedBox(height: 8),
+              const _DrawerDivider(),
+            ],
 
-        if (isAdmin)
-          const Divider(height: 1),
+            _SectionLabel('เมนูหลัก'),
+            _DrawerItem(icon: Icons.home_rounded, label: 'หน้าหลัก', onTap: () => onTap(0)),
+            _DrawerItem(icon: Icons.list_alt_rounded, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
+            _DrawerItem(icon: Icons.notifications_none_rounded, label: 'ข่าวสาร', onTap: () => onTap(2)),
+            _DrawerItem(icon: Icons.person_rounded, label: 'โปรไฟล์', onTap: () => onTap(3)),
 
-          _DrawerItem(icon: Icons.home, label: 'หน้าหลัก', onTap: () => onTap(0)),
-          _DrawerItem(icon: Icons.list_alt, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
-          _DrawerItem(icon: Icons.notifications_none, label: 'ข่าวสาร', onTap: () => onTap(2)),
-          _DrawerItem(icon: Icons.person, label: 'โปรไฟล์', onTap: () => onTap(3)),
+            const SizedBox(height: 8),
+            const _DrawerDivider(),
 
-          const Divider(height: 1),
+            _DrawerItem(
+              icon: Icons.phone_in_talk_rounded,
+              label: 'เบอร์โทรฉุกเฉิน',
+              onTap: onEmergency,
+              iconColor: Colors.red.shade400,
+              labelColor: Colors.red.shade400,
+            ),
 
-          _DrawerItem(icon: Icons.phone_in_talk_outlined, label: 'เบอร์โทรฉุกเฉิน', onTap: onEmergency),
-        ],
+            const Spacer(),
+          ],
+        ),
       ),
     );
   }
 }
 
-// Single drawer row [_DrawerItem]
+// Small uppercase section label above a group of drawer items [_SectionLabel]
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+          color: Colors.grey.shade500,
+        ),
+      ),
+    );
+  }
+}
+
+// Thin inset divider between sections, less harsh than full-width [_DrawerDivider]
+class _DrawerDivider extends StatelessWidget {
+  const _DrawerDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Divider(height: 1, color: Colors.grey.shade200),
+    );
+  }
+}
+
+// Single drawer row, rounded + inset with tap ripple contained to the row [_DrawerItem]
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color,
+    this.iconColor,
+    this.labelColor,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Color? color;
+  final Color? iconColor;
+  final Color? labelColor;
 
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(label,
-          style: color != null
-              ? TextStyle(color: color, fontWeight: FontWeight.w600)
-              : null),
-      onTap: onTap,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              children: [
+                Icon(icon, size: 22, color: iconColor ?? Colors.grey.shade700),
+                const SizedBox(width: 16),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: labelColor ?? Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
+
+// Single drawer item [_DrawerItem] rows plus divider [_DrawerDivider] are used above;
+// note: original file also has private widget classes below for the map tab
+// (_HomePage, ReportMarkerLayer usage, etc.) — unchanged from before, kept as-is.
 
 // Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
 class _HomePage extends StatefulWidget {
