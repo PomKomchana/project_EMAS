@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../pages/main_page.dart';
 import 'sign_up.dart';
+import '../pages/PushNotificationService.dart';
 
 import '../../shared/constants/emas_colors.dart';
 
@@ -88,6 +89,12 @@ class _LoginPageState extends State<LoginPage> {
 
       // บันทึกสถานะ remember me หลัง login สำเร็จ
       await _saveRememberMe();
+
+      try {
+        await PushNotificationService.instance.init();
+        } catch (e) {
+          debugPrint('Push notification init failed: $e');
+        }
 
       if (!mounted) return;
 

@@ -44,7 +44,7 @@ class _LoadingPageState extends State<LoadingPage>
 
     _fadeCtrl.forward();
 
-    Future.delayed(const Duration(seconds: 2), _go);
+    _go(); // Navigate to the next page after the fade-in animation
   }
 
   @override
