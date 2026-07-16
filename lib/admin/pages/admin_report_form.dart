@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/admin_service.dart';
@@ -104,8 +105,9 @@ class _AdminReportFormState extends State<AdminReportForm>
         curve: Curves.easeInOutCubic,
       ),
     );
+    _requestLocationAndMove(); 
   }
-
+  
   @override
   void dispose() {
     _buildingTextController.dispose();
@@ -154,6 +156,33 @@ class _AdminReportFormState extends State<AdminReportForm>
   }
 
   /// ============================== [Location & Map Logic] ==============================
+  /// Request GPS permission and move map to user location (if inside campus bounds) [_requestLocationAndMove]
+  Future<void> _requestLocationAndMove() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      final userLatLng = LatLng(position.latitude, position.longitude);
+
+      if (mapBounds.contains(userLatLng)) {
+        _mapController.move(userLatLng, 16);
+      }
+    } catch (_) {
+      // if can't find GPS then use initialCenter location
+    }
+  }
+
   /// Expand / collapse map and optionally enter picking mode [_toggleMapExpand]
   void _toggleMapExpand({bool enterPickingMode = false}) {
     HapticFeedback.lightImpact();
