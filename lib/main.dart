@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'pages/main_page.dart';
+import 'auth/login.dart';
 import 'pages/loading_page.dart';
 
 void main() async {
@@ -43,7 +45,9 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFe85d6a)),
       ),
-      home: const LoadingPage(),
+      home: FirebaseAuth.instance.currentUser != null
+      ? const MainPage()
+      : const LoginPage(),
     );
   }
 }
