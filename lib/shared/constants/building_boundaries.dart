@@ -204,4 +204,44 @@ const List<BuildingBoundary> campusBuildings = [
       LatLng(14.1025623, 100.9831283),
     ],
   ),
+  BuildingBoundary(
+    buildingCode: '32',
+    buildingName: 'อาคารปฏิบัติการวิศวกรรมเครื่องกล (อาคาร D)',
+    polygon: [
+      LatLng(14.1025096, 100.9831966),
+      LatLng(14.1021681, 100.9825407),
+      LatLng(14.1018357, 100.9827262),
+      LatLng(14.1021756, 100.9833742),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '33',
+    buildingName: 'อาคารปฏิบัติการวิศวกรรมเคมี (อาคาร E)',
+    polygon: [
+      LatLng(14.1019667, 100.9834772),
+      LatLng(14.1016318, 100.9828309),
+      LatLng(14.1013061, 100.9830129),
+      LatLng(14.1016411, 100.9836505),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '34',
+    buildingName: 'ตึกวิศวกรรมอุตสาหการ (อาคาร I)',
+    polygon: [
+      LatLng(14.1019667, 100.9834772),
+      LatLng(14.1016318, 100.9828309),
+      LatLng(14.1013061, 100.9830129),
+      LatLng(14.1016411, 100.9836505),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '75',
+    buildingName: 'อาคารวิจัยและพัฒนาเทคโนโลยีทางวิศวกรรมไฟฟ้า (อาคาร G)',
+    polygon: [
+      LatLng(14.1017102, 100.9837839),
+      LatLng(14.1013088, 100.9830095),
+      LatLng(14.1008864, 100.9832613),
+      LatLng(14.1012804, 100.9840287),
+    ],
+  ),
 ];

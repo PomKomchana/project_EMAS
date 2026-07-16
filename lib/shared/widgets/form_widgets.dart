@@ -36,6 +36,8 @@ class StyledDropdown extends StatelessWidget {
       child: DropdownButtonHideUnderline(
         child: DropdownButtonFormField<String>(
           value: value,
+          isExpanded: true,
+          menuMaxHeight: 320,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 18, color: emasColor.withOpacity(0.7)),
             hintText: hint,
@@ -43,7 +45,16 @@ class StyledDropdown extends StatelessWidget {
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 4),
           ),
-          items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+          items: items
+              .map((item) => DropdownMenuItem(
+                    value: item,
+                    child: Text(
+                      item,
+                      overflow: TextOverflow.ellipsis, // กันข้อความยาวล้นตอนแสดงค่าที่เลือก
+                      maxLines: 1,
+                    ),
+                  ))
+              .toList(),
           onChanged: onChanged,
           dropdownColor: Colors.white,
           borderRadius: BorderRadius.circular(12),
