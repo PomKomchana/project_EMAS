@@ -3,12 +3,13 @@ import 'package:flutter/services.dart';
 
 import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
+
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/buttons.dart';
 
-// Report detail page — admin can edit status, severity, and note [AdminReportDetailPage]
+/// Report detail page — admin can edit status, severity, and note [AdminReportDetailPage]
 class AdminReportDetailPage extends StatefulWidget {
   final String reportId;
   final Map<String, dynamic> data;
@@ -34,7 +35,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   late String? _currentSeverity;
   bool _isSaving = false;
 
-  // Status options for the picker: label, icon, color [_statusOptions]
+  /// Status options for the picker: label, icon, color [_statusOptions]
   static const _statusOptions = [
     (label: 'รอดำเนินการ', icon: Icons.hourglass_empty_rounded, color: Colors.orange),
     (label: 'กำลังดำเนินการ', icon: Icons.construction_rounded, color: Colors.blue),
@@ -57,7 +58,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Report Actions Logic] ==============================
-  // Save status, severity, and note [_saveStatus]
+  /// Save status, severity, and note [_saveStatus]
   Future<void> _saveStatus() async {
     if (_currentSeverity == null) {
       _showSnack('กรุณาเลือกระดับความรุนแรง', Colors.red.shade600);
@@ -86,7 +87,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
-  // Ask for password, then delete this report [_deleteReport]
+  /// Ask for password, then delete this report [_deleteReport]
   Future<void> _deleteReport() async {
     final confirmed = await showDeleteConfirmDialog(
       context,
@@ -108,7 +109,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [UI Helpers] ==============================
-  // Show a snackbar message [_showSnack]
+  /// Show a snackbar message [_showSnack]
   void _showSnack(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -277,8 +278,8 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Widgets] ==============================
-  // Hero photo. Tag 'img_${reportId}' must match the tag used on the list
-  // thumbnail for the hero animation to work. [_buildHeroImage]
+  /// Hero photo. Tag 'img_${reportId}' must match the tag used on the list
+  /// thumbnail for the hero animation to work. [_buildHeroImage]
   Widget _buildHeroImage(String? imageUrl) {
     return Hero(
       tag: 'img_${widget.reportId}',
@@ -296,7 +297,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // Shown when there's no photo [_buildNoImagePlaceholder]
+  /// Shown when there's no photo [_buildNoImagePlaceholder]
   Widget _buildNoImagePlaceholder() {
     return Container(
       height: 220,
@@ -316,7 +317,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // Icon + label + value row [_info]
+  /// Icon + label + value row [_info]
   Widget _info(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -338,7 +339,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // One status option chip [_buildStatusChip]
+  /// One status option chip [_buildStatusChip]
   Widget _buildStatusChip(({String label, IconData icon, Color color}) opt) {
     final isSelected = _currentStatus == opt.label;
     return GestureDetector(
@@ -376,7 +377,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // Severity picker row, from report_constants.dart [_buildSeverityRow]
+  /// Severity picker row, from report_constants.dart [_buildSeverityRow]
   Widget _buildSeverityRow() {
     final options = severityLevels.entries.where((e) => e.key != 'none').toList();
 
@@ -390,7 +391,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // One severity chip [_buildSeverityChip]
+  /// One severity chip [_buildSeverityChip]
   Widget _buildSeverityChip(String key, SeverityInfo info) {
     final isSelected = _currentSeverity == key;
     final isHigh = key == 'high';

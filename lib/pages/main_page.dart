@@ -18,8 +18,8 @@ import '../report/pages/report_form.dart';
 import '../shared/constants/emas_colors.dart';
 import '../shared/constants/map_constants.dart';
 
-// App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency)
-// No AppBar here — each tab that needs one (ReportListPage/AnnouncementPage) owns its own [MainPage]
+/// App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency)
+/// No AppBar here — each tab that needs one (ReportListPage/AnnouncementPage) owns its own [MainPage]
 class MainPage extends StatefulWidget {
   final int initialIndex;
 
@@ -30,8 +30,8 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  // Key to reach MainPage's own Scaffold (the one that owns the Drawer)
-  // from child tab pages that have their own Scaffold [_scaffoldKey]
+  /// Key to reach MainPage's own Scaffold (the one that owns the Drawer)
+  /// from child tab pages that have their own Scaffold [_scaffoldKey]
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   /// ============================== [State] ==============================
@@ -41,7 +41,7 @@ class _MainPageState extends State<MainPage> {
   String? _userName;
 
   /// ============================== [Data] ==============================
-  // Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
+  /// Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
   static const _navItems = [
     BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
     BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
@@ -58,8 +58,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   /// ============================== [User Data Logic] ==============================
-  // Reads users/{uid}.role (admin gating) + firstName/lastName (drawer header),
-  // same fields written/read by ProfilePage / ProfileDetailPage. [_loadUserData]
+  /// Reads users/{uid}.role (admin gating) + firstName/lastName (drawer header),
+  /// same fields written/read by ProfilePage / ProfileDetailPage. [_loadUserData]
   Future<void> _loadUserData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -153,7 +153,7 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-// Side drawer: profile header + nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
+/// Side drawer: profile header + nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
@@ -265,7 +265,7 @@ class _AppDrawer extends StatelessWidget {
   }
 }
 
-// Small uppercase section label above a group of drawer items [_SectionLabel]
+/// Small uppercase section label above a group of drawer items [_SectionLabel]
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
   final String text;
@@ -287,7 +287,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// Thin inset divider between sections, less harsh than full-width [_DrawerDivider]
+/// Thin inset divider between sections, less harsh than full-width [_DrawerDivider]
 class _DrawerDivider extends StatelessWidget {
   const _DrawerDivider();
 
@@ -300,7 +300,7 @@ class _DrawerDivider extends StatelessWidget {
   }
 }
 
-// Single drawer row, rounded + inset with tap ripple contained to the row [_DrawerItem]
+/// Single drawer row, rounded + inset with tap ripple contained to the row [_DrawerItem]
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
     required this.icon,
@@ -350,11 +350,11 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-// Single drawer item [_DrawerItem] rows plus divider [_DrawerDivider] are used above;
-// note: original file also has private widget classes below for the map tab
-// (_HomePage, ReportMarkerLayer usage, etc.) — unchanged from before, kept as-is.
+/// Single drawer item [_DrawerItem] rows plus divider [_DrawerDivider] are used above;
+/// note: original file also has private widget classes below for the map tab
+/// (_HomePage, ReportMarkerLayer usage, etc.) — unchanged from before, kept as-is.
 
-// Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
+/// Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
 class _HomePage extends StatefulWidget {
   final bool isAdmin;
 
@@ -383,7 +383,7 @@ class _HomePageState extends State<_HomePage> {
   }
 
   /// ============================== [Location & Map Logic] ==============================
-  // Switch to next map display mode [_cycleMapType]
+  /// Switch to next map display mode [_cycleMapType]
   void _cycleMapType() {
     HapticFeedback.selectionClick();
     final modes = MapMode.values;
@@ -391,7 +391,7 @@ class _HomePageState extends State<_HomePage> {
     setState(() => _mapMode = modes[next]);
   }
 
-  // Request GPS permission and move map to user location [_getUserLocation]
+  /// Request GPS permission and move map to user location [_getUserLocation]
   Future<void> _getUserLocation() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -418,7 +418,7 @@ class _HomePageState extends State<_HomePage> {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Route to the correct report form depending on the user's role [_onNewReportTap]
+  /// Route to the correct report form depending on the user's role [_onNewReportTap]
   void _onNewReportTap(BuildContext context) {
     if (widget.isAdmin) {
       Navigator.push(
@@ -437,8 +437,8 @@ class _HomePageState extends State<_HomePage> {
   }
 
   /// ============================== [Build] ==============================
-  // NOTE: menu button / map-mode switch / report button are inline here rather
-  // than extracted to _build... methods, unlike report_form.dart's pattern.
+  /// NOTE: menu button / map-mode switch / report button are inline here rather
+  /// than extracted to _build... methods, unlike report_form.dart's pattern.
   @override
   Widget build(BuildContext context) {
     return Stack(

@@ -9,7 +9,7 @@ import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
 
-// Admin shell: bottom nav across Dashboard / Report List / Announcements [AdminMainPage]
+/// Admin shell: bottom nav across Dashboard / Report List / Announcements [AdminMainPage]
 class AdminMainPage extends StatefulWidget {
   final bool autoOpenReportForm;
 
@@ -24,13 +24,13 @@ class _AdminMainPageState extends State<AdminMainPage> {
   /// ============================== [State] ==============================
   int _selectedIndex = 0;
 
-  // Which status tab and scope to open in the report list. Set from the
-  // dashboard's scope-chooser sheet. Changing either makes a new key below,
-  // so the page resets with the new values. [_reportListTabIndex, _reportListScope]
+  /// Which status tab and scope to open in the report list. Set from the
+  /// dashboard's scope-chooser sheet. Changing either makes a new key below,
+  /// so the page resets with the new values. [_reportListTabIndex, _reportListScope]
   int _reportListTabIndex = 0;
   ReportScopeFilter _reportListScope = ReportScopeFilter.all;
 
-  // Nav item metadata, used to build both destinations + track label [_navItems]
+  /// Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
     (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'แดชบอร์ด'),
     (icon: Icons.list_alt_outlined, selectedIcon: Icons.list_alt_rounded, label: 'รายการแจ้งซ่อม'),
@@ -49,7 +49,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Current tab's page [_currentPage]
+  /// Current tab's page [_currentPage]
   Widget _currentPage() {
     switch (_selectedIndex) {
       case 0:
@@ -66,8 +66,8 @@ class _AdminMainPageState extends State<AdminMainPage> {
     }
   }
 
-  // Switch to the report list tab at the right status + scope. No push,
-  // no back button — bottom nav bar stays visible. [_openReportList]
+  /// Switch to the report list tab at the right status + scope. No push,
+  /// no back button — bottom nav bar stays visible. [_openReportList]
   void _openReportList(int tabIndex, ReportScopeFilter scope) {
     setState(() {
       _selectedIndex = 1;
@@ -76,8 +76,8 @@ class _AdminMainPageState extends State<AdminMainPage> {
     });
   }
 
-  // Global "add" sheet — works on every admin tab. After saving, switches
-  // to the page showing what was just made. [_showCreateChooser]
+  /// Global "add" sheet — works on every admin tab. After saving, switches
+  /// to the page showing what was just made. [_showCreateChooser]
   void _showCreateChooser() {
     showModalBottomSheet(
       context: context,
@@ -124,7 +124,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
     );
   }
 
-  // Open the news form. Returns true if saved, so we can switch tabs [_createNews]
+  /// Open the news form. Returns true if saved, so we can switch tabs [_createNews]
   Future<void> _createNews() async {
     final saved = await Navigator.push<bool>(
       context,
@@ -135,7 +135,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
     }
   }
 
-  // Open the report form. Only switch tabs if it was actually saved. [_createReport]
+  /// Open the report form. Only switch tabs if it was actually saved. [_createReport]
   Future<void> _createReport() async {
     final saved = await showAdminReportForm(context);
     if (saved == true && mounted) {
@@ -186,7 +186,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 
   /// ============================== [Widgets] ==============================
-  // Row inside the create-chooser bottom sheet [_buildChooserOption]
+  /// Row inside the create-chooser bottom sheet [_buildChooserOption]
   Widget _buildChooserOption({
     required IconData icon,
     required String label,
@@ -228,7 +228,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
     );
   }
 
-  // Themed bottom nav bar, pill-style selected indicator matching brand color [_buildBottomNav]
+  /// Themed bottom nav bar, pill-style selected indicator matching brand color [_buildBottomNav]
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
@@ -255,7 +255,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
     );
   }
 
-  // Single bottom nav destination [_buildNavItem]
+  /// Single bottom nav destination [_buildNavItem]
   Widget _buildNavItem(int index) {
     final item = _navItems[index];
     final isSelected = _selectedIndex == index;
@@ -293,7 +293,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 }
 
-// Report counts split by who made them — shown on the stat cards. [_StatusCount]
+/// Report counts split by who made them — shown on the stat cards. [_StatusCount]
 class _StatusCount {
   final int user;
   final int admin;
@@ -301,7 +301,7 @@ class _StatusCount {
   int get total => user + admin;
 }
 
-// Dashboard tab: stats, trend chart, recent activity [_AdminDashboard]
+/// Dashboard tab: stats, trend chart, recent activity [_AdminDashboard]
 class _AdminDashboard extends StatelessWidget {
   final void Function(int tabIndex, ReportScopeFilter scope) onOpenReportList;
 
@@ -325,7 +325,7 @@ class _AdminDashboard extends StatelessWidget {
 
         final reportDocs = reportSnap.data?.docs ?? [];
 
-        // Count reports by status, split by who made them [pending, inProgress, done]
+        /// Count reports by status, split by who made them [pending, inProgress, done]
         int pendingUser = 0, pendingAdmin = 0;
         int inProgressUser = 0, inProgressAdmin = 0;
         int doneUser = 0, doneAdmin = 0;
@@ -418,7 +418,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [Data] ==============================
-  // Merge reports + news into one feed, newest first, top 8 [_buildActivityItems]
+  /// Merge reports + news into one feed, newest first, top 8 [_buildActivityItems]
   List<_ActivityItem> _buildActivityItems(
     List<QueryDocumentSnapshot> reportDocs,
     List<QueryDocumentSnapshot> newsDocs,
@@ -463,7 +463,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [UI Helpers] ==============================
-  // Relative time text, e.g. "5 นาทีที่แล้ว". No intl package needed. [_relativeTime]
+  /// Relative time text, e.g. "5 นาทีที่แล้ว". No intl package needed. [_relativeTime]
   String _relativeTime(DateTime? time) {
     if (time == null) return '';
     final diff = DateTime.now().difference(time);
@@ -475,7 +475,7 @@ class _AdminDashboard extends StatelessWidget {
     return '${time.day}/${time.month}/${time.year}';
   }
 
-  // "ใหม่" badge for items made in the last 24 hours [_isRecent]
+  /// "ใหม่" badge for items made in the last 24 hours [_isRecent]
   bool _isRecent(DateTime? time) {
     if (time == null) return false;
     final diff = DateTime.now().difference(time);
@@ -483,7 +483,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Reports open the detail page. News has no detail page here. [_openActivityDetail]
+  /// Reports open the detail page. News has no detail page here. [_openActivityDetail]
   void _openActivityDetail(BuildContext context, _ActivityItem item) {
     if (item.type != _ActivityType.report) return;
 
@@ -495,8 +495,8 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Pick ทั้งหมด/ผู้ใช้/แอดมิน before opening the report list. Skips the sheet
-  // if only one scope has items. [_openScopeChooser]
+  /// Pick ทั้งหมด/ผู้ใช้/แอดมิน before opening the report list. Skips the sheet
+  /// if only one scope has items. [_openScopeChooser]
   void _openScopeChooser(
     BuildContext context,
     int tabIndex,
@@ -570,7 +570,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  // Greeting card at the top, emasColor gradient [_buildHeroCard]
+  /// Greeting card at the top, emasColor gradient [_buildHeroCard]
   Widget _buildHeroCard(int totalCount) {
     return Container(
       width: double.infinity,
@@ -620,7 +620,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Recent activity card: reports + news in one feed [_buildActivityCard]
+  /// Recent activity card: reports + news in one feed [_buildActivityCard]
   Widget _buildActivityCard(BuildContext context, List<_ActivityItem> items) {
     if (items.isEmpty) {
       return Container(
@@ -650,7 +650,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // One activity row. Reports are tappable, news isn't. [_buildActivityTile]
+  /// One activity row. Reports are tappable, news isn't. [_buildActivityTile]
   Widget _buildActivityTile(BuildContext context, _ActivityItem item) {
     final isReport = item.type == _ActivityType.report;
     final borderColor = isReport ? _reportStatusColor(item.status) : emasColor;
@@ -733,7 +733,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Pink "ใหม่" pill for items made in the last 24 hours [_buildNewBadge]
+  /// Pink "ใหม่" pill for items made in the last 24 hours [_buildNewBadge]
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -742,7 +742,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Color per status, for the activity icon and left border [_reportStatusColor]
+  /// Color per status, for the activity icon and left border [_reportStatusColor]
   Color _reportStatusColor(String? status) {
     switch (status) {
       case 'รอดำเนินการ': return Colors.orange;
@@ -752,7 +752,7 @@ class _AdminDashboard extends StatelessWidget {
     }
   }
 
-  // Row inside the scope-chooser sheet [_buildScopeOption]
+  /// Row inside the scope-chooser sheet [_buildScopeOption]
   Widget _buildScopeOption({
     required IconData icon,
     required String label,
@@ -795,10 +795,10 @@ class _AdminDashboard extends StatelessWidget {
   }
 }
 
-// Feed entry kind: report or news [_ActivityType]
+/// Feed entry kind: report or news [_ActivityType]
 enum _ActivityType { report, news }
 
-// One merged feed entry shown in the activity card [_ActivityItem]
+/// One merged feed entry shown in the activity card [_ActivityItem]
 class _ActivityItem {
   final _ActivityType type;
   final String title;
@@ -819,7 +819,7 @@ class _ActivityItem {
   });
 }
 
-// Bar chart painter for the trend, no chart package needed [_TrendChartPainter]
+/// Bar chart painter for the trend, no chart package needed [_TrendChartPainter]
 class _TrendChartPainter extends CustomPainter {
   final List<int> counts;
   final int maxVal;
@@ -886,20 +886,20 @@ class _TrendChartPainter extends CustomPainter {
   }
 }
 
-// Time range for the trend chart [_TrendPeriod]
+/// Time range for the trend chart [_TrendPeriod]
 enum _TrendPeriod { week, month }
 
-// Bar or line chart, picked separately from the period [_ChartMode]
+/// Bar or line chart, picked separately from the period [_ChartMode]
 enum _ChartMode { bar, line }
 
-// Counts + labels for the chart [_TrendData]
+/// Counts + labels for the chart [_TrendData]
 class _TrendData {
   final List<int> counts;
   final List<String> labels;
   const _TrendData({required this.counts, required this.labels});
 }
 
-// Trend chart card: period picker + chart-type toggle + chart [_TrendSection]
+/// Trend chart card: period picker + chart-type toggle + chart [_TrendSection]
 class _TrendSection extends StatefulWidget {
   final List<QueryDocumentSnapshot> reportDocs;
 
@@ -914,13 +914,13 @@ class _TrendSectionState extends State<_TrendSection> {
   _TrendPeriod _period = _TrendPeriod.week;
   _ChartMode _mode = _ChartMode.bar;
 
-  // Month shown in "เดือน" mode. Change it with the month/year picker. [_selectedMonth]
+  /// Month shown in "เดือน" mode. Change it with the month/year picker. [_selectedMonth]
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
-  // Thai weekday labels, Monday first [_weekdayLabels]
+  /// Thai weekday labels, Monday first [_weekdayLabels]
   static const _weekdayLabels = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
 
-  // Thai month names, full + short. No intl package needed. [_thaiMonths, _thaiMonthsShort]
+  /// Thai month names, full + short. No intl package needed. [_thaiMonths, _thaiMonthsShort]
   static const _thaiMonths = [
     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
     'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
@@ -931,12 +931,12 @@ class _TrendSectionState extends State<_TrendSection> {
   ];
 
   /// ============================== [Data] ==============================
-  // Bucket report counts for the selected period [_buildData]
+  /// Bucket report counts for the selected period [_buildData]
   _TrendData _buildData() {
     return _period == _TrendPeriod.week ? _buildWeekData() : _buildMonthData();
   }
 
-  // Daily buckets for the last 7 days (oldest → newest) [_buildWeekData]
+  /// Daily buckets for the last 7 days (oldest → newest) [_buildWeekData]
   _TrendData _buildWeekData() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -964,7 +964,7 @@ class _TrendSectionState extends State<_TrendSection> {
     return _TrendData(counts: counts, labels: labels);
   }
 
-  // Weekly counts within the picked month, 4 or 5 weeks [_buildMonthData]
+  /// Weekly counts within the picked month, 4 or 5 weeks [_buildMonthData]
   _TrendData _buildMonthData() {
     final year = _selectedMonth.year;
     final month = _selectedMonth.month;
@@ -1018,7 +1018,7 @@ class _TrendSectionState extends State<_TrendSection> {
   }
 
   /// ============================== [Widgets] ==============================
-  // Tab bar for สัปดาห์/เดือน — same sliding-pill style as the scope tabs [_buildPeriodTabs]
+  /// Tab bar for สัปดาห์/เดือน — same sliding-pill style as the scope tabs [_buildPeriodTabs]
   Widget _buildPeriodTabs() {
     final selectedIndex = _TrendPeriod.values.indexOf(_period);
 
@@ -1095,7 +1095,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Chip showing the picked month — tap to open the picker [_buildMonthSelector]
+  /// Chip showing the picked month — tap to open the picker [_buildMonthSelector]
   Widget _buildMonthSelector() {
     return GestureDetector(
       onTap: _showMonthYearPicker,
@@ -1129,7 +1129,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Month/year picker: year arrows + a grid of 12 months [_showMonthYearPicker]
+  /// Month/year picker: year arrows + a grid of 12 months [_showMonthYearPicker]
   void _showMonthYearPicker() {
     int pickerYear = _selectedMonth.year;
     final now = DateTime.now();
@@ -1218,7 +1218,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Bar/line toggle, two small icon buttons [_buildModeToggle]
+  /// Bar/line toggle, two small icon buttons [_buildModeToggle]
   Widget _buildModeToggle() {
     return Container(
       padding: const EdgeInsets.all(3),
@@ -1259,7 +1259,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Chart card — swaps between bar and line painter [_buildChartCard]
+  /// Chart card — swaps between bar and line painter [_buildChartCard]
   Widget _buildChartCard(List<int> counts, List<String> labels) {
     final maxVal = counts.isEmpty ? 1 : counts.reduce((a, b) => a > b ? a : b);
 
@@ -1314,7 +1314,7 @@ class _TrendSectionState extends State<_TrendSection> {
   }
 }
 
-// Line chart painter: filled area, line, dots, and count labels [_LineChartPainter]
+/// Line chart painter: filled area, line, dots, and count labels [_LineChartPainter]
 class _LineChartPainter extends CustomPainter {
   final List<int> counts;
   final int maxVal;
@@ -1342,7 +1342,7 @@ class _LineChartPainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    // Filled area under the line [fillPath]
+    /// Filled area under the line [fillPath]
     final fillPath = Path()..moveTo(points.first.dx, size.height);
     for (final p in points) {
       fillPath.lineTo(p.dx, p.dy);
@@ -1358,7 +1358,7 @@ class _LineChartPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawPath(fillPath, fillPaint);
 
-    // Stroked polyline [linePath]
+    /// Stroked polyline [linePath]
     final linePath = Path()..moveTo(points.first.dx, points.first.dy);
     for (final p in points.skip(1)) {
       linePath.lineTo(p.dx, p.dy);
@@ -1373,7 +1373,7 @@ class _LineChartPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // Dots + count labels [dots]
+    /// Dots + count labels [dots]
     for (var i = 0; i < points.length; i++) {
       final p = points[i];
       canvas.drawCircle(p, 4, Paint()..color = lineColor);
@@ -1398,7 +1398,7 @@ class _LineChartPainter extends CustomPainter {
   }
 }
 
-// Stat card: icon + user/admin counts + label. Tap opens the report list. [_StatCard]
+/// Stat card: icon + user/admin counts + label. Tap opens the report list. [_StatCard]
 class _StatCard extends StatelessWidget {
   final String title;
   final _StatusCount counts;

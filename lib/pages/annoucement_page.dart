@@ -7,12 +7,12 @@ import '../report/pages/report_detail_page.dart';
 import '../shared/constants/emas_colors.dart';
 import '../shared/constants/report_constants.dart';
 
-// Filter for announcement feed [FeedFilter]
+/// Filter for announcement feed [FeedFilter]
 enum _FeedType { news, report }
 
 enum FeedFilter { all, news, report }
 
-// Display label per filter option [feedFilterLabel]
+/// Display label per filter option [feedFilterLabel]
 String feedFilterLabel(FeedFilter f) {
   switch (f) {
     case FeedFilter.all:
@@ -24,7 +24,7 @@ String feedFilterLabel(FeedFilter f) {
   }
 }
 
-// One merged feed entry shown in the announcements list [_FeedItem]
+/// One merged feed entry shown in the announcements list [_FeedItem]
 class _FeedItem {
   final _FeedType type;
   final QueryDocumentSnapshot doc;
@@ -49,8 +49,8 @@ class _FeedItem {
   });
 }
 
-// Announcements feed: realtime list (news + admin reports).
-// Report items open the shared ReportDetailPage; news items open a bottom sheet. [AnnouncementPage]
+/// Announcements feed: realtime list (news + admin reports).
+/// Report items open the shared ReportDetailPage; news items open a bottom sheet. [AnnouncementPage]
 class AnnouncementPage extends StatefulWidget {
   final VoidCallback onMenuTap;
 
@@ -69,7 +69,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
 
-  // Current selected feed filter [FeedFilter]
+  /// Current selected feed filter [FeedFilter]
   FeedFilter _currentFilter = FeedFilter.all;
 
   /// ============================== [Life Cycle] ==============================
@@ -120,7 +120,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   }
 
   /// ============================== [Data] ==============================
-  // News stream, newest first [_newsStream]
+  /// News stream, newest first [_newsStream]
   Stream<QuerySnapshot> _newsStream() {
     return FirebaseFirestore.instance
         .collection('news')
@@ -128,7 +128,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         .snapshots();
   }
 
-  // Admin-created reports, newest first [_adminReportsStream]
+  /// Admin-created reports, newest first [_adminReportsStream]
   Stream<QuerySnapshot> _adminReportsStream() {
     return FirebaseFirestore.instance
         .collection('reports')
@@ -137,7 +137,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         .snapshots();
   }
 
-  // Merge news + admin reports into one feed, newest first [_mergeFeed]
+  /// Merge news + admin reports into one feed, newest first [_mergeFeed]
   List<_FeedItem> _mergeFeed(
     List<QueryDocumentSnapshot> newsDocs,
     List<QueryDocumentSnapshot> reportDocs,
@@ -215,7 +215,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     await Future.delayed(const Duration(milliseconds: 600));
   }
 
-  // Opens an external/attached link in the browser [_openLink]
+  /// Opens an external/attached link in the browser [_openLink]
   Future<void> _openLink(String url) async {
     var normalized = url.trim();
     if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
@@ -227,7 +227,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     }
   }
 
-// Opens feed filter sheet [showFeedFilterSheet]
+/// Opens feed filter sheet [showFeedFilterSheet]
 void _showFeedFilterSheet() {
     showModalBottomSheet(
       context: context,
@@ -284,7 +284,7 @@ void _showFeedFilterSheet() {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Report items → shared ReportDetailPage (same page the "รายการแจ้งปัญหา" tab uses) [_openReportDetail]
+  /// Report items → shared ReportDetailPage (same page the "รายการแจ้งปัญหา" tab uses) [_openReportDetail]
   void _openReportDetail(_FeedItem item) {
     final data = item.doc.data() as Map<String, dynamic>;
     Navigator.push(
@@ -295,9 +295,9 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // News items → bottom sheet (no dedicated news detail page exists).
-  // Now shows the attached image full-width at the top (if any) and a
-  // tappable link row at the bottom (if any). [_openNewsDetail]
+  /// News items → bottom sheet (no dedicated news detail page exists).
+  /// Now shows the attached image full-width at the top (if any) and a
+  /// tappable link row at the bottom (if any). [_openNewsDetail]
   void _openNewsDetail(_FeedItem item) {
     final date = item.createdAt != null ? _formatDate(item.createdAt) : null;
     final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
@@ -505,7 +505,7 @@ void _showFeedFilterSheet() {
   }
 
   /// ============================== [Widgets] ==============================
-  // Pill-shaped filter chip in AppBar showing current filter label [_buildFilterChip]
+  /// Pill-shaped filter chip in AppBar showing current filter label [_buildFilterChip]
   Widget _buildFilterChip() {
     return Material(
       color: Colors.white.withValues(alpha: 0.18),
@@ -612,7 +612,7 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // Dispatch to the right card style [_buildFeedCard]
+  /// Dispatch to the right card style [_buildFeedCard]
   Widget _buildFeedCard(_FeedItem item) {
     if (item.type == _FeedType.news) {
       return _buildNewsCard(item);
@@ -620,10 +620,10 @@ void _showFeedFilterSheet() {
     return _buildReportCard(item);
   }
 
-  // News card. Two layouts depending on whether an image is attached:
-  // - With image: full-width banner on top, text block below (bigger, more editorial feel)
-  // - Without image: compact icon-row layout (unchanged from before)
-  // A link chip is shown under the content whenever the news item has one. [_buildNewsCard]
+  /// News card. Two layouts depending on whether an image is attached:
+  /// - With image: full-width banner on top, text block below (bigger, more editorial feel)
+  /// - Without image: compact icon-row layout (unchanged from before)
+  /// A link chip is shown under the content whenever the news item has one. [_buildNewsCard]
   Widget _buildNewsCard(_FeedItem item) {
     final isRecent = _isRecent(item.createdAt);
     final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
@@ -633,6 +633,7 @@ void _showFeedFilterSheet() {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: emasColor, width: 4)),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
@@ -651,7 +652,7 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // Editorial-style card: banner image on top, title/badge/content/date below [_buildNewsCardWithImage]
+  /// Editorial-style card: banner image on top, title/badge/content/date below [_buildNewsCardWithImage]
   Widget _buildNewsCardWithImage(_FeedItem item, bool isRecent, bool hasLink) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -717,7 +718,7 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // Compact icon-row layout, used when the news item has no attached image [_buildNewsCardCompact]
+  /// Compact icon-row layout, used when the news item has no attached image [_buildNewsCardCompact]
   Widget _buildNewsCardCompact(_FeedItem item, bool isRecent, bool hasLink) {
     return Padding(
       padding: const EdgeInsets.all(14),
@@ -780,7 +781,7 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // Tappable link button shown inside the news detail sheet [_buildLinkButton]
+  /// Tappable link button shown inside the news detail sheet [_buildLinkButton]
   Widget _buildLinkButton(String link) {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -812,8 +813,8 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // Report card: left border by status, thumbnail, admin badge, severity badge, status chip + date.
-  // Every report in this feed is admin-created (query filter), so the "Admin" badge is unconditional. [_buildReportCard]
+  /// Report card: left border by status, thumbnail, admin badge, severity badge, status chip + date.
+  /// Every report in this feed is admin-created (query filter), so the "Admin" badge is unconditional. [_buildReportCard]
   Widget _buildReportCard(_FeedItem item) {
     final statusColor = getStatusColors(item.status ?? ReportStatus.pending).fg;
     final severity = getSeverityInfo(item.severity);
@@ -932,7 +933,7 @@ void _showFeedFilterSheet() {
     );
   }
 
-  // Static "Admin" badge — every report in this feed is admin-created [_buildAdminBadge]
+  /// Static "Admin" badge — every report in this feed is admin-created [_buildAdminBadge]
   Widget _buildAdminBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),

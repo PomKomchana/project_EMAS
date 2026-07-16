@@ -9,7 +9,7 @@ import 'profile_detail_page.dart';
 
 import '../shared/constants/emas_colors.dart';
 
-// User profile: avatar picker (local only, not yet persisted), account info, logout [ProfilePage]
+/// User profile: avatar picker (local only, not yet persisted), account info, logout [ProfilePage]
 class ProfilePage extends StatefulWidget {
   final VoidCallback onMenuTap;
   final bool isAdmin;
@@ -35,8 +35,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   User? get _user => FirebaseAuth.instance.currentUser;
 
-  // Prefer firstName + lastName from Firestore; fall back to a placeholder
-  // if the user hasn't filled in their profile yet. [_displayName]
+  /// Prefer firstName + lastName from Firestore; fall back to a placeholder
+  /// if the user hasn't filled in their profile yet. [_displayName]
   String get _displayName {
     final full = '${_firstName ?? ''} ${_lastName ?? ''}'.trim();
     return full.isNotEmpty ? full : 'ผู้ใช้งาน';
@@ -52,8 +52,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   /// ============================== [Data Loading Logic] ==============================
-  // Reads users/{uid}.firstName / lastName to build the display name shown
-  // under the avatar. Same fields written by ProfileDetailPage. [_loadUserName]
+  /// Reads users/{uid}.firstName / lastName to build the display name shown
+  /// under the avatar. Same fields written by ProfileDetailPage. [_loadUserName]
   Future<void> _loadUserName() async {
     final uid = _user?.uid;
     if (uid == null) return;
@@ -74,9 +74,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   /// ============================== [Image Picker Logic] ==============================
-  // Pick a profile image from camera/gallery.
-  // NOTE: only sets local state — never uploaded to Storage or saved to
-  // Firestore, so it resets on app restart (same gap fixed in ReportService). [_pickProfileImage]
+  /// Pick a profile image from camera / gallery.
+  /// NOTE: only sets local state — never uploaded to Storage or saved to
+  /// Firestore, so it resets on app restart (same gap fixed in ReportService). [_pickProfileImage]
   Future<void> _pickProfileImage() async {
     final source = await _showImageSourceSheet();
     if (source == null) return;
@@ -90,7 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _profileImage = File(picked.path));
   }
 
-  // Bottom sheet: camera / gallery / cancel [_showImageSourceSheet]
+  /// Bottom sheet: camera / gallery / cancel [_showImageSourceSheet]
   Future<ImageSource?> _showImageSourceSheet() async {
     return showModalBottomSheet<ImageSource>(
       context: context,
@@ -255,7 +255,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-// White rounded card wrapping a group of _InfoTile rows [_CardGroup]
+/// White rounded card wrapping a group of _InfoTile rows [_CardGroup]
 class _CardGroup extends StatelessWidget {
   const _CardGroup({required this.children});
   final List<Widget> children;
@@ -282,7 +282,7 @@ class _CardGroup extends StatelessWidget {
   }
 }
 
-// One row in an info card [_InfoTile]
+/// One row in an info card [_InfoTile]
 class _InfoTile extends StatelessWidget {
   const _InfoTile({
     required this.icon,

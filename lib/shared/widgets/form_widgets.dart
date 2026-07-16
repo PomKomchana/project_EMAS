@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 
 import '../constants/emas_colors.dart';
 
-// WIDGETS: StyledDropdown
-// Dropdown for ("เลือกอาคาร" / "เลือกชั้น")
-// Border turns pink once selected
+/// WIDGETS: StyledDropdown
+/// Dropdown for ("เลือกอาคาร" / "เลือกชั้น")
+/// Border turns pink once selected
 class StyledDropdown extends StatelessWidget {
   const StyledDropdown({
     super.key,
@@ -53,8 +53,8 @@ class StyledDropdown extends StatelessWidget {
   }
 }
 
-// WIDGETS: SheetOption
-// One tappable option in the image-source bottom sheet ("ถ่ายรูป" / "คลังภาพ")
+/// WIDGETS: SheetOption
+/// One tappable option in the image-source bottom sheet ("ถ่ายรูป" / "คลังภาพ")
 class SheetOption extends StatelessWidget {
   const SheetOption({
     super.key,

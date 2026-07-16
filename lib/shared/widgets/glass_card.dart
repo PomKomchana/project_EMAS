@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../constants/emas_colors.dart';
 
-// WIDGETS: GlassCard
-// Glass card with a clear white background
+/// WIDGETS: GlassCard
+/// Glass card with a clear white background
 class GlassCard extends StatelessWidget {
   const GlassCard({super.key, required this.child});
 
@@ -38,8 +38,8 @@ class GlassCard extends StatelessWidget {
   }
 }
 
-// WIDGETS: CardHeader
-// Icon chip + bold title, used inside a GlassCard section.
+/// WIDGETS: CardHeader
+/// Icon chip + bold title, used inside a GlassCard section.
 class CardHeader extends StatelessWidget {
   const CardHeader({super.key, required this.icon, required this.title});
 

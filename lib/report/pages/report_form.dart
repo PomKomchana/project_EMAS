@@ -18,8 +18,9 @@ import '../../shared/widgets/form_widgets.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/image_widgets.dart';
 import '../../shared/widgets/map_widgets.dart';
+import '../../shared/utils/geo_utils.dart';
 
-// Report form page [ReportForm]
+/// Report form page [ReportForm]
 class ReportForm extends StatefulWidget {
   const ReportForm({super.key});
 
@@ -27,47 +28,49 @@ class ReportForm extends StatefulWidget {
   State<ReportForm> createState() => _ReportFormState();
 }
 
-// State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
+/// State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
   /// ============================== [Controllers & Services] ==============================
-  // Service [_reportService]
+  /// Service [_reportService]
   final _reportService = ReportService();
 
-  // Text Controllers [_dateController, _usernameController, _phoneController, _roomController, _descController]
+  /// Text Controllers [_dateController, _floorController, _usernameController, _phoneController, _roomController, _descController, _buildingTextController]
   final _dateController = TextEditingController();
+  final _floorController = TextEditingController();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
   final _imagePicker = ImagePicker();
+  final _buildingTextController = TextEditingController();
 
-  // Animation Controllers
-    // Map expansion animation [_mapAnimController, _mapHeightAnimation]
+  /// Animation Controllers
+    /// Map expansion animation [_mapAnimController, _mapHeightAnimation]
     late final AnimationController _mapAnimController;
     late final Animation<double> _mapHeightAnimation;
 
-    // Page entrance animation (stagger fade + slide) [_sectionFadeController, _sectionFadeList, _sectionSlideList]
+    /// Page entrance animation (stagger fade + slide) [_sectionFadeController, _sectionFadeList, _sectionSlideList]
     late final AnimationController _sectionFadeController;
     late final List<Animation<double>> _sectionFadeList;
     late final List<Animation<Offset>> _sectionSlideList;
 
   /// ============================== [State] ==============================
-  // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
+  /// Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
   bool _isMapExpanded = false;        // whether the map is currently expanded
   bool _isPickingMode = false;        // whether the user is in pin selection mode (waiting for map tap)
   MapMode _mapMode = MapMode.normal;  // current map display mode
   LatLng? _pickedLocation;            // selected pinned location on the map
+  bool _isManualBuildingEntry = false;
 
-  // Form State [_selectedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
+  /// Form State [_selectedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
   String? _selectedBuilding;
-  String? _selectedFloor;
   File? _selectedImage;
   bool _isSubmitting = false;
 
   /// ============================== [Life Cycle] ==============================
-  // InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
+  /// InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
   @override
   void initState() {
     super.initState();
@@ -76,13 +79,15 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     _requestLocationAndMove();        // request GPS and move the camera
   }
 
-  // Dispose (Return resource when you leave this page)
+  /// Dispose (Return resource when you leave this page)
   @override
   void dispose() {
     _mapAnimController.dispose();
     _sectionFadeController.dispose();
 
+    _floorController.dispose();
     _dateController.dispose();
+    _buildingTextController.dispose();
     _usernameController.dispose();
     _phoneController.dispose();
     _roomController.dispose();
@@ -93,9 +98,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [Animation Logic] ==============================
-  // Setup Animations [_setupAnimations]
+  /// Setup Animations [_setupAnimations]
   void _setupAnimations() {
-    // Map height grows from 200 to 520 when expanded.
+    /// Map height grows from 200 to 520 when expanded.
     _mapAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -108,7 +113,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
       ),
     );
 
-    // Fade + slide animation for 5 sections (Stagger per section)
+    /// Fade + slide animation for 5 sections (Stagger per section)
     _sectionFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -141,7 +146,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [Location & Map Logic] ==============================
-  // Request GPS permission and move map to user location [_requestLocationAndMove]
+  /// Request GPS permission and move map to user location [_requestLocationAndMove]
   Future<void> _requestLocationAndMove() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -191,34 +196,55 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     });
   }
 
-  // Handle map tap and set pin location [_onMapTapped]
-  void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
-    if (!_isPickingMode) return;
+  /// Handle map tap and set pin location [_onMapTapped]
+void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
+  if (!_isPickingMode) return;
 
-    // ตรวจสอบว่าอยู่ใน มศว ไหม
-    if (!mapBounds.contains(tappedPosition)) {
-      HapticFeedback.heavyImpact();
-      _showSnackBar(
-        'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น',
-        Colors.orange.shade700,
-        Icons.warning_amber_rounded,
-      );
-      return;
-    }
-
-    HapticFeedback.mediumImpact();
-    setState(() => _pickedLocation = tappedPosition);
-    _mapController.move(tappedPosition, 18);
+  // Check if the selected location is within SWU Ongkharak campus
+  if (!mapBounds.contains(tappedPosition)) {
+    HapticFeedback.heavyImpact();
+    _showSnackBar(
+      'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น',
+      Colors.orange.shade700,
+      Icons.warning_amber_rounded,
+    );
+    return;
   }
 
-  // Confirm selected pin location [_confirmPin]
+  HapticFeedback.mediumImpact();
+  setState(() => _pickedLocation = tappedPosition);
+  _mapController.move(tappedPosition, 18);
+
+  // Try auto-detect which building this point belongs to [_autoDetectBuilding]
+  _autoDetectBuilding(tappedPosition);
+}
+
+/// Auto-fill the building field using point-in-polygon detection.
+/// Works in both dropdown mode and manual-typing mode. [_autoDetectBuilding]
+void _autoDetectBuilding(LatLng point) {
+  final detectedName = getBuildingNameFromPoint(point);
+  if (detectedName == null) return;
+
+  setState(() {
+    _selectedBuilding = detectedName;
+    _buildingTextController.text = detectedName;
+  });
+
+  _showSnackBar( // หรือ _showSnack(...) ใน AdminReportForm
+    'ตรวจพบตำแหน่ง: $detectedName',
+    Colors.blue.shade600,
+    Icons.location_city_rounded,
+  );
+}
+
+  /// Confirm selected pin location [_confirmPin]
   void _confirmPin() {
     HapticFeedback.mediumImpact();
     _toggleMapExpand(); // ย่อแผนที่กลับ
     _showSnackBar('ปักหมุดสำเร็จ ✓', Colors.green.shade600, Icons.check_circle_outline);
   }
 
-  // Switch to next map mode [_cycleMapMode]
+  /// Switch to next map mode [_cycleMapMode]
   void _cycleMapMode() {
     HapticFeedback.selectionClick();
     setState(() {
@@ -229,7 +255,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [Image Picker Logic] ==============================
-  // Show image picker bottom sheet [_showImagePickerSheet]
+  /// Show image picker bottom sheet [_showImagePickerSheet]
   void _showImagePickerSheet() {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
@@ -239,7 +265,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Pick image from selected source [_pickImageFrom]
+  /// Pick image from selected source [_pickImageFrom]
   Future<void> _pickImageFrom(ImageSource source) async {
     final picked = await _imagePicker.pickImage(source: source);
     if (picked != null) {
@@ -248,9 +274,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [Submit Logic] ==============================
-  // Submit report via ReportService [_submitReport]
+  /// Submit report via ReportService [_submitReport]
   Future<void> _submitReport() async {
-    if (_selectedBuilding == null || _selectedFloor == null) {
+    if (_selectedBuilding == null || _floorController.text.trim().isEmpty == null) {
       _showSnackBar(
         'กรุณาเลือกอาคารและชั้น',
         Colors.red.shade600,
@@ -271,7 +297,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         username: _usernameController.text,
         phone: _phoneController.text,
         building: _selectedBuilding!,
-        floor: _selectedFloor!,
+        floor: _floorController.text.trim(),
         room: _roomController.text,
         description: _descController.text,
       );
@@ -298,7 +324,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [UI Helpers] ==============================
-  // Show snackbar message [_showSnackBar]
+  /// Show snackbar message [_showSnackBar]
   void _showSnackBar(String message, Color color, IconData icon) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -315,7 +341,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Apply fade + slide animation to section [_withSectionAnimation]
+  /// Apply fade + slide animation to section [_withSectionAnimation]
   Widget _withSectionAnimation(int sectionIndex, Widget child) {
     return FadeTransition(
       opacity: _sectionFadeList[sectionIndex],
@@ -368,7 +394,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [Widgets] ==============================
-  // App Bar with back button and title [_buildAppBar]
+  /// App Bar with back button and title [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -398,7 +424,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Submit Button Bar pinned at bottom, shows loading spinner while submitting [_buildSubmitBar]
+  /// Submit Button Bar pinned at bottom, shows loading spinner while submitting [_buildSubmitBar]
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
@@ -435,7 +461,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
           );
         }
 
-  // Map Section with pin picking, Expand / Collapse animation, and mode toggle [_buildMapSection]
+  /// Map Section with pin picking, Expand / Collapse animation, and mode toggle [_buildMapSection]
   Widget _buildMapSection() {
     return GlassCard(
       child: Column(
@@ -571,7 +597,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Image Upload Section, shows placeholder or selected image with change button [_buildImageSection]
+  /// Image Upload Section, shows placeholder or selected image with change button [_buildImageSection]
   Widget _buildImageSection() {
     return GlassCard(
       child: Column(
@@ -610,7 +636,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Bottom Sheet to choose image source: camera or gallery [_buildImagePickerSheet]
+  /// Bottom Sheet to choose image source: camera or gallery [_buildImagePickerSheet]
   Widget _buildImagePickerSheet() {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -681,7 +707,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Reporter Info Section: date picker, username, phone [_buildReporterSection]
+  /// Reporter Info Section: date picker, username, phone [_buildReporterSection]
   Widget _buildReporterSection() {
     return GlassCard(
       child: Column(
@@ -766,52 +792,160 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     );
   }
 
-  // Location Section: Building / Floor dropdown + room number [_buildLocationSection]
-  Widget _buildLocationSection() {
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const CardHeader(icon: Icons.apartment_rounded, title: 'สถานที่'),
-          const SizedBox(height: 12),
-          StyledDropdown(
-            value: _selectedBuilding,
-            hint: 'เลือกอาคาร',
-            icon: Icons.domain_rounded,
-            items: buildingOptions,
-            onChanged: (value) => setState(() => _selectedBuilding = value),
-          ),
-          const SizedBox(height: 10),
-          StyledDropdown(
-            value: _selectedFloor,
-            hint: 'เลือกชั้น',
-            icon: Icons.layers_rounded,
-            items: floorOptions,
-            onChanged: (value) => setState(() => _selectedFloor = value),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _roomController,
-            decoration: InputDecoration(
-              labelText: 'ห้องเลขที่',
-              labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-              prefixIcon: const Icon(Icons.meeting_room_outlined, color: emasColor),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: emasColor, width: 2),
+/// Location Section: Building / Floor dropdown + room number [_buildLocationSection]
+Widget _buildLocationSection() {
+  return GlassCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const CardHeader(
+          icon: Icons.apartment_rounded,
+          title: 'สถานที่',
+        ),
+        const SizedBox(height: 12),
+
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildBuildingField(),
+            ),
+            const SizedBox(width: 8),
+            _buildBuildingModeToggle(),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        TextField(
+          controller: _floorController,
+          keyboardType: TextInputType.text,
+          decoration: InputDecoration(
+            labelText: 'ชั้น',
+            labelStyle: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 14,
+            ),
+            prefixIcon: const Icon(
+              Icons.layers_rounded,
+              color: emasColor,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: emasColor,
+                width: 2,
               ),
             ),
           ),
-        ],
+        ),
+
+        const SizedBox(height: 10),
+
+        TextField(
+          controller: _roomController,
+          decoration: InputDecoration(
+            labelText: 'ห้องเลขที่',
+            labelStyle: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 14,
+            ),
+            prefixIcon: const Icon(
+              Icons.meeting_room_outlined,
+              color: emasColor,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: emasColor,
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Building input, switches between StyledDropdown and free-text TextField
+/// depending on _isManualBuildingEntry [_buildBuildingField]
+Widget _buildBuildingField() {
+  if (_isManualBuildingEntry) {
+    return TextField(
+      controller: _buildingTextController,
+      decoration: InputDecoration(
+        labelText: 'ชื่ออาคาร',
+        labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        prefixIcon: const Icon(Icons.domain_rounded, color: emasColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: emasColor, width: 2),
+        ),
       ),
+      onChanged: (value) => setState(() => _selectedBuilding = value),
     );
   }
 
-  // Problem Description Section (free text) [_buildDescriptionSection]
+  return StyledDropdown(
+    value: _selectedBuilding,
+    hint: 'เลือกอาคาร',
+    icon: Icons.domain_rounded,
+    items: buildingOptions,
+    onChanged: (value) => setState(() => _selectedBuilding = value),
+  );
+}
+
+/// Toggle button between dropdown mode and manual-typing mode.
+/// Carries the current value over when switching so nothing gets lost. [_buildBuildingModeToggle]
+Widget _buildBuildingModeToggle() {
+  return Padding(
+    padding: const EdgeInsets.only(top: 4),
+    child: GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() {
+          if (!_isManualBuildingEntry) {
+            // Switching dropdown → manual: carry over current value as starting text
+            _buildingTextController.text = _selectedBuilding ?? '';
+          } else {
+            // Switching manual → dropdown: only keep the value if it matches a real option,
+            // otherwise clear it so the dropdown doesn't crash on an unknown value
+            if (!buildingOptions.contains(_selectedBuilding)) {
+              _selectedBuilding = null;
+            }
+          }
+          _isManualBuildingEntry = !_isManualBuildingEntry;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: emasColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: emasColor.withOpacity(0.3)),
+        ),
+        child: Icon(
+          _isManualBuildingEntry ? Icons.list_rounded : Icons.edit_rounded,
+          color: emasColorDarker,
+          size: 20,
+        ),
+      ),
+    ),
+  );
+}
+
+  /// Problem Description Section (free text) [_buildDescriptionSection]
   Widget _buildDescriptionSection() {
     return GlassCard(
       child: Column(

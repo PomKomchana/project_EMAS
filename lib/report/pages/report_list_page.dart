@@ -8,8 +8,8 @@ import 'report_detail_page.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
-// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status/severity filter
-// AppBar is now owned by MainPage — this page only renders the tab bar + list body
+/// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status/severity filter
+/// AppBar is now owned by MainPage — this page only renders the tab bar + list body
 class ReportListPage extends StatefulWidget {
   final VoidCallback onMenuTap;
 
@@ -26,17 +26,17 @@ class _ReportListPageState extends State<ReportListPage>
   late final TabController _tabController;
   late final AnimationController _fadeController;
 
-  // Staggered list-item animation, replayed on tab switch [_fadeList, _slideList]
+  /// Staggered list-item animation, replayed on tab switch [_fadeList, _slideList]
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
 
-  // Status filter [_filterStatus] — null = show all statuses
+  /// Status filter [_filterStatus] — null = show all statuses
   String? _filterStatus;
 
   // Severity filter [_filterSeverity] — null = show all severities
   String? _filterSeverity;
 
-  /// ============================== [Life Cycle] ==============================
+  //// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
@@ -51,7 +51,7 @@ class _ReportListPageState extends State<ReportListPage>
 
     _fadeController.forward();
 
-    // Replay entrance animation on tab switch
+    /// Replay entrance animation on tab switch
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         _fadeController.reset();
@@ -68,7 +68,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Animation Logic] ==============================
-  // Staggered fade-in per list item slot [_buildStaggeredFadeList]
+  /// Staggered fade-in per list item slot [_buildStaggeredFadeList]
   List<Animation<double>> _buildStaggeredFadeList() {
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
@@ -81,7 +81,7 @@ class _ReportListPageState extends State<ReportListPage>
     });
   }
 
-  // Same as above but slide-up motion [_buildStaggeredSlideList]
+  /// Same as above but slide-up motion [_buildStaggeredSlideList]
   List<Animation<Offset>> _buildStaggeredSlideList() {
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
@@ -98,7 +98,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Data] ==============================
-  // Reports stream, newest first. If myReportsOnly, filter by current user's uid [_reportsStream]
+  /// Reports stream, newest first. If myReportsOnly, filter by current user's uid [_reportsStream]
   Stream<QuerySnapshot> _reportsStream({required bool myReportsOnly}) {
     Query query = FirebaseFirestore.instance.collection('reports');
 
@@ -114,7 +114,7 @@ class _ReportListPageState extends State<ReportListPage>
     return query.orderBy('createdAt', descending: true).snapshots();
   }
 
-  // Filters docs by _filterStatus + _filterSeverity (null = no filter on that field) [_applyFilters]
+  /// Filters docs by _filterStatus + _filterSeverity (null = no filter on that field) [_applyFilters]
   List<QueryDocumentSnapshot> _applyFilters(
     List<QueryDocumentSnapshot> docs,
   ) {
@@ -127,7 +127,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Opens the status/severity filter sheet [_showFilterSheet]
+  /// Opens the status/severity filter sheet [_showFilterSheet]
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
@@ -136,7 +136,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Navigate to detail page with fade + slide-up transition [_openDetailPage]
+  /// Navigate to detail page with fade + slide-up transition [_openDetailPage]
   void _openDetailPage(
     BuildContext context,
     Map<String, dynamic> data,
@@ -166,7 +166,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [UI Helpers] ==============================
-  // Accent color per status, mirrors AdminReportListPage's _statusColor [_statusBorderColor]
+  /// Accent color per status, mirrors AdminReportListPage's _statusColor [_statusBorderColor]
   Color _statusBorderColor(String status) {
     switch (status) {
       case ReportStatus.pending: return Colors.orange;
@@ -176,8 +176,8 @@ class _ReportListPageState extends State<ReportListPage>
     }
   }
 
-  // "ใหม่" badge if the report was created within the last 24 hours — reads createdAt
-  // (Timestamp) rather than the display-only `date` string field [_isRecent]
+  /// "ใหม่" badge if the report was created within the last 24 hours — reads createdAt
+  /// (Timestamp) rather than the display-only `date` string field [_isRecent]
   bool _isRecent(dynamic createdAt) {
     if (createdAt is! Timestamp) return false;
     final diff = DateTime.now().difference(createdAt.toDate());
@@ -211,7 +211,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Widgets] ==============================
-  // App bar: hamburger (opens MainPage drawer) + title + status/severity filter [_buildAppBar]
+  /// App bar: hamburger (opens MainPage drawer) + title + status/severity filter [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       elevation: 0,
@@ -246,7 +246,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Tab selector: "ทั้งหมด" / "ของฉัน" [_buildTabBar]
+  /// Tab selector: "ทั้งหมด" / "ของฉัน" [_buildTabBar]
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -283,7 +283,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Filter pill button, shows active filter count, opens the filter sheet [_buildFilterButton]
+  /// Filter pill button, shows active filter count, opens the filter sheet [_buildFilterButton]
   Widget _buildFilterButton() {
     final activeCount = (_filterStatus != null ? 1 : 0) + (_filterSeverity != null ? 1 : 0);
     final label = activeCount == 0 ? 'ทุกสถานะ' : 'ตัวกรอง ($activeCount)';
@@ -322,7 +322,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Filter sheet: status options + severity options, each with "ทั้งหมด" (all) [_buildFilterSheetContent]
+  /// Filter sheet: status options + severity options, each with "ทั้งหมด" (all) [_buildFilterSheetContent]
   Widget _buildFilterSheetContent() {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -374,7 +374,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // One row in the status group. null = "show all". [_buildStatusOptionTile]
+  /// One row in the status group. null = "show all". [_buildStatusOptionTile]
   Widget _buildStatusOptionTile(String? option) {
     return ListTile(
       leading: Icon(
@@ -391,7 +391,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // One row in the severity group. null = "show all". [_buildSeverityOptionTile]
+  /// One row in the severity group. null = "show all". [_buildSeverityOptionTile]
   Widget _buildSeverityOptionTile(String? key, String label) {
     return ListTile(
       leading: Icon(
@@ -408,7 +408,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Tab content: loading/error/empty states, or the report list. [_buildList]
+  /// Tab content: loading/error/empty states, or the report list. [_buildList]
   Widget _buildList({required bool myReportsOnly}) {
     return StreamBuilder<QuerySnapshot>(
       stream: _reportsStream(myReportsOnly: myReportsOnly),
@@ -434,7 +434,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Report cards with staggered entrance animation [_buildAnimatedListView]
+  /// Report cards with staggered entrance animation [_buildAnimatedListView]
   Widget _buildAnimatedListView(List<QueryDocumentSnapshot> docs) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -456,7 +456,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Shown when the filtered list has no items [_buildEmptyState]
+  /// Shown when the filtered list has no items [_buildEmptyState]
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -477,7 +477,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // One report card: thumbnail, title, status, date. Tap → detail page. [_buildReportCard]
+  /// One report card: thumbnail, title, status, date. Tap → detail page. [_buildReportCard]
   Widget _buildReportCard(
     BuildContext context,
     Map<String, dynamic> data,
@@ -524,7 +524,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Glass background for the card (duplicate of detail page's glass card) [_buildCardGlassContainer]
+  /// Glass background for the card (duplicate of detail page's glass card) [_buildCardGlassContainer]
   Widget _buildCardGlassContainer({required Widget child, required Color borderColor}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -550,7 +550,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Thumbnail. Shares a Hero tag with the detail page's hero image. [_buildThumbnail]
+  /// Thumbnail. Shares a Hero tag with the detail page's hero image. [_buildThumbnail]
   Widget _buildThumbnail(String id, String? imageUrl) {
     return Hero(
       tag: 'img_$id',
@@ -572,7 +572,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Text column: title, severity badge, status chip, date [_buildCardContent]
+  /// Text column: title, severity badge, status chip, date [_buildCardContent]
   Widget _buildCardContent({
     required String building,
     required String floor,
@@ -637,7 +637,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Severity dot + label (duplicate of detail page's version) [_buildSeverityBadge]
+  /// Severity dot + label (duplicate of detail page's version) [_buildSeverityBadge]
   Widget _buildSeverityBadge(SeverityInfo severity) {
     final isHigh = severity.label == severityLevels['high']!.label;
     return Container(
@@ -682,7 +682,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  // Small pink "ใหม่" pill for reports created within the last 24 hours [_buildNewBadge]
+  /// Small pink "ใหม่" pill for reports created within the last 24 hours [_buildNewBadge]
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -691,7 +691,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
   
-  // Status pill (pending/in-progress/done) [_buildStatusChip]
+  /// Status pill (pending/in-progress/done) [_buildStatusChip]
   Widget _buildStatusChip(String status) {
     final colors = getStatusColors(status);
 

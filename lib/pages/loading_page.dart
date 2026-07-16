@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login.dart';
 import 'main_page.dart';
 
-// Splash screen: fade in logo, hold, then transition to LoginPage or MainPage [LoadingPage]
+/// Splash screen: fade in logo, hold, then transition to LoginPage or MainPage [LoadingPage]
 class LoadingPage extends StatefulWidget {
   const LoadingPage({super.key});
 
@@ -54,7 +54,7 @@ class _LoadingPageState extends State<LoadingPage>
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Fade-transition to MainPage if already logged in, otherwise LoginPage [_go]
+  /// Fade-transition to MainPage if already logged in, otherwise LoginPage [_go]
   void _go() {
     if (!mounted) return;
 

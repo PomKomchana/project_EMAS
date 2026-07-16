@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../shared/constants/emas_colors.dart';
 
-// Emergency contact model [_Contact]
+/// Emergency contact model [_Contact]
 class _Contact {
   const _Contact({
     required this.icon,
@@ -20,7 +20,7 @@ class _Contact {
 }
 
 /// ============================== [Data] ==============================
-// Static emergency contact directory [_contacts]
+/// Static emergency contact directory [_contacts]
 const _contacts = [
   _Contact(
     icon: Icons.local_police_outlined,
@@ -66,7 +66,7 @@ const _contacts = [
   ),
 ];
 
-// Emergency contacts directory: tap a card to dial directly [EmergencyPage]
+/// Emergency contacts directory: tap a card to dial directly [EmergencyPage]
 class EmergencyPage extends StatelessWidget {
   const EmergencyPage({super.key});
 
@@ -142,14 +142,14 @@ class EmergencyPage extends StatelessWidget {
   }
 }
 
-// Single contact card, tap to dial [_ContactCard]
+/// Single contact card, tap to dial [_ContactCard]
 class _ContactCard extends StatelessWidget {
   const _ContactCard({required this.contact});
   final _Contact contact;
 
   /// ============================== [Logic] ==============================
-  // Launch the phone dialer with this contact's number.
-  // NOTE: errors are silently swallowed — user gets no feedback if launch fails. [_call]
+  /// Launch the phone dialer with this contact's number.
+  /// NOTE: errors are silently swallowed — user gets no feedback if launch fails. [_call]
   Future<void> _call() async {
     final uri = Uri(scheme: 'tel', path: contact.number);
     try {

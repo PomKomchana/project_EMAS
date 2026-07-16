@@ -35,7 +35,7 @@ class _ReportMarkerLayerState extends State<ReportMarkerLayer> {
 
       if (lat == null || lng == null) return null;
 
-      // ดึงข้อมูลระดับความอันตรายของ report นี้ (เหมือนใน report_list_page.dart)
+      /// ดึงข้อมูลระดับความอันตรายของ report นี้ (เหมือนใน report_list_page.dart)
       final severityKey = data['severity'] as String?;
       final severity = getSeverityInfo(severityKey);
       final isHigh = severity.label == severityLevels['high']!.label;
@@ -59,7 +59,7 @@ class _ReportMarkerLayerState extends State<ReportMarkerLayer> {
     });
   }
 
-  // ไอคอนหมุด: สีตามระดับความอันตราย + มี outline สีขาวรอบไอคอน, high มี badge ตกใจ (!)
+  /// ไอคอนหมุด: สีตามระดับความอันตราย + มี outline สีขาวรอบไอคอน, high มี badge ตกใจ (!)
   Widget _buildMarkerIcon(SeverityInfo severity, bool isHigh) {
     final iconSize = isHigh ? 44.0 : 40.0;
 
