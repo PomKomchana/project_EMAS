@@ -24,11 +24,9 @@ class _AdminMainPageState extends State<AdminMainPage> {
   /// ============================== [State] ==============================
   int _selectedIndex = 0;
 
-  // Which status tab AdminReportListPage should open on, and which scope
-  // (ทั้งหมด/ผู้ใช้/แอดมิน) sub-tab it starts on. Both set together from the
-  // dashboard's scope-chooser bottom sheet (_openReportList). Bumping either
-  // changes the page's key below, forcing a fresh TabController + sub-tab
-  // state with the new initial values. [_reportListTabIndex, _reportListScope]
+  // Which status tab and scope to open in the report list. Set from the
+  // dashboard's scope-chooser sheet. Changing either makes a new key below,
+  // so the page resets with the new values. [_reportListTabIndex, _reportListScope]
   int _reportListTabIndex = 0;
   ReportScopeFilter _reportListScope = ReportScopeFilter.all;
 
@@ -68,10 +66,8 @@ class _AdminMainPageState extends State<AdminMainPage> {
     }
   }
 
-  // Called after the dashboard's scope-chooser bottom sheet resolves — switch
-  // to the "รายการแจ้งซ่อม" bottom-nav tab directly on the matching status +
-  // scope. No push, no back button — the bottom nav bar stays visible, same
-  // as tapping the nav item manually. [_openReportList]
+  // Switch to the report list tab at the right status + scope. No push,
+  // no back button — bottom nav bar stays visible. [_openReportList]
   void _openReportList(int tabIndex, ReportScopeFilter scope) {
     setState(() {
       _selectedIndex = 1;
@@ -80,10 +76,8 @@ class _AdminMainPageState extends State<AdminMainPage> {
     });
   }
 
-  // Global "เพิ่มประกาศ" bottom sheet — reachable from every admin tab (the
-  // FAB below is at the Scaffold level, not per-page). Finishing either flow
-  // switches straight to the page showing what was just created: a news post
-  // lands on "ประกาศ", a report lands on "รายการแจ้งซ่อม". [_showCreateChooser]
+  // Global "add" sheet — works on every admin tab. After saving, switches
+  // to the page showing what was just made. [_showCreateChooser]
   void _showCreateChooser() {
     showModalBottomSheet(
       context: context,
@@ -130,7 +124,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
     );
   }
 
-  // Push NewsFormPage; it pops `true` on successful save, so land on ประกาศ [_createNews]
+  // Open the news form. Returns true if saved, so we can switch tabs [_createNews]
   Future<void> _createNews() async {
     final saved = await Navigator.push<bool>(
       context,
@@ -141,9 +135,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
     }
   }
 
-  // showAdminReportForm now resolves `true` only on a real save (its
-  // _submit pops with true; closing via the X button pops null) — so this
-  // only switches tabs when a report was actually created. [_createReport]
+  // Open the report form. Only switch tabs if it was actually saved. [_createReport]
   Future<void> _createReport() async {
     final saved = await showAdminReportForm(context);
     if (saved == true && mounted) {
@@ -301,9 +293,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
   }
 }
 
-// Per-status counts split by who created the report — feeds the stat card's
-// "user/admin" display. Purely informational now; tapping a card always
-// opens "ทั้งหมด" and the admin can switch scope from the sub-tabs there. [_StatusCount]
+// Report counts split by who made them — shown on the stat cards. [_StatusCount]
 class _StatusCount {
   final int user;
   final int admin;
@@ -311,7 +301,7 @@ class _StatusCount {
   int get total => user + admin;
 }
 
-// Dashboard tab: stats + trend chart + recent activity, all live from Firestore streams [_AdminDashboard]
+// Dashboard tab: stats, trend chart, recent activity [_AdminDashboard]
 class _AdminDashboard extends StatelessWidget {
   final void Function(int tabIndex, ReportScopeFilter scope) onOpenReportList;
 
@@ -335,8 +325,7 @@ class _AdminDashboard extends StatelessWidget {
 
         final reportDocs = reportSnap.data?.docs ?? [];
 
-        // Status counts tallied client-side from the raw stream, split by
-        // who created each report (user vs admin) [pending, inProgress, done]
+        // Count reports by status, split by who made them [pending, inProgress, done]
         int pendingUser = 0, pendingAdmin = 0;
         int inProgressUser = 0, inProgressAdmin = 0;
         int doneUser = 0, doneAdmin = 0;
@@ -429,7 +418,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [Data] ==============================
-  // Merge reports + news into a single feed, newest first, capped at 8 items [_buildActivityItems]
+  // Merge reports + news into one feed, newest first, top 8 [_buildActivityItems]
   List<_ActivityItem> _buildActivityItems(
     List<QueryDocumentSnapshot> reportDocs,
     List<QueryDocumentSnapshot> newsDocs,
@@ -474,7 +463,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [UI Helpers] ==============================
-  // "x นาทีที่แล้ว" / "x ชม.ที่แล้ว" / "x วันที่แล้ว" relative time, no intl dependency [_relativeTime]
+  // Relative time text, e.g. "5 นาทีที่แล้ว". No intl package needed. [_relativeTime]
   String _relativeTime(DateTime? time) {
     if (time == null) return '';
     final diff = DateTime.now().difference(time);
@@ -486,7 +475,7 @@ class _AdminDashboard extends StatelessWidget {
     return '${time.day}/${time.month}/${time.year}';
   }
 
-  // "ใหม่" badge if posted within the last 24 hours [_isRecent]
+  // "ใหม่" badge for items made in the last 24 hours [_isRecent]
   bool _isRecent(DateTime? time) {
     if (time == null) return false;
     final diff = DateTime.now().difference(time);
@@ -494,7 +483,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Report items → AdminReportDetailPage. News items have no dedicated detail page here. [_openActivityDetail]
+  // Reports open the detail page. News has no detail page here. [_openActivityDetail]
   void _openActivityDetail(BuildContext context, _ActivityItem item) {
     if (item.type != _ActivityType.report) return;
 
@@ -506,9 +495,8 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Bottom sheet: choose ทั้งหมด/ผู้ใช้/แอดมิน before switching to the
-  // "รายการแจ้งซ่อม" tab on the given status. Skips the sheet when only one
-  // scope has any items — no point asking when there's only one place to go. [_openScopeChooser]
+  // Pick ทั้งหมด/ผู้ใช้/แอดมิน before opening the report list. Skips the sheet
+  // if only one scope has items. [_openScopeChooser]
   void _openScopeChooser(
     BuildContext context,
     int tabIndex,
@@ -582,7 +570,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  // Greeting hero card, gradient uses emasColor/emasColorDarker directly [_buildHeroCard]
+  // Greeting card at the top, emasColor gradient [_buildHeroCard]
   Widget _buildHeroCard(int totalCount) {
     return Container(
       width: double.infinity,
@@ -632,7 +620,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Recent activity card: report + news items merged into one feed [_buildActivityCard]
+  // Recent activity card: reports + news in one feed [_buildActivityCard]
   Widget _buildActivityCard(BuildContext context, List<_ActivityItem> items) {
     if (items.isEmpty) {
       return Container(
@@ -662,8 +650,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Single activity row: left border by status/news, badge for recent items,
-  // tappable → detail page for reports only [_buildActivityTile]
+  // One activity row. Reports are tappable, news isn't. [_buildActivityTile]
   Widget _buildActivityTile(BuildContext context, _ActivityItem item) {
     final isReport = item.type == _ActivityType.report;
     final borderColor = isReport ? _reportStatusColor(item.status) : emasColor;
@@ -746,7 +733,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Small pink "ใหม่" pill for items posted within the last 24 hours [_buildNewBadge]
+  // Pink "ใหม่" pill for items made in the last 24 hours [_buildNewBadge]
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -755,7 +742,7 @@ class _AdminDashboard extends StatelessWidget {
     );
   }
 
-  // Accent color per report status, used for the activity icon badge + left border [_reportStatusColor]
+  // Color per status, for the activity icon and left border [_reportStatusColor]
   Color _reportStatusColor(String? status) {
     switch (status) {
       case 'รอดำเนินการ': return Colors.orange;
@@ -765,8 +752,7 @@ class _AdminDashboard extends StatelessWidget {
     }
   }
 
-  // Row inside the scope-chooser bottom sheet — matches _buildChooserOption's
-  // style in admin_announcements.dart [_buildScopeOption]
+  // Row inside the scope-chooser sheet [_buildScopeOption]
   Widget _buildScopeOption({
     required IconData icon,
     required String label,
@@ -833,7 +819,7 @@ class _ActivityItem {
   });
 }
 
-// Simple bar-chart painter for the 7-day trend, avoids adding a chart package dependency [_TrendChartPainter]
+// Bar chart painter for the trend, no chart package needed [_TrendChartPainter]
 class _TrendChartPainter extends CustomPainter {
   final List<int> counts;
   final int maxVal;
@@ -900,24 +886,20 @@ class _TrendChartPainter extends CustomPainter {
   }
 }
 
-// Date range for the trend chart — week buckets by day, month buckets by
-// 7-day window within the last 4 weeks. [_TrendPeriod]
+// Time range for the trend chart [_TrendPeriod]
 enum _TrendPeriod { week, month }
 
-// Bar (existing custom painter) vs line (new below), toggled independently
-// of the period. [_ChartMode]
+// Bar or line chart, picked separately from the period [_ChartMode]
 enum _ChartMode { bar, line }
 
-// Bucketed counts + their axis labels for whichever period is selected [_TrendData]
+// Counts + labels for the chart [_TrendData]
 class _TrendData {
   final List<int> counts;
   final List<String> labels;
   const _TrendData({required this.counts, required this.labels});
 }
 
-// Trend chart card: period picker (สัปดาห์/เดือน) + chart-mode toggle
-// (bar/line) sitting above the custom-painted chart. Holds its own local UI
-// state since neither selection needs to survive outside this card. [_TrendSection]
+// Trend chart card: period picker + chart-type toggle + chart [_TrendSection]
 class _TrendSection extends StatefulWidget {
   final List<QueryDocumentSnapshot> reportDocs;
 
@@ -932,16 +914,13 @@ class _TrendSectionState extends State<_TrendSection> {
   _TrendPeriod _period = _TrendPeriod.week;
   _ChartMode _mode = _ChartMode.bar;
 
-  // Calendar month shown in "เดือน" mode — defaults to the current month,
-  // changeable via the month/year picker dialog. Only relevant to
-  // _buildMonthData; "สัปดาห์" mode always shows the trailing 7 days. [_selectedMonth]
+  // Month shown in "เดือน" mode. Change it with the month/year picker. [_selectedMonth]
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
-  // Thai short weekday labels, index 0 = Monday — used in สัปดาห์ mode [_weekdayLabels]
+  // Thai weekday labels, Monday first [_weekdayLabels]
   static const _weekdayLabels = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
 
-  // Thai month names, full + 3-letter abbreviation — no intl dependency,
-  // same approach as the rest of the app's date formatting. [_thaiMonths, _thaiMonthsShort]
+  // Thai month names, full + short. No intl package needed. [_thaiMonths, _thaiMonthsShort]
   static const _thaiMonths = [
     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
     'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
@@ -985,8 +964,7 @@ class _TrendSectionState extends State<_TrendSection> {
     return _TrendData(counts: counts, labels: labels);
   }
 
-  // Weekly buckets within the selected calendar month (oldest → newest).
-  // Number of buckets varies with the month's length (4 or 5). [_buildMonthData]
+  // Weekly counts within the picked month, 4 or 5 weeks [_buildMonthData]
   _TrendData _buildMonthData() {
     final year = _selectedMonth.year;
     final month = _selectedMonth.month;
@@ -1040,8 +1018,7 @@ class _TrendSectionState extends State<_TrendSection> {
   }
 
   /// ============================== [Widgets] ==============================
-  // Segmented control for สัปดาห์/เดือน — same sliding-pill pattern as the
-  // ทั้งหมด/ผู้ใช้/แอดมิน scope tabs in AdminReportListPage. [_buildPeriodTabs]
+  // Tab bar for สัปดาห์/เดือน — same sliding-pill style as the scope tabs [_buildPeriodTabs]
   Widget _buildPeriodTabs() {
     final selectedIndex = _TrendPeriod.values.indexOf(_period);
 
@@ -1118,8 +1095,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Chip showing the currently selected calendar month — tap opens the
-  // month/year picker dialog. Only shown in "เดือน" mode. [_buildMonthSelector]
+  // Chip showing the picked month — tap to open the picker [_buildMonthSelector]
   Widget _buildMonthSelector() {
     return GestureDetector(
       onTap: _showMonthYearPicker,
@@ -1153,8 +1129,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Custom month/year picker — a year stepper above a 3x4 grid of months.
-  // No calendar package dependency, matches the app's other custom pickers. [_showMonthYearPicker]
+  // Month/year picker: year arrows + a grid of 12 months [_showMonthYearPicker]
   void _showMonthYearPicker() {
     int pickerYear = _selectedMonth.year;
     final now = DateTime.now();
@@ -1188,7 +1163,7 @@ class _TrendSectionState extends State<_TrendSection> {
                     IconButton(
                       icon: const Icon(Icons.chevron_right_rounded),
                       color: emasColor,
-                      // Can't view trend data for years that haven't happened yet [pickerYear < now.year]
+                      // Can't pick a future year [pickerYear < now.year]
                       onPressed: pickerYear < now.year ? () => setDialogState(() => pickerYear++) : null,
                     ),
                   ],
@@ -1204,7 +1179,7 @@ class _TrendSectionState extends State<_TrendSection> {
                   children: List.generate(12, (i) {
                     final m = i + 1;
                     final isSelected = pickerYear == _selectedMonth.year && m == _selectedMonth.month;
-                    // Same reasoning as the year arrow — no data exists for future months [isFuture]
+                    // Can't pick a future month [isFuture]
                     final isFuture = pickerYear == now.year && m > now.month;
 
                     return InkWell(
@@ -1243,7 +1218,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Bar/line toggle — two small icon buttons, active one filled emasColor [_buildModeToggle]
+  // Bar/line toggle, two small icon buttons [_buildModeToggle]
   Widget _buildModeToggle() {
     return Container(
       padding: const EdgeInsets.all(3),
@@ -1284,8 +1259,7 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  // Chart card: swaps between the bar painter and the line painter, labels
-  // beneath adapt to whichever period is selected [_buildChartCard]
+  // Chart card — swaps between bar and line painter [_buildChartCard]
   Widget _buildChartCard(List<int> counts, List<String> labels) {
     final maxVal = counts.isEmpty ? 1 : counts.reduce((a, b) => a > b ? a : b);
 
@@ -1340,9 +1314,7 @@ class _TrendSectionState extends State<_TrendSection> {
   }
 }
 
-// Line-chart painter for the trend data: filled area + stroked polyline +
-// dots, count labels above each point. Same no-package-dependency approach
-// as _TrendChartPainter. [_LineChartPainter]
+// Line chart painter: filled area, line, dots, and count labels [_LineChartPainter]
 class _LineChartPainter extends CustomPainter {
   final List<int> counts;
   final int maxVal;
@@ -1426,8 +1398,7 @@ class _LineChartPainter extends CustomPainter {
   }
 }
 
-// Single stat tile: icon + user/admin split count + label. Tappable —
-// pushes AdminReportListPage on the matching status tab, "ทั้งหมด" sub-tab. [_StatCard]
+// Stat card: icon + user/admin counts + label. Tap opens the report list. [_StatCard]
 class _StatCard extends StatelessWidget {
   final String title;
   final _StatusCount counts;

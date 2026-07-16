@@ -3,11 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
 
-// Shared delete-confirmation dialog for both news and reports. Requires the
-// admin to re-enter their account password — verified via
-// AdminService.reauthenticate — before the delete is allowed to proceed.
-// Returns true only if reauthentication succeeded; callers should perform
-// the actual delete() only after awaiting `true` from this. [showDeleteConfirmDialog]
+// Dialog for news and reports. Admin must re-enter password before delete
+// happens. Returns true only if the password was correct. [showDeleteConfirmDialog]
 Future<bool> showDeleteConfirmDialog(
   BuildContext context, {
   required String title,
@@ -51,8 +48,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
   String? _errorText;
 
   /// ============================== [Delete Confirm Logic] ==============================
-  // Verify the entered password via Firebase reauthentication before letting
-  // the caller proceed with the actual delete [_confirm]
+  // Check password with Firebase before deleting [_confirm]
   Future<void> _confirm() async {
     final password = widget.passwordCtrl.text;
     if (password.isEmpty) {

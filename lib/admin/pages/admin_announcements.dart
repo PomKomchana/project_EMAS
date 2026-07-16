@@ -9,11 +9,9 @@ import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
 
-// News-only announcements feed. Admin-created reports live in
-// AdminReportListPage alongside user reports (with a ทั้งหมด/ผู้ใช้/แอดมิน
-// sub-filter there) — this page is a pure news feed, no merge, no filter.
-// The "add" FAB now lives globally on AdminMainPage instead of here, since
-// it needs to be reachable from every admin tab. [AdminAnnouncementsPage]
+// News-only feed. Admin-made reports live in AdminReportListPage now, with
+// their own ทั้งหมด/ผู้ใช้/แอดมิน filter — this page is just news, no filter.
+// The "add" button now lives on AdminMainPage (global), not here. [AdminAnnouncementsPage]
 class AdminAnnouncementsPage extends StatelessWidget {
   const AdminAnnouncementsPage({super.key});
 
@@ -74,7 +72,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  // Opens the full-page news composer (create or edit) [_openNewsForm]
+  // Open the full-page news form, for add or edit [_openNewsForm]
   void _openNewsForm(BuildContext context, {QueryDocumentSnapshot? doc}) {
     Navigator.push(
       context,
@@ -85,7 +83,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
   }
 
   /// ============================== [News Logic] ==============================
-  // Confirm (via password reauthentication) + delete this news post [_deleteNews]
+  // Ask for password, then delete this news post [_deleteNews]
   Future<void> _deleteNews(BuildContext context, String docId) async {
     final confirmed = await showDeleteConfirmDialog(
       context,
@@ -263,9 +261,8 @@ class AdminAnnouncementsPage extends StatelessWidget {
 }
 
 /// ============================== [News Form Page] ==============================
-// Full-page composer for adding/editing a news item — bigger layout with
-// image + link attachment. Public (not `_NewsFormPage`) so AdminMainPage's
-// global FAB can push it directly. [NewsFormPage]
+// Full-page form to add or edit a news post — image + link, bigger layout.
+// Public (not "_NewsFormPage") so AdminMainPage's FAB can open it too. [NewsFormPage]
 class NewsFormPage extends StatefulWidget {
   final AdminService adminService;
   final QueryDocumentSnapshot? doc;
@@ -282,8 +279,8 @@ class _NewsFormPageState extends State<NewsFormPage> {
   late final TextEditingController _linkCtrl;
 
   File? _pickedImage;
-  String? _originalImageUrl; // image already on the doc when editing (immutable snapshot)
-  bool _imageRemoved = false; // true if the admin cleared the existing image without picking a new one
+  String? _originalImageUrl; // image already on the post, before any edit
+  bool _imageRemoved = false; // true if admin cleared the image without picking a new one
   bool _saving = false;
 
   bool get _isEdit => widget.doc != null;
@@ -313,7 +310,7 @@ class _NewsFormPageState extends State<NewsFormPage> {
     if (picked != null) {
       setState(() {
         _pickedImage = File(picked.path);
-        _imageRemoved = false; // a freshly picked image supersedes any "removed" state
+        _imageRemoved = false; // picking a new image cancels any "removed" state
       });
     }
   }
@@ -367,8 +364,8 @@ class _NewsFormPageState extends State<NewsFormPage> {
   }
 
   /// ============================== [Save] ==============================
-  // Pops `true` on success so callers (the global FAB flow in AdminMainPage)
-  // know to switch to the ประกาศ tab. [_save]
+  // Pops true on success, so the global FAB flow in AdminMainPage knows to
+  // switch to the ประกาศ tab. [_save]
   Future<void> _save() async {
     if (_titleCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

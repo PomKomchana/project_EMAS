@@ -3,18 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-// Centralizes all admin-side Firestore access for 'reports' and 'news'.
-// User-facing report creation stays in report/services/report_service.dart —
-// this service is for admin-only reads/writes (status changes, deletes, news CRUD). [AdminService]
+// All admin Firestore work for 'reports' and 'news'. User-side report
+// creation stays in report_service.dart — this is admin-only. [AdminService]
 class AdminService {
   final _reportsRef = FirebaseFirestore.instance.collection('reports');
   final _newsRef = FirebaseFirestore.instance.collection('news');
   final _storage = FirebaseStorage.instance;
 
   /// ============================== [Image Upload] ==============================
-  // Upload a picked image to Storage, return its download URL. Stored under
-  // reports/admin/<uid>/ to keep admin-created report images separate from
-  // user-submitted ones. Same pattern as ReportService._uploadImage. [_uploadImage]
+  // Upload a report image, return its URL. Saved under reports/admin/<uid>/. [_uploadImage]
   Future<String?> _uploadImage(File image) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
@@ -33,8 +30,7 @@ class AdminService {
     return uploadTask.ref.getDownloadURL();
   }
 
-  // Same upload pattern as _uploadImage, but stored under news/<uid>/ so
-  // announcement images stay separate from report images. [_uploadNewsImage]
+  // Same as _uploadImage but for news, saved under news/<uid>/. [_uploadNewsImage]
   Future<String?> _uploadNewsImage(File image) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
@@ -53,10 +49,8 @@ class AdminService {
   }
 
   /// ============================== [Auth] ==============================
-  // Re-verify the signed-in admin's password before a destructive action
-  // (delete news/report). Used by showDeleteConfirmDialog. Returns false on
-  // any failure (wrong password, no email/password account, network error)
-  // rather than throwing, so callers can just check the bool. [reauthenticate]
+  // Re-check the admin's password before delete. Used by
+  // showDeleteConfirmDialog. Returns false on any error. [reauthenticate]
   Future<bool> reauthenticate(String password) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || user.email == null) return false;
@@ -71,13 +65,13 @@ class AdminService {
   }
 
   /// ============================== [Report Reads] ==============================
-  // Raw reports stream, unfiltered — used by the dashboard for stat counts [reportsStream]
+  // All reports, no filter. Used for dashboard counts. [reportsStream]
   Stream<QuerySnapshot> reportsStream() {
     return _reportsRef.snapshots();
   }
 
-  // Reports filtered by status, newest first — used by the admin tabbed list.
-  // Scope (user/admin) is applied client-side on top of this in AdminReportListPage. [reportsByStatusStream]
+  // Reports by status, newest first. User/admin scope is filtered later in
+  // AdminReportListPage. [reportsByStatusStream]
   Stream<QuerySnapshot> reportsByStatusStream(String status) {
     return _reportsRef
         .where('status', isEqualTo: status)
@@ -86,9 +80,8 @@ class AdminService {
   }
 
   /// ============================== [Report Writes] ==============================
-  // Create a report on behalf of the admin (username fixed to 'Admin').
-  // Uploads image first (if provided) so imageUrl is written in the same
-  // add() call — avoids a partial doc with no image. [createReport]
+  // Create a report as admin (username set to 'Admin'). Uploads image
+  // first so imageUrl is set in the same write. [createReport]
   Future<void> createReport({
     required String building,
     required String floor,
@@ -118,7 +111,7 @@ class AdminService {
     });
   }
 
-  // Update status + admin note on an existing report [updateReportStatus]
+  // Update status, severity, and admin note on a report [updateReportStatus]
   Future<void> updateReportStatus({
     required String reportId,
     required String status,
@@ -139,14 +132,13 @@ class AdminService {
   }
 
   /// ============================== [News Reads] ==============================
-  // News stream, newest first [newsStream]
+  // News, newest first [newsStream]
   Stream<QuerySnapshot> newsStream() {
     return _newsRef.orderBy('createdAt', descending: true).snapshots();
   }
 
   /// ============================== [News Writes] ==============================
-  // Create a news post. Uploads image first (if provided) so imageUrl is
-  // written in the same add() call, same reasoning as createReport. [addNews]
+  // Create a news post. Uploads image first, same reason as createReport. [addNews]
   Future<void> addNews({
     required String title,
     required String content,
@@ -165,9 +157,8 @@ class AdminService {
     });
   }
 
-  // Update an existing news post. Pass `image` to upload+replace the photo,
-  // `removeImage: true` to clear it, or leave both alone (with
-  // `existingImageUrl` unchanged) to keep the current photo as-is. [updateNews]
+  // Update a news post. Pass `image` to replace the photo, `removeImage:
+  // true` to clear it, or leave both alone to keep it as-is. [updateNews]
   Future<void> updateNews({
     required String docId,
     required String title,

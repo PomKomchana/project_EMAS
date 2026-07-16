@@ -8,8 +8,7 @@ import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
-// Which subset of reports a status tab is showing — drives the nested
-// scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) inside each status page. [ReportScopeFilter]
+// Which reports to show — drives the ทั้งหมด/ผู้ใช้/แอดมิน sub-tabs. [ReportScopeFilter]
 enum ReportScopeFilter { all, user, admin }
 
 extension ReportScopeFilterLabel on ReportScopeFilter {
@@ -22,14 +21,14 @@ extension ReportScopeFilterLabel on ReportScopeFilter {
   }
 }
 
-// Admin report list: tabbed by status ("รอดำเนินการ" / "กำลังดำเนินการ" / "เสร็จสิ้น").
-// Each status tab carries its own scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) so
-// user-submitted and admin-created reports live in one place. [AdminReportListPage]
+// Report list, tabbed by status (รอดำเนินการ / กำลังดำเนินการ / เสร็จสิ้น).
+// Each status tab has its own ทั้งหมด/ผู้ใช้/แอดมิน sub-tabs, so user and
+// admin reports live in one place. [AdminReportListPage]
 //
-// `showAppBar: false` (default) — embedded inside AdminMainPage's bottom-nav
-// shell, which already provides its own AppBar.
-// `showAppBar: true` — pushed standalone (e.g. from the dashboard stat cards),
-// so this page renders its own AppBar with a back button.
+// showAppBar: false (default) — used inside AdminMainPage's bottom nav,
+// which already has its own AppBar.
+// showAppBar: true — used standalone (e.g. from dashboard cards), shows
+// its own AppBar with a back button.
 class AdminReportListPage extends StatefulWidget {
   final int initialTabIndex;
   final ReportScopeFilter initialScope;
@@ -53,8 +52,8 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   late final TabController _tabController;
 
   /// ============================== [State] ==============================
-  // Shared across all 3 status tabs — picking "ผู้ใช้" while on "รอดำเนินการ"
-  // keeps "ผู้ใช้" selected after swiping to "กำลังดำเนินการ" / "เสร็จสิ้น". [_scope]
+  // Shared by all 3 status tabs — pick "ผู้ใช้" on one tab, it stays picked
+  // when you swipe to another. [_scope]
   late ReportScopeFilter _scope = widget.initialScope;
 
   /// ============================== [Life Cycle] ==============================
@@ -145,7 +144,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   }
 
   /// ============================== [Widgets] ==============================
-  // Gradient AppBar matching AdminMainPage's style — used only when pushed standalone [_buildAppBar]
+  // AppBar shown only when pushed standalone [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       elevation: 0,
@@ -172,10 +171,9 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   }
 }
 
-// One status tab's content: scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) + the
-// filtered list beneath. `scope` is owned by AdminReportListPage and shared
-// across all 3 status tabs, so picking a scope on one tab carries over when
-// swiping to another. [_StatusTabContent]
+// One status tab: scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) on top, list below.
+// `scope` is owned by AdminReportListPage so it stays the same across all
+// 3 status tabs. [_StatusTabContent]
 class _StatusTabContent extends StatelessWidget {
   final String status;
   final ReportScopeFilter scope;
@@ -204,9 +202,8 @@ class _StatusTabContent extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  // Segmented control for ทั้งหมด/ผู้ใช้/แอดมิน within this status — an
-  // emasColor pill slides between segments via AnimatedPositioned, with
-  // labels crossfading between grey and white on top. [_buildScopeTabs]
+  // Small tab bar for ทั้งหมด/ผู้ใช้/แอดมิน — an emasColor pill slides between
+  // options, text fades white/grey. [_buildScopeTabs]
   Widget _buildScopeTabs() {
     final selectedIndex = ReportScopeFilter.values.indexOf(scope);
 
@@ -283,7 +280,7 @@ class _StatusTabContent extends StatelessWidget {
   }
 }
 
-// Status + scope filtered list, newest first [_FilteredList]
+// List of reports, filtered by status + scope, newest first [_FilteredList]
 class _FilteredList extends StatelessWidget {
   final String status;
   final ReportScopeFilter scope;
@@ -302,7 +299,7 @@ class _FilteredList extends StatelessWidget {
     }
   }
 
-  // Apply the ทั้งหมด/ผู้ใช้/แอดมิน sub-filter on top of the status stream [_filterByScope]
+  // Apply the ทั้งหมด/ผู้ใช้/แอดมิน filter on top of the status list [_filterByScope]
   List<QueryDocumentSnapshot> _filterByScope(List<QueryDocumentSnapshot> docs) {
     if (scope == ReportScopeFilter.all) return docs;
 
@@ -319,7 +316,7 @@ class _FilteredList extends StatelessWidget {
     return '${d.day}/${d.month}/${d.year}';
   }
 
-  // "ใหม่" badge if posted within the last 24 hours [_isRecent]
+  // "ใหม่" badge for reports made in the last 24 hours [_isRecent]
   bool _isRecent(dynamic createdAt) {
     if (createdAt is! Timestamp) return false;
     final diff = DateTime.now().difference(createdAt.toDate());
@@ -327,8 +324,7 @@ class _FilteredList extends StatelessWidget {
   }
 
   /// ============================== [Report Actions Logic] ==============================
-  // Confirm (via password reauthentication) + delete this report, called
-  // directly from the list row's trash icon [_deleteReport]
+  // Ask for password, then delete — trash icon in the list [_deleteReport]
   Future<void> _deleteReport(BuildContext context, String docId) async {
     final confirmed = await showDeleteConfirmDialog(
       context,
@@ -396,11 +392,9 @@ class _FilteredList extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  // Full-info card: thumbnail, severity badge, status chip + date. Tags
-  // admin-created reports with a small "Admin" pill so scope is visible even
-  // in the "ทั้งหมด" sub-tab. "ใหม่" sits with the status chip at the bottom
-  // rather than crowding the title row. Actions are explicit pencil (open
-  // detail) + trash (delete) icons instead of a whole-card tap. [_buildReportCard]
+  // One report card: thumbnail, severity badge, status chip + date. Tags
+  // admin-made reports with a small "Admin" pill. Pencil icon opens detail,
+  // trash icon deletes — no more whole-card tap. [_buildReportCard]
   Widget _buildReportCard(
     BuildContext context,
     String docId,
@@ -564,8 +558,7 @@ class _FilteredList extends StatelessWidget {
     );
   }
 
-  // Small pink "ใหม่" pill for reports created within the last 24 hours —
-  // now sits next to the status chip instead of the title row [_buildNewBadge]
+  // Small pink "ใหม่" pill, sits next to the status chip [_buildNewBadge]
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -574,7 +567,7 @@ class _FilteredList extends StatelessWidget {
     );
   }
 
-  // Small "Admin" pill so admin-created reports are still identifiable in the "ทั้งหมด" sub-tab [_buildAdminBadge]
+  // Small "Admin" pill for admin-made reports [_buildAdminBadge]
   Widget _buildAdminBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
