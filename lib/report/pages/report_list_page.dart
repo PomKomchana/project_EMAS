@@ -8,7 +8,7 @@ import 'report_detail_page.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
-/// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status/severity filter
+/// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status/severity/scope filter
 /// AppBar is now owned by MainPage — this page only renders the tab bar + list body
 class ReportListPage extends StatefulWidget {
   final VoidCallback onMenuTap;
@@ -35,6 +35,9 @@ class _ReportListPageState extends State<ReportListPage>
 
   // Severity filter [_filterSeverity] — null = show all severities
   String? _filterSeverity;
+
+  /// Scope filter [_filterScope] — null = ทั้งหมด, 'user' = ผู้ใช้, 'admin' = แอดมิน
+  String? _filterScope;
 
   //// ============================== [Life Cycle] ==============================
   @override
@@ -114,7 +117,7 @@ class _ReportListPageState extends State<ReportListPage>
     return query.orderBy('createdAt', descending: true).snapshots();
   }
 
-  /// Filters docs by _filterStatus + _filterSeverity (null = no filter on that field) [_applyFilters]
+  /// Filters docs by _filterStatus + _filterSeverity + _filterScope (null = no filter on that field) [_applyFilters]
   List<QueryDocumentSnapshot> _applyFilters(
     List<QueryDocumentSnapshot> docs,
   ) {
@@ -122,12 +125,19 @@ class _ReportListPageState extends State<ReportListPage>
       final data = doc.data() as Map<String, dynamic>;
       final matchesStatus = _filterStatus == null || data['status'] == _filterStatus;
       final matchesSeverity = _filterSeverity == null || data['severity'] == _filterSeverity;
-      return matchesStatus && matchesSeverity;
+
+      final createdBy = data['createdBy'];
+      final isAdmin = createdBy == 'admin';
+      final matchesScope = _filterScope == null ||
+          (_filterScope == 'admin' && isAdmin) ||
+          (_filterScope == 'user' && !isAdmin);
+
+      return matchesStatus && matchesSeverity && matchesScope;
     }).toList();
   }
 
   /// ============================== [Navigation Logic] ==============================
-  /// Opens the status/severity filter sheet [_showFilterSheet]
+  /// Opens the status/severity/scope filter sheet [_showFilterSheet]
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
@@ -211,7 +221,7 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   /// ============================== [Widgets] ==============================
-  /// App bar: hamburger (opens MainPage drawer) + title + status/severity filter [_buildAppBar]
+  /// App bar: hamburger (opens MainPage drawer) + title + status/severity/scope filter [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       elevation: 0,
@@ -256,7 +266,7 @@ class _ReportListPageState extends State<ReportListPage>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -285,7 +295,9 @@ class _ReportListPageState extends State<ReportListPage>
 
   /// Filter pill button, shows active filter count, opens the filter sheet [_buildFilterButton]
   Widget _buildFilterButton() {
-    final activeCount = (_filterStatus != null ? 1 : 0) + (_filterSeverity != null ? 1 : 0);
+    final activeCount = (_filterStatus != null ? 1 : 0) +
+        (_filterSeverity != null ? 1 : 0) +
+        (_filterScope != null ? 1 : 0);
     final label = activeCount == 0 ? 'ทุกสถานะ' : 'ตัวกรอง ($activeCount)';
 
     return GestureDetector(
@@ -297,9 +309,9 @@ class _ReportListPageState extends State<ReportListPage>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.4)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -322,14 +334,14 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  /// Filter sheet: status options + severity options, each with "ทั้งหมด" (all) [_buildFilterSheetContent]
+  /// Filter sheet: status options + severity options + scope options, each with "ทั้งหมด" (all) [_buildFilterSheetContent]
   Widget _buildFilterSheetContent() {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           child: SafeArea(
             child: SingleChildScrollView(
               child: Column(
@@ -363,6 +375,17 @@ class _ReportListPageState extends State<ReportListPage>
                   _buildSeverityOptionTile(null, 'ทั้งหมด'),
                   for (final entry in severityLevels.entries)
                     _buildSeverityOptionTile(entry.key, entry.value.label),
+
+                  Divider(color: Colors.grey.shade200, height: 24, indent: 20, endIndent: 20),
+
+                  const Text(
+                    'กรองตามผู้แจ้ง',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  _buildScopeOptionTile(null, 'ทั้งหมด'),
+                  _buildScopeOptionTile('user', 'ผู้ใช้'),
+                  _buildScopeOptionTile('admin', 'แอดมิน'),
 
                   const SizedBox(height: 12),
                 ],
@@ -403,6 +426,23 @@ class _ReportListPageState extends State<ReportListPage>
       title: Text(label),
       onTap: () {
         setState(() => _filterSeverity = key);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  /// One row in the scope group. null = ทั้งหมด, 'user' / 'admin' filter by createdBy [_buildScopeOptionTile]
+  Widget _buildScopeOptionTile(String? key, String label) {
+    return ListTile(
+      leading: Icon(
+        _filterScope == key
+            ? Icons.radio_button_checked
+            : Icons.radio_button_unchecked,
+        color: emasColor,
+      ),
+      title: Text(label),
+      onTap: () {
+        setState(() => _filterScope = key);
         Navigator.pop(context);
       },
     );
@@ -477,7 +517,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  /// One report card: thumbnail, title, status, date. Tap → detail page. [_buildReportCard]
+  /// One report card: thumbnail, title, admin badge (if applicable), status, date. Tap → detail page. [_buildReportCard]
   Widget _buildReportCard(
     BuildContext context,
     Map<String, dynamic> data,
@@ -491,6 +531,7 @@ class _ReportListPageState extends State<ReportListPage>
     final date = data['date'] ?? '-';
     final imageUrl = data['imageUrl'] as String?;
     final isRecent = _isRecent(data['createdAt']);
+    final isAdmin = data['createdBy'] == 'admin';
 
     final severityKey = data['severity'] as String?;
     final severity = getSeverityInfo(severityKey);
@@ -514,6 +555,7 @@ class _ReportListPageState extends State<ReportListPage>
                 date: date,
                 severity: severity,
                 isRecent: isRecent,
+                isAdmin: isAdmin,
               ),
             ),
             const SizedBox(width: 4),
@@ -533,12 +575,12 @@ class _ReportListPageState extends State<ReportListPage>
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.78),
+            color: Colors.white.withValues(alpha: 0.78),
             borderRadius: BorderRadius.circular(18),
             border: Border(left: BorderSide(color: borderColor, width: 4)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -572,7 +614,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  /// Text column: title, severity badge, status chip, date [_buildCardContent]
+  /// Text column: title, admin badge, severity badge, status chip, date [_buildCardContent]
   Widget _buildCardContent({
     required String building,
     required String floor,
@@ -582,11 +624,13 @@ class _ReportListPageState extends State<ReportListPage>
     required String date,
     required SeverityInfo severity,
     required bool isRecent,
+    required bool isAdmin,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Text(
@@ -598,11 +642,20 @@ class _ReportListPageState extends State<ReportListPage>
                 ),
               ),
             ),
-            if (isRecent) ...[
-              _buildNewBadge(),
+            if (isAdmin) ...[
+              _buildAdminBadge(),
               const SizedBox(width: 6),
             ],
-            _buildSeverityBadge(severity),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildSeverityBadge(severity),
+                if (isRecent) ...[
+                  const SizedBox(height: 4),
+                  _buildNewBadge(),
+                ],
+              ],
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -637,15 +690,30 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
+  /// Static "Admin" badge for reports created by an admin (createdBy == 'admin') [_buildAdminBadge]
+  Widget _buildAdminBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: emasColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'Admin',
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: emasColorDarker),
+      ),
+    );
+  }
+
   /// Severity dot + label (duplicate of detail page's version) [_buildSeverityBadge]
   Widget _buildSeverityBadge(SeverityInfo severity) {
     final isHigh = severity.label == severityLevels['high']!.label;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: severity.color.withOpacity(0.12),
+        color: severity.color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: severity.color.withOpacity(0.4)),
+        border: Border.all(color: severity.color.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -690,7 +758,7 @@ class _ReportListPageState extends State<ReportListPage>
       child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
     );
   }
-  
+
   /// Status pill (pending/in-progress/done) [_buildStatusChip]
   Widget _buildStatusChip(String status) {
     final colors = getStatusColors(status);
