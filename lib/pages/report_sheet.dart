@@ -177,7 +177,7 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
 
                     _sectionSimple(
                       icon: Icons.description_outlined,
-                      title: "รายละเอียด",
+                      title: "รายละเอียดปัญหา",
                       color: Colors.black87,
                       text: widget.report['description'] ?? 'ไม่มีรายละเอียด',
                     ),

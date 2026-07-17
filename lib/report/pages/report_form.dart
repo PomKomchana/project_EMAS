@@ -37,9 +37,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
   /// Text Controllers [_dateController, _floorController, _usernameController, _phoneController, _roomController, _descController, _buildingTextController]
   final _dateController = TextEditingController();
-  final _floorController = TextEditingController();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _floorController = TextEditingController();
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
@@ -204,9 +204,7 @@ void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
   if (!mapBounds.contains(tappedPosition)) {
     HapticFeedback.heavyImpact();
     _showSnackBar(
-      'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น',
-      Colors.orange.shade700,
-      Icons.warning_amber_rounded,
+      'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น', Colors.red.shade700, Icons.warning_amber_rounded,
     );
     return;
   }
@@ -231,28 +229,28 @@ void _autoDetectBuilding(LatLng point) {
   });
 
   _showSnackBar( // หรือ _showSnack(...) ใน AdminReportForm
-    'ตรวจพบตำแหน่ง: $detectedName',
-    Colors.blue.shade600,
-    Icons.location_city_rounded,
+    'ตรวจพบตำแหน่ง: $detectedName', Colors.green.shade600, Icons.location_city_rounded,
   );
 }
 
-  /// Confirm selected pin location [_confirmPin]
-  void _confirmPin() {
-    HapticFeedback.mediumImpact();
-    _toggleMapExpand(); // ย่อแผนที่กลับ
-    _showSnackBar('ปักหมุดสำเร็จ ✓', Colors.green.shade600, Icons.check_circle_outline);
+/// Confirm selected pin location [_confirmPin]
+void _confirmPin() {
+  HapticFeedback.mediumImpact();
+  _toggleMapExpand(); // ย่อแผนที่กลับ
+  _showSnackBar(
+    'ปักหมุดสำเร็จ', Colors.green.shade600, Icons.check_circle_outline
+    );
   }
 
-  /// Switch to next map mode [_cycleMapMode]
-  void _cycleMapMode() {
-    HapticFeedback.selectionClick();
-    setState(() {
-      final modes = MapMode.values; // [normal, hybrid]
-      final nextIndex = (modes.indexOf(_mapMode) + 1) % modes.length;
-      _mapMode = modes[nextIndex];
-    });
-  }
+/// Switch to next map mode [_cycleMapMode]
+void _cycleMapMode() {
+  HapticFeedback.selectionClick();
+  setState(() {
+    final modes = MapMode.values; // [normal, hybrid]
+    final nextIndex = (modes.indexOf(_mapMode) + 1) % modes.length;
+    _mapMode = modes[nextIndex];
+  });
+}
 
   /// ============================== [Image Picker Logic] ==============================
   /// Show image picker bottom sheet [_showImagePickerSheet]
@@ -276,12 +274,34 @@ void _autoDetectBuilding(LatLng point) {
   /// ============================== [Submit Logic] ==============================
   /// Submit report via ReportService [_submitReport]
   Future<void> _submitReport() async {
+    if (_dateController.text.trim().isEmpty) {
+      _showSnackBar(
+        'กรุณากรอกวันที่แจ้งซ่อม', Colors.red.shade600, Icons.error_outline
+        );
+      return;
+    }
+    if (_usernameController.text.trim().isEmpty) {
+      _showSnackBar(
+        'กรุณากรอกชื่อผู้แจ้ง', Colors.red.shade600, Icons.error_outline
+        );
+      return;
+    }
+    if (_phoneController.text.trim().isEmpty) {
+      _showSnackBar(
+        'กรุณากรอกเบอร์ติดต่อ', Colors.red.shade600, Icons.error_outline
+        );
+      return;
+    }
     if (_selectedBuilding == null || _floorController.text.trim().isEmpty == null) {
       _showSnackBar(
-        'กรุณาเลือกอาคารและชั้น',
-        Colors.red.shade600,
-        Icons.error_outline,
+        'กรุณาเลือกอาคารและชั้น', Colors.red.shade700, Icons.error_outline
       );
+      return;
+    }
+    if (_descController.text.trim().isEmpty) {
+      _showSnackBar(
+        'กรุณากรอกรายละเอียดปัญหา', Colors.red.shade600, Icons.error_outline
+        );
       return;
     }
 
@@ -304,7 +324,9 @@ void _autoDetectBuilding(LatLng point) {
 
       if (!mounted) return;
 
-      _showSnackBar('ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green, Icons.check_circle);
+      _showSnackBar(
+        'ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green.shade600, Icons.check_circle
+        );
 
       // Submit to ReportListPage
       Navigator.pushAndRemoveUntil(
@@ -315,7 +337,9 @@ void _autoDetectBuilding(LatLng point) {
         (route) => false,
       );
     } catch (e) {
-      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red, Icons.error);
+      _showSnackBar(
+        'เกิดข้อผิดพลาด: $e', Colors.red.shade700, Icons.error_outline
+        );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

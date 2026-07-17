@@ -176,7 +176,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                       const SizedBox(height: 12),
                       _info(Icons.apartment_rounded, 'อาคาร', '${data['building'] ?? '-'}'),
                       _info(Icons.layers_rounded, 'ชั้น', '${data['floor'] ?? '-'}'),
-                      _info(Icons.edit_note_rounded, 'รายละเอียด', '${data['description'] ?? '-'}'),
+                      _info(Icons.edit_note_rounded, 'รายละเอียดปัญหา', '${data['description'] ?? '-'}'),
                       _info(
                         Icons.location_on_rounded,
                         'ตำแหน่ง',

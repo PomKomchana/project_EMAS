@@ -210,7 +210,9 @@ void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
 
   if (!mapBounds.contains(tappedPosition)) {
     HapticFeedback.heavyImpact();
-    _showSnack('กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น', Colors.orange.shade700);
+    _showSnackBar(
+      'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น', Colors.red.shade700, Icons.warning_amber_rounded
+    );
     return;
   }
 
@@ -232,24 +234,28 @@ void _autoDetectBuilding(LatLng point) {
     _buildingTextController.text = detectedName;
   });
 
-  _showSnack('ตรวจพบตำแหน่ง: $detectedName', Colors.blue.shade600);
+  _showSnackBar(
+    'ตรวจพบตำแหน่ง: $detectedName', Colors.green.shade600, Icons.location_city_rounded
+  );
 }
 
-  /// Confirm selected pin location [_confirmPin]
-  void _confirmPin() {
-    HapticFeedback.mediumImpact();
-    _toggleMapExpand();
-    _showSnack('ปักหมุดสำเร็จ ✓', Colors.green.shade600);
-  }
+/// Confirm selected pin location [_confirmPin]
+void _confirmPin() {
+  HapticFeedback.mediumImpact();
+  _toggleMapExpand();
+  _showSnackBar(
+    'ปักหมุดสำเร็จ', Colors.green.shade600, Icons.check_circle_outline
+  );
+}
 
-  /// Switch to next map mode [_cycleMapMode]
-  void _cycleMapMode() {
-    HapticFeedback.selectionClick();
-    setState(() {
-      final modes = MapMode.values;
-      _mapMode = modes[(modes.indexOf(_mapMode) + 1) % modes.length];
-    });
-  }
+/// Switch to next map mode [_cycleMapMode]
+void _cycleMapMode() {
+  HapticFeedback.selectionClick();
+  setState(() {
+    final modes = MapMode.values;
+    _mapMode = modes[(modes.indexOf(_mapMode) + 1) % modes.length];
+  });
+}
 
   /// ============================== [Image Picker Logic] ==============================
   /// Show image picker bottom sheet [_showImagePickerSheet]
@@ -274,15 +280,21 @@ void _autoDetectBuilding(LatLng point) {
   /// Validate + create the admin report [_submit]
   Future<void> _submit() async {
     if (_selectedBuilding == null || _floorController.text.trim().isEmpty) {
-      _showSnack('กรุณาเลือกอาคารและชั้น', Colors.red.shade600);
+      _showSnackBar(
+        'กรุณาเลือกอาคารและชั้น', Colors.red.shade600, Icons.error_outline
+        );
       return;
     }
     if (_selectedSeverity == null) {
-      _showSnack('กรุณาเลือกระดับความรุนแรง', Colors.red.shade600);
+      _showSnackBar(
+        'กรุณาเลือกระดับความรุนแรง', Colors.red.shade600, Icons.error_outline
+        );
       return;
     }
     if (_descController.text.trim().isEmpty) {
-      _showSnack('กรุณากรอกรายละเอียดปัญหา', Colors.red.shade600);
+      _showSnackBar(
+        'กรุณากรอกรายละเอียดปัญหา', Colors.red.shade600, Icons.error_outline
+        );
       return;
     }
 
@@ -309,9 +321,13 @@ void _autoDetectBuilding(LatLng point) {
       /// the sheet, so callers like AdminMainPage's global FAB know whether
       /// to switch to the report list tab. [Navigator.pop(context, true)]
       Navigator.pop(context, true);
-      _showSnack('เพิ่มรายการแจ้งซ่อมสำเร็จ ✓', Colors.green.shade600);
+      _showSnackBar(
+        'เพิ่มรายการแจ้งซ่อมสำเร็จ', Colors.green.shade600, Icons.check_circle
+        );
     } catch (e) {
-      _showSnack('เกิดข้อผิดพลาด: $e', Colors.red.shade600);
+      _showSnackBar(
+        'เกิดข้อผิดพลาด: $e', Colors.red.shade700, Icons.error_outline
+        );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -319,7 +335,7 @@ void _autoDetectBuilding(LatLng point) {
 
   /// ============================== [UI Helpers] ==============================
   /// Show snackbar message [_showSnack]
-  void _showSnack(String message, Color color) {
+  void _showSnackBar(String message, Color color, IconData icon) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),

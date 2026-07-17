@@ -226,7 +226,19 @@ const List<BuildingBoundary> campusBuildings = [
   ),
   BuildingBoundary(
     buildingCode: '31',
-    buildingName: 'อาคารปฏิบัติการวิศกรรมไฟฟ้า',
+    buildingName: 'อาคารหอประชุมคณะวิศวกรรมศาสตร์ (อาคาร B)',
+    polygon: [
+      LatLng(14.1032084, 100.982668),
+      LatLng(14.1031331, 100.9825176),
+      LatLng(14.1031006, 100.9825385),
+      LatLng(14.103006, 100.9823572),
+      LatLng(14.1028856, 100.9824243),
+      LatLng(14.1030538, 100.9827517),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '32',
+    buildingName: 'อาคารปฏิบัติการวิศกรรมไฟฟ้า (อาคาร C)',
     polygon: [
       LatLng(14.1028898, 100.9829694),
       LatLng(14.1025572, 100.9823328),
@@ -235,7 +247,7 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '32',
+    buildingCode: '33',
     buildingName: 'อาคารปฏิบัติการวิศวกรรมเครื่องกล (อาคาร D)',
     polygon: [
       LatLng(14.1025096, 100.9831966),
@@ -245,23 +257,13 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '33',
+    buildingCode: '34',
     buildingName: 'อาคารปฏิบัติการวิศวกรรมเคมี (อาคาร E)',
     polygon: [
       LatLng(14.1019667, 100.9834772),
       LatLng(14.1016318, 100.9828309),
       LatLng(14.1013061, 100.9830129),
       LatLng(14.1016411, 100.9836505),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '34',
-    buildingName: 'ตึกวิศวกรรมอุตสาหการ (อาคาร H)',
-    polygon: [
-      LatLng(14.101876, 100.9819806),
-      LatLng(14.1017347, 100.9817065),
-      LatLng(14.1011655, 100.9820248),
-      LatLng(14.1013096, 100.9822965),
     ],
   ),
   BuildingBoundary(
@@ -279,7 +281,37 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '42',
+    buildingCode: '36',
+    buildingName: 'อาคารวิจัยและพัฒนาเทคโนโลยีทางวิศวกรรมไฟฟ้า (อาคาร G)',
+    polygon: [
+      LatLng(14.1017102, 100.9837839),
+      LatLng(14.1013088, 100.9830095),
+      LatLng(14.1008864, 100.9832613),
+      LatLng(14.1012804, 100.9840287),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '37',
+    buildingName: 'ตึกวิศวกรรมอุตสาหการ (อาคาร H)',
+    polygon: [
+      LatLng(14.101876, 100.9819806),
+      LatLng(14.1017347, 100.9817065),
+      LatLng(14.1011655, 100.9820248),
+      LatLng(14.1013096, 100.9822965),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '38',
+    buildingName: 'อาคารศูนย์เครื่องมือกลางและสอบเทียบทางวิศวกรรม (อาคาร I)',
+    polygon: [
+      LatLng(14.1021075, 100.9823342),
+      LatLng(14.1019263, 100.9820019),
+      LatLng(14.1013695, 100.9823225),
+      LatLng(14.1015369, 100.9826436),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '46',
     buildingName: 'หอพักนิสิต 1',
     polygon: [
       LatLng(14.1064071, 100.9877709),
@@ -289,7 +321,7 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '43',
+    buildingCode: '47',
     buildingName: 'หอพักนิสิต 2',
     polygon: [
       LatLng(14.1059207, 100.9880142),
@@ -299,7 +331,7 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '44',
+    buildingCode: '48',
     buildingName: 'หอพักนิสิต 3',
     polygon: [
       LatLng(14.1055849, 100.988221),
@@ -309,7 +341,7 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '45',
+    buildingCode: '49',
     buildingName: 'หอพักนิสิต 4',
     polygon: [
       LatLng(14.1051933, 100.9884436),
@@ -319,17 +351,7 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '46',
-    buildingName: 'โรงอาหารหอพักนิสิต',
-    polygon: [
-      LatLng(14.1048084, 100.9886428),
-      LatLng(14.1044744, 100.9880482),
-      LatLng(14.1042389, 100.9881828),
-      LatLng(14.1045756, 1100.9887772),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '47',
+    buildingCode: '50',
     buildingName: 'หอพักนิสิต 5',
     polygon: [
       LatLng(14.1068705, 100.9884247),
@@ -339,7 +361,7 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '48',
+    buildingCode: '51',
     buildingName: 'หอพักนิสิต 6',
     polygon: [
       LatLng(14.1064808, 100.9886419),
@@ -349,7 +371,107 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '49',
+    buildingCode: '52',
+    buildingName: 'หอพักนิสิต 7',
+    polygon: [
+      LatLng(14.1055454, 100.9891476),
+      LatLng(14.1053558, 100.9887828),
+      LatLng(14.1051538, 100.9888909),
+      LatLng(14.105345, 100.9892572),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '53',
+    buildingName: 'หอพักนิสิต 8',
+    polygon: [
+      LatLng(14.1055454, 100.9891476),
+      LatLng(14.1053558, 100.9887828),
+      LatLng(114.1051538, 100.9888909),
+      LatLng(14.105345, 100.9892572),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '54',
+    buildingName: 'หอพักนิสิต 9',
+    polygon: [
+      LatLng(14.1048359, 100.9895414),
+      LatLng(14.1046452, 100.9891653),
+      LatLng(14.104444, 100.9892754),
+      LatLng(14.1046373, 100.9896533),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '55',
+    buildingName: 'หอพักนิสิต 10',
+    polygon: [
+      LatLng(14.1044389, 100.989763),
+      LatLng(14.1042477, 100.9893876),
+      LatLng(14.104036, 100.9894995),
+      LatLng(14.1042228, 100.98988),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '56',
+    buildingName: 'หอพักนิสิต 11',
+    polygon: [
+      LatLng(14.1042449, 100.9888206),
+      LatLng(14.1042678, 100.9884248),
+      LatLng(14.1040599, 100.9884085),
+      LatLng(14.1040329, 100.9888059),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '57',
+    buildingName: 'หอพักนิสิต 12',
+    polygon: [
+      LatLng(14.103505, 100.9887031),
+      LatLng(14.1036561, 100.9883456),
+      LatLng(14.103466, 100.9882548),
+      LatLng(14.1033118, 100.98862),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '58',
+    buildingName: 'หอพักนิสิต 13',
+    polygon: [
+      LatLng(14.1032317, 100.9885746),
+      LatLng(14.1033841, 100.9882243),
+      LatLng(14.1031921, 100.9881316),
+      LatLng(14.1030454, 100.9884828),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '59',
+    buildingName: 'หอพักนิสิต 14',
+    polygon: [
+      LatLng(14.1028221, 100.9883981),
+      LatLng(14.1029838, 100.9880487),
+      LatLng(14.1027935, 100.9879582),
+      LatLng(14.1026385, 100.9883182),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '60',
+    buildingName: 'หอพักนิสิต 15',
+    polygon: [
+      LatLng(14.1025506, 100.9882677),
+      LatLng(14.1027054, 100.9879126),
+      LatLng(14.1025281, 100.9878315),
+      LatLng(14.1023627, 100.988192),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '61',
+    buildingName: 'หอพักนิสิต 16',
+    polygon: [
+      LatLng(14.1021492, 100.9880885),
+      LatLng(14.1023064, 100.9877363),
+      LatLng(14.1021199, 100.9876493),
+      LatLng(14.101969, 100.9880103),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '62',
     buildingName: 'อาคารบริการนิสิต (อ๊อกตะ)',
     polygon: [
       LatLng(14.1060909, 100.9889131),
@@ -369,135 +491,13 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '50',
-    buildingName: 'หอพักนิสิต 7',
+    buildingCode: '63',
+    buildingName: 'โรงอาหารหอพักนิสิต (โรงเขียว)',
     polygon: [
-      LatLng(14.1055454, 100.9891476),
-      LatLng(14.1053558, 100.9887828),
-      LatLng(14.1051538, 100.9888909),
-      LatLng(14.105345, 100.9892572),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '51',
-    buildingName: 'หอพักนิสิต 8',
-    polygon: [
-      LatLng(14.1055454, 100.9891476),
-      LatLng(14.1053558, 100.9887828),
-      LatLng(114.1051538, 100.9888909),
-      LatLng(14.105345, 100.9892572),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '52',
-    buildingName: 'หอพักนิสิต 9',
-    polygon: [
-      LatLng(14.1048359, 100.9895414),
-      LatLng(14.1046452, 100.9891653),
-      LatLng(14.104444, 100.9892754),
-      LatLng(14.1046373, 100.9896533),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '52',
-    buildingName: 'หอพักนิสิต 10',
-    polygon: [
-      LatLng(14.1044389, 100.989763),
-      LatLng(14.1042477, 100.9893876),
-      LatLng(14.104036, 100.9894995),
-      LatLng(14.1042228, 100.98988),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '52',
-    buildingName: 'หอพักนิสิต 11',
-    polygon: [
-      LatLng(14.1042449, 100.9888206),
-      LatLng(14.1042678, 100.9884248),
-      LatLng(14.1040599, 100.9884085),
-      LatLng(14.1040329, 100.9888059),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '74',
-    buildingName: 'อาคารหอประชุมคณะวิศวกรรมศาสตร์ (อาคาร B)',
-    polygon: [
-      LatLng(14.1032084, 100.982668),
-      LatLng(14.1031331, 100.9825176),
-      LatLng(14.1031006, 100.9825385),
-      LatLng(14.103006, 100.9823572),
-      LatLng(14.1028856, 100.9824243),
-      LatLng(14.1030538, 100.9827517),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '75',
-    buildingName: 'อาคารวิจัยและพัฒนาเทคโนโลยีทางวิศวกรรมไฟฟ้า (อาคาร G)',
-    polygon: [
-      LatLng(14.1017102, 100.9837839),
-      LatLng(14.1013088, 100.9830095),
-      LatLng(14.1008864, 100.9832613),
-      LatLng(14.1012804, 100.9840287),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '76',
-    buildingName: 'อาคารศูนย์เครื่องมือกลางและสอบเทียบทางวิศวกรรม (อาคาร I)',
-    polygon: [
-      LatLng(14.1021075, 100.9823342),
-      LatLng(14.1019263, 100.9820019),
-      LatLng(14.1013695, 100.9823225),
-      LatLng(14.1015369, 100.9826436),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '77',
-    buildingName: 'หอพักนิสิต 12',
-    polygon: [
-      LatLng(14.103505, 100.9887031),
-      LatLng(14.1036561, 100.9883456),
-      LatLng(14.103466, 100.9882548),
-      LatLng(14.1033118, 100.98862),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '78',
-    buildingName: 'หอพักนิสิต 13',
-    polygon: [
-      LatLng(14.1032317, 100.9885746),
-      LatLng(14.1033841, 100.9882243),
-      LatLng(14.1031921, 100.9881316),
-      LatLng(14.1030454, 100.9884828),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '79',
-    buildingName: 'หอพักนิสิต 14',
-    polygon: [
-      LatLng(14.1028221, 100.9883981),
-      LatLng(14.1029838, 100.9880487),
-      LatLng(14.1027935, 100.9879582),
-      LatLng(14.1026385, 100.9883182),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '80',
-    buildingName: 'หอพักนิสิต 15',
-    polygon: [
-      LatLng(14.1025506, 100.9882677),
-      LatLng(14.1027054, 100.9879126),
-      LatLng(14.1025281, 100.9878315),
-      LatLng(14.1023627, 100.988192),
-    ],
-  ),
-  BuildingBoundary(
-    buildingCode: '81',
-    buildingName: 'หอพักนิสิต 16',
-    polygon: [
-      LatLng(14.1021492, 100.9880885),
-      LatLng(14.1023064, 100.9877363),
-      LatLng(14.1021199, 100.9876493),
-      LatLng(14.101969, 100.9880103),
+      LatLng(14.1048084, 100.9886428),
+      LatLng(14.1044744, 100.9880482),
+      LatLng(14.1042389, 100.9881828),
+      LatLng(14.1045756, 1100.9887772),
     ],
   ),
 ];
