@@ -59,9 +59,9 @@ const _contacts = [
   ),
   _Contact(
     icon: Icons.school_outlined,
-    label: 'รปภ. มศว องครักษ์',
-    subtitle: 'งานรักษาความปลอดภัย',
-    number: '037395397',
+    label: 'คณะวิศวกรรมศาสตร์',
+    subtitle: 'มหาวิทยาลัยศรีนครินทรวิโรฒ',
+    number: '02649500027056',
     color: emasColor,
   ),
 ];
