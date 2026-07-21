@@ -29,7 +29,9 @@ class StyledDropdown extends StatelessWidget {
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: value != null ? emasColor.withOpacity(0.5) : Colors.grey.shade200,
+          color: value != null
+              ? emasColor.withOpacity(0.5)
+              : Colors.grey.shade200,
           width: value != null ? 1.5 : 1,
         ),
       ),
@@ -43,7 +45,9 @@ class StyledDropdown extends StatelessWidget {
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 4),
           ),
-          items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+          items: items
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .toList(),
           onChanged: onChanged,
           dropdownColor: Colors.white,
           borderRadius: BorderRadius.circular(12),

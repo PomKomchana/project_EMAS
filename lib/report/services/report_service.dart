@@ -13,22 +13,18 @@ class ReportService {
 
   /// ============================== [Image Upload] ==============================
   // Upload a picked image to Storage, return its download URL. Returns null if image is null. [_uploadImage]
- Future<String?> _uploadImage(File image) async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  Future<String?> _uploadImage(File image) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
 
-  final fileName =
-      '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
+    final fileName =
+        '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
 
-  final ref = _storage
-      .ref()
-      .child('reports')
-      .child(uid)
-      .child(fileName);
+    final ref = _storage.ref().child('reports').child(uid).child(fileName);
 
-  final uploadTask = await ref.putFile(image);
+    final uploadTask = await ref.putFile(image);
 
-  return uploadTask.ref.getDownloadURL();
-}
+    return uploadTask.ref.getDownloadURL();
+  }
 
   /// ============================== [Report Write] ==============================
   // Submit new report to Firestore. Uploads image first (if provided) so imageUrl

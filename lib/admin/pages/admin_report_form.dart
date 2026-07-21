@@ -36,7 +36,6 @@ class AdminReportForm extends StatefulWidget {
 
 class _AdminReportFormState extends State<AdminReportForm>
     with TickerProviderStateMixin {
-
   /// ============================== [Controllers & Services] ==============================
   // Text/map controllers [_roomController, _descController, _mapController]
   final _roomController = TextEditingController();
@@ -92,10 +91,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     )..addListener(() => setState(() {}));
 
     _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
-      CurvedAnimation(
-        parent: _mapAnimController,
-        curve: Curves.easeInOutCubic,
-      ),
+      CurvedAnimation(parent: _mapAnimController, curve: Curves.easeInOutCubic),
     );
   }
 
@@ -127,7 +123,10 @@ class _AdminReportFormState extends State<AdminReportForm>
   List<Animation<Offset>> _buildStaggeredSlideList() {
     return List.generate(_sectionCount, (i) {
       final start = (i * 0.1).clamp(0.0, 0.9);
-      return Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
+      return Tween<Offset>(
+        begin: const Offset(0, 0.12),
+        end: Offset.zero,
+      ).animate(
         CurvedAnimation(
           parent: _fadeController,
           curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
@@ -172,7 +171,10 @@ class _AdminReportFormState extends State<AdminReportForm>
 
     if (!mapBounds.contains(tappedPosition)) {
       HapticFeedback.heavyImpact();
-      _showSnack('กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น', Colors.orange.shade700);
+      _showSnack(
+        'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น',
+        Colors.orange.shade700,
+      );
       return;
     }
 
@@ -265,7 +267,10 @@ class _AdminReportFormState extends State<AdminReportForm>
   void _showSnack(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
+        content: Text(
+          message,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -393,10 +398,8 @@ class _AdminReportFormState extends State<AdminReportForm>
           // Map height changes with animation.
           AnimatedBuilder(
             animation: _mapAnimController,
-            builder: (_, child) => SizedBox(
-              height: _mapHeightAnimation.value,
-              child: child,
-            ),
+            builder: (_, child) =>
+                SizedBox(height: _mapHeightAnimation.value, child: child),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Stack(
@@ -408,7 +411,9 @@ class _AdminReportFormState extends State<AdminReportForm>
                       initialZoom: 15,
                       minZoom: 14,
                       maxZoom: 20,
-                      cameraConstraint: CameraConstraint.containCenter(bounds: mapBounds),
+                      cameraConstraint: CameraConstraint.containCenter(
+                        bounds: mapBounds,
+                      ),
                       onTap: _onMapTapped,
                     ),
                     children: [
@@ -499,7 +504,9 @@ class _AdminReportFormState extends State<AdminReportForm>
                 Expanded(
                   child: OutlineButton(
                     icon: Icons.my_location_rounded,
-                    label: _pickedLocation == null ? 'เลือกตำแหน่ง' : 'เปลี่ยนตำแหน่ง',
+                    label: _pickedLocation == null
+                        ? 'เลือกตำแหน่ง'
+                        : 'เปลี่ยนตำแหน่ง',
                     onTap: () => _toggleMapExpand(enterPickingMode: true),
                   ),
                 ),
@@ -547,7 +554,8 @@ class _AdminReportFormState extends State<AdminReportForm>
           ],
 
           // But if an image not present → show Placeholder box
-          if (_selectedImage == null) ImagePlaceholder(onTap: _showImagePickerSheet),
+          if (_selectedImage == null)
+            ImagePlaceholder(onTap: _showImagePickerSheet),
         ],
       ),
     );
@@ -580,7 +588,11 @@ class _AdminReportFormState extends State<AdminReportForm>
                 const SizedBox(height: 16),
                 const Text(
                   'เพิ่มรูปภาพ',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Padding(
@@ -649,7 +661,10 @@ class _AdminReportFormState extends State<AdminReportForm>
             decoration: InputDecoration(
               labelText: 'ห้องเลขที่',
               labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-              prefixIcon: const Icon(Icons.meeting_room_outlined, color: emasColor),
+              prefixIcon: const Icon(
+                Icons.meeting_room_outlined,
+                color: emasColor,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade200),
@@ -689,7 +704,10 @@ class _AdminReportFormState extends State<AdminReportForm>
           // CardHeader + Admin Badge (In the same row)
           Row(
             children: [
-              const CardHeader(icon: Icons.flag_rounded, title: 'สถานะเริ่มต้น'),
+              const CardHeader(
+                icon: Icons.flag_rounded,
+                title: 'สถานะเริ่มต้น',
+              ),
               const Spacer(),
               _buildAdminBadge(),
             ],
@@ -805,7 +823,9 @@ class _AdminReportFormState extends State<AdminReportForm>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? info.color.withOpacity(0.12) : Colors.grey.shade50,
+          color: isSelected
+              ? info.color.withOpacity(0.12)
+              : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? info.color : Colors.grey.shade200,
@@ -827,7 +847,10 @@ class _AdminReportFormState extends State<AdminReportForm>
                 : Container(
                     width: 10,
                     height: 10,
-                    decoration: BoxDecoration(color: info.color, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: info.color,
+                      shape: BoxShape.circle,
+                    ),
                   ),
             const SizedBox(height: 6),
             Text(
@@ -850,7 +873,10 @@ class _AdminReportFormState extends State<AdminReportForm>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CardHeader(icon: Icons.edit_note_rounded, title: 'รายละเอียดปัญหา'),
+          const CardHeader(
+            icon: Icons.edit_note_rounded,
+            title: 'รายละเอียดปัญหา',
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _descController,
@@ -878,7 +904,9 @@ class _AdminReportFormState extends State<AdminReportForm>
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        16, 12, 16,
+        16,
+        12,
+        16,
         MediaQuery.of(context).padding.bottom + 12,
       ),
       decoration: BoxDecoration(
@@ -897,7 +925,10 @@ class _AdminReportFormState extends State<AdminReportForm>
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               )
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,

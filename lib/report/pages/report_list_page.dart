@@ -21,7 +21,6 @@ class ReportListPage extends StatefulWidget {
 
 class _ReportListPageState extends State<ReportListPage>
     with TickerProviderStateMixin {
-
   /// ============================== [State] ==============================
   late final TabController _tabController;
   late final AnimationController _fadeController;
@@ -115,13 +114,13 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   // Filters docs by _filterStatus + _filterSeverity (null = no filter on that field) [_applyFilters]
-  List<QueryDocumentSnapshot> _applyFilters(
-    List<QueryDocumentSnapshot> docs,
-  ) {
+  List<QueryDocumentSnapshot> _applyFilters(List<QueryDocumentSnapshot> docs) {
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      final matchesStatus = _filterStatus == null || data['status'] == _filterStatus;
-      final matchesSeverity = _filterSeverity == null || data['severity'] == _filterSeverity;
+      final matchesStatus =
+          _filterStatus == null || data['status'] == _filterStatus;
+      final matchesSeverity =
+          _filterSeverity == null || data['severity'] == _filterSeverity;
       return matchesStatus && matchesSeverity;
     }).toList();
   }
@@ -151,12 +150,16 @@ class _ReportListPageState extends State<ReportListPage>
           return FadeTransition(
             opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
             child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.04),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-              ),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.04),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
               child: child,
             ),
           );
@@ -169,10 +172,14 @@ class _ReportListPageState extends State<ReportListPage>
   // Accent color per status, mirrors AdminReportListPage's _statusColor [_statusBorderColor]
   Color _statusBorderColor(String status) {
     switch (status) {
-      case ReportStatus.pending: return Colors.orange;
-      case ReportStatus.inProgress: return Colors.blue;
-      case ReportStatus.done: return Colors.green;
-      default: return emasColor;
+      case ReportStatus.pending:
+        return Colors.orange;
+      case ReportStatus.inProgress:
+        return Colors.blue;
+      case ReportStatus.done:
+        return Colors.green;
+      default:
+        return emasColor;
     }
   }
 
@@ -267,7 +274,10 @@ class _ReportListPageState extends State<ReportListPage>
         labelColor: Colors.white,
         unselectedLabelColor: Colors.grey.shade500,
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         indicatorSize: TabBarIndicatorSize.tab,
         indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
         indicator: BoxDecoration(
@@ -285,7 +295,8 @@ class _ReportListPageState extends State<ReportListPage>
 
   // Filter pill button, shows active filter count, opens the filter sheet [_buildFilterButton]
   Widget _buildFilterButton() {
-    final activeCount = (_filterStatus != null ? 1 : 0) + (_filterSeverity != null ? 1 : 0);
+    final activeCount =
+        (_filterStatus != null ? 1 : 0) + (_filterSeverity != null ? 1 : 0);
     final label = activeCount == 0 ? 'ทุกสถานะ' : 'ตัวกรอง ($activeCount)';
 
     return GestureDetector(
@@ -304,7 +315,11 @@ class _ReportListPageState extends State<ReportListPage>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
+                const Icon(
+                  Icons.filter_list_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   label,
@@ -353,7 +368,12 @@ class _ReportListPageState extends State<ReportListPage>
                   for (final option in ReportStatus.filterOptions)
                     _buildStatusOptionTile(option),
 
-                  Divider(color: Colors.grey.shade200, height: 24, indent: 20, endIndent: 20),
+                  Divider(
+                    color: Colors.grey.shade200,
+                    height: 24,
+                    indent: 20,
+                    endIndent: 20,
+                  ),
 
                   const Text(
                     'กรองตามระดับความรุนแรง',
@@ -525,7 +545,10 @@ class _ReportListPageState extends State<ReportListPage>
   }
 
   // Glass background for the card (duplicate of detail page's glass card) [_buildCardGlassContainer]
-  Widget _buildCardGlassContainer({required Widget child, required Color borderColor}) {
+  Widget _buildCardGlassContainer({
+    required Widget child,
+    required Color borderColor,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
@@ -598,10 +621,7 @@ class _ReportListPageState extends State<ReportListPage>
                 ),
               ),
             ),
-            if (isRecent) ...[
-              _buildNewBadge(),
-              const SizedBox(width: 6),
-            ],
+            if (isRecent) ...[_buildNewBadge(), const SizedBox(width: 6)],
             _buildSeverityBadge(severity),
           ],
         ),
@@ -686,11 +706,21 @@ class _ReportListPageState extends State<ReportListPage>
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
-      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+      decoration: BoxDecoration(
+        color: emasColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'ใหม่',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
-  
+
   // Status pill (pending/in-progress/done) [_buildStatusChip]
   Widget _buildStatusChip(String status) {
     final colors = getStatusColors(status);

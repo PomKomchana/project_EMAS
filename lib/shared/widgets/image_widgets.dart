@@ -67,7 +67,11 @@ class ImagePlaceholder extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_photo_alternate_rounded, size: 32, color: emasColor.withOpacity(0.7)),
+            Icon(
+              Icons.add_photo_alternate_rounded,
+              size: 32,
+              color: emasColor.withOpacity(0.7),
+            ),
             const SizedBox(height: 6),
             Text(
               'แตะเพื่อเพิ่มรูปภาพ',
@@ -78,7 +82,10 @@ class ImagePlaceholder extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text('ถ่ายรูปหรือเลือกจากคลัง', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+            Text(
+              'ถ่ายรูปหรือเลือกจากคลัง',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+            ),
           ],
         ),
       ),

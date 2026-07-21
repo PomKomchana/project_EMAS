@@ -29,7 +29,6 @@ class ReportForm extends StatefulWidget {
 
 // State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
-
   /// ============================== [Controllers & Services] ==============================
   // Service [_reportService]
   final _reportService = ReportService();
@@ -44,21 +43,22 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   final _imagePicker = ImagePicker();
 
   // Animation Controllers
-    // Map expansion animation [_mapAnimController, _mapHeightAnimation]
-    late final AnimationController _mapAnimController;
-    late final Animation<double> _mapHeightAnimation;
+  // Map expansion animation [_mapAnimController, _mapHeightAnimation]
+  late final AnimationController _mapAnimController;
+  late final Animation<double> _mapHeightAnimation;
 
-    // Page entrance animation (stagger fade + slide) [_sectionFadeController, _sectionFadeList, _sectionSlideList]
-    late final AnimationController _sectionFadeController;
-    late final List<Animation<double>> _sectionFadeList;
-    late final List<Animation<Offset>> _sectionSlideList;
+  // Page entrance animation (stagger fade + slide) [_sectionFadeController, _sectionFadeList, _sectionSlideList]
+  late final AnimationController _sectionFadeController;
+  late final List<Animation<double>> _sectionFadeList;
+  late final List<Animation<Offset>> _sectionSlideList;
 
   /// ============================== [State] ==============================
   // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
-  bool _isMapExpanded = false;        // whether the map is currently expanded
-  bool _isPickingMode = false;        // whether the user is in pin selection mode (waiting for map tap)
-  MapMode _mapMode = MapMode.normal;  // current map display mode
-  LatLng? _pickedLocation;            // selected pinned location on the map
+  bool _isMapExpanded = false; // whether the map is currently expanded
+  bool _isPickingMode =
+      false; // whether the user is in pin selection mode (waiting for map tap)
+  MapMode _mapMode = MapMode.normal; // current map display mode
+  LatLng? _pickedLocation; // selected pinned location on the map
 
   // Form State [_selectedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
   String? _selectedBuilding;
@@ -73,7 +73,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     super.initState();
     _setupAnimations();
     _sectionFadeController.forward(); // start animation
-    _requestLocationAndMove();        // request GPS and move the camera
+    _requestLocationAndMove(); // request GPS and move the camera
   }
 
   // Dispose (Return resource when you leave this page)
@@ -102,10 +102,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     )..addListener(() => setState(() {}));
 
     _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
-      CurvedAnimation(
-        parent: _mapAnimController,
-        curve: Curves.easeInOutCubic,
-      ),
+      CurvedAnimation(parent: _mapAnimController, curve: Curves.easeInOutCubic),
     );
 
     // Fade + slide animation for 5 sections (Stagger per section)
@@ -149,7 +146,8 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) return;
+          permission == LocationPermission.deniedForever)
+        return;
 
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -215,7 +213,11 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   void _confirmPin() {
     HapticFeedback.mediumImpact();
     _toggleMapExpand(); // ย่อแผนที่กลับ
-    _showSnackBar('ปักหมุดสำเร็จ ✓', Colors.green.shade600, Icons.check_circle_outline);
+    _showSnackBar(
+      'ปักหมุดสำเร็จ ✓',
+      Colors.green.shade600,
+      Icons.check_circle_outline,
+    );
   }
 
   // Switch to next map mode [_cycleMapMode]
@@ -278,7 +280,11 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
       if (!mounted) return;
 
-      _showSnackBar('ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green, Icons.check_circle);
+      _showSnackBar(
+        'ส่งแจ้งปัญหาเรียบร้อยแล้ว',
+        Colors.green,
+        Icons.check_circle,
+      );
 
       // Submit to ReportListPage
       Navigator.pushAndRemoveUntil(
@@ -302,11 +308,13 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   void _showSnackBar(String message, Color color, IconData icon) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ]),
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
+          ],
+        ),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -401,7 +409,12 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   // Submit Button Bar pinned at bottom, shows loading spinner while submitting [_buildSubmitBar]
   Widget _buildSubmitBar() {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        MediaQuery.of(context).padding.bottom + 12,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFF2F2F7),
         boxShadow: [
@@ -418,7 +431,10 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
             ? const SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               )
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -427,13 +443,17 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
                   SizedBox(width: 8),
                   Text(
                     'ส่งแจ้งปัญหา',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ],
               ),
-            ),
-          );
-        }
+      ),
+    );
+  }
 
   // Map Section with pin picking, Expand / Collapse animation, and mode toggle [_buildMapSection]
   Widget _buildMapSection() {
@@ -441,22 +461,21 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          const CardHeader(icon: Icons.location_on_rounded, title: 'ตำแหน่งที่เกิดเหตุ'),
+          const CardHeader(
+            icon: Icons.location_on_rounded,
+            title: 'ตำแหน่งที่เกิดเหตุ',
+          ),
           const SizedBox(height: 12),
 
           // Map height changes with animation.
           AnimatedBuilder(
             animation: _mapAnimController,
-            builder: (_, child) => SizedBox(
-              height: _mapHeightAnimation.value,
-              child: child,
-            ),
+            builder: (_, child) =>
+                SizedBox(height: _mapHeightAnimation.value, child: child),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Stack(
                 children: [
-
                   // Flutter Map
                   FlutterMap(
                     mapController: _mapController,
@@ -465,7 +484,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
                       initialZoom: 15,
                       minZoom: 14,
                       maxZoom: 20,
-                      cameraConstraint: CameraConstraint.containCenter(bounds: mapBounds),
+                      cameraConstraint: CameraConstraint.containCenter(
+                        bounds: mapBounds,
+                      ),
                       onTap: _onMapTapped,
                     ),
                     children: [
@@ -496,7 +517,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
 
                   // Map Mode Button
                   Positioned(
-                    top: _isMapExpanded ? 50 : 10, // Move down when expanded so it clears the app bar area.
+                    top: _isMapExpanded
+                        ? 50
+                        : 10, // Move down when expanded so it clears the app bar area.
                     left: 10,
                     child: GlassMapButton(
                       icon: mapModeIcon(_mapMode),
@@ -529,7 +552,10 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
                           children: [
                             Icon(Icons.check_rounded, size: 18),
                             SizedBox(width: 6),
-                            Text('ยืนยันตำแหน่งนี้', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              'ยืนยันตำแหน่งนี้',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         ),
                       ),
@@ -556,7 +582,9 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
                 Expanded(
                   child: OutlineButton(
                     icon: Icons.my_location_rounded,
-                    label: _pickedLocation == null ? 'เลือกตำแหน่ง' : 'เปลี่ยนตำแหน่ง',
+                    label: _pickedLocation == null
+                        ? 'เลือกตำแหน่ง'
+                        : 'เปลี่ยนตำแหน่ง',
                     onTap: () => _toggleMapExpand(enterPickingMode: true),
                   ),
                 ),
@@ -604,7 +632,8 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
           ],
 
           // But if an image not present → show Placeholder box
-          if (_selectedImage == null) ImagePlaceholder(onTap: _showImagePickerSheet),
+          if (_selectedImage == null)
+            ImagePlaceholder(onTap: _showImagePickerSheet),
         ],
       ),
     );
@@ -639,7 +668,11 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
                 const SizedBox(height: 16),
                 const Text(
                   'เพิ่มรูปภาพ',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -795,7 +828,10 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
             decoration: InputDecoration(
               labelText: 'ห้องเลขที่',
               labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-              prefixIcon: const Icon(Icons.meeting_room_outlined, color: emasColor),
+              prefixIcon: const Icon(
+                Icons.meeting_room_outlined,
+                color: emasColor,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
@@ -817,7 +853,10 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CardHeader(icon: Icons.edit_note_rounded, title: 'รายละเอียดปัญหา'),
+          const CardHeader(
+            icon: Icons.edit_note_rounded,
+            title: 'รายละเอียดปัญหา',
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _descController,

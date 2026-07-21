@@ -9,11 +9,7 @@ class ReportDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
   final String id;
 
-  const ReportDetailPage({
-    super.key,
-    required this.data,
-    required this.id,
-  });
+  const ReportDetailPage({super.key, required this.data, required this.id});
 
   /// ============================== [Build] ==============================
   @override
@@ -54,9 +50,7 @@ class ReportDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            _buildGlassCard(
-              child: _buildDescriptionSection(desc),
-            ),
+            _buildGlassCard(child: _buildDescriptionSection(desc)),
             const SizedBox(height: 12),
 
             _buildGlassCard(

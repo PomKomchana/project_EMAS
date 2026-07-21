@@ -14,9 +14,12 @@ enum ReportScopeFilter { all, user, admin }
 extension ReportScopeFilterLabel on ReportScopeFilter {
   String get label {
     switch (this) {
-      case ReportScopeFilter.all: return 'ทั้งหมด';
-      case ReportScopeFilter.user: return 'ผู้ใช้';
-      case ReportScopeFilter.admin: return 'แอดมิน';
+      case ReportScopeFilter.all:
+        return 'ทั้งหมด';
+      case ReportScopeFilter.user:
+        return 'ผู้ใช้';
+      case ReportScopeFilter.admin:
+        return 'แอดมิน';
     }
   }
 }
@@ -47,7 +50,6 @@ class AdminReportListPage extends StatefulWidget {
 
 class _AdminReportListPageState extends State<AdminReportListPage>
     with SingleTickerProviderStateMixin {
-
   /// ============================== [Controllers & Services] ==============================
   late final TabController _tabController;
 
@@ -94,8 +96,14 @@ class _AdminReportListPageState extends State<AdminReportListPage>
               controller: _tabController,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.grey.shade500,
-              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
               indicatorSize: TabBarIndicatorSize.tab,
               indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
               indicator: BoxDecoration(
@@ -115,9 +123,18 @@ class _AdminReportListPageState extends State<AdminReportListPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _StatusTabContent(status: 'รอดำเนินการ', initialScope: widget.initialScope),
-                _StatusTabContent(status: 'กำลังดำเนินการ', initialScope: widget.initialScope),
-                _StatusTabContent(status: 'เสร็จสิ้น', initialScope: widget.initialScope),
+                _StatusTabContent(
+                  status: 'รอดำเนินการ',
+                  initialScope: widget.initialScope,
+                ),
+                _StatusTabContent(
+                  status: 'กำลังดำเนินการ',
+                  initialScope: widget.initialScope,
+                ),
+                _StatusTabContent(
+                  status: 'เสร็จสิ้น',
+                  initialScope: widget.initialScope,
+                ),
               ],
             ),
           ),
@@ -215,7 +232,8 @@ class _StatusTabContentState extends State<_StatusTabContent>
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final segmentWidth = constraints.maxWidth / ReportScopeFilter.values.length;
+          final segmentWidth =
+              constraints.maxWidth / ReportScopeFilter.values.length;
           return Stack(
             children: [
               AnimatedPositioned(
@@ -241,7 +259,8 @@ class _StatusTabContentState extends State<_StatusTabContent>
               ),
               Row(
                 children: [
-                  for (final s in ReportScopeFilter.values) Expanded(child: _buildScopeChip(s)),
+                  for (final s in ReportScopeFilter.values)
+                    Expanded(child: _buildScopeChip(s)),
                 ],
               ),
             ],
@@ -284,10 +303,14 @@ class _FilteredList extends StatelessWidget {
   /// ============================== [UI Helpers] ==============================
   Color _statusColor(String s) {
     switch (s) {
-      case 'รอดำเนินการ': return Colors.orange;
-      case 'กำลังดำเนินการ': return Colors.blue;
-      case 'เสร็จสิ้น': return Colors.green;
-      default: return emasColor;
+      case 'รอดำเนินการ':
+        return Colors.orange;
+      case 'กำลังดำเนินการ':
+        return Colors.blue;
+      case 'เสร็จสิ้น':
+        return Colors.green;
+      default:
+        return emasColor;
     }
   }
 
@@ -298,7 +321,9 @@ class _FilteredList extends StatelessWidget {
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final isAdminCreated = data['createdBy'] == 'admin';
-      return scope == ReportScopeFilter.admin ? isAdminCreated : !isAdminCreated;
+      return scope == ReportScopeFilter.admin
+          ? isAdminCreated
+          : !isAdminCreated;
     }).toList();
   }
 
@@ -329,8 +354,10 @@ class _FilteredList extends StatelessWidget {
 
         if (snapshot.hasError) {
           return Center(
-            child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล',
-                style: TextStyle(color: Colors.red.shade400)),
+            child: Text(
+              'เกิดข้อผิดพลาดในการโหลดข้อมูล',
+              style: TextStyle(color: Colors.red.shade400),
+            ),
           );
         }
 
@@ -347,11 +374,20 @@ class _FilteredList extends StatelessWidget {
                     color: emasColor.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.inbox_rounded, size: 40, color: emasColor.withValues(alpha: 0.6)),
+                  child: Icon(
+                    Icons.inbox_rounded,
+                    size: 40,
+                    color: emasColor.withValues(alpha: 0.6),
+                  ),
                 ),
                 const SizedBox(height: 14),
-                Text('ไม่มีรายการ "$status"',
-                    style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
+                Text(
+                  'ไม่มีรายการ "$status"',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           );
@@ -413,7 +449,8 @@ class _FilteredList extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => AdminReportDetailPage(reportId: docId, data: data),
+                builder: (_) =>
+                    AdminReportDetailPage(reportId: docId, data: data),
               ),
             );
           },
@@ -434,7 +471,10 @@ class _FilteredList extends StatelessWidget {
                           Expanded(
                             child: Text(
                               '$building · $floor · ห้อง $room',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                           if (isAdminCreated) ...[
@@ -454,16 +494,30 @@ class _FilteredList extends StatelessWidget {
                         desc,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                          height: 1.3,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           _buildStatusChip(status),
                           const SizedBox(width: 8),
-                          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 11,
+                            color: Colors.grey.shade500,
+                          ),
                           const SizedBox(width: 4),
-                          Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                          Text(
+                            date,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -484,8 +538,15 @@ class _FilteredList extends StatelessWidget {
       return Container(
         width: 52,
         height: 52,
-        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
-        child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.image_outlined,
+          color: Colors.grey.shade400,
+          size: 24,
+        ),
       );
     }
     return ClipRRect(
@@ -498,8 +559,15 @@ class _FilteredList extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => Container(
           width: 52,
           height: 52,
-          decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
-          child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.image_outlined,
+            color: Colors.grey.shade400,
+            size: 24,
+          ),
         ),
       ),
     );
@@ -518,10 +586,32 @@ class _FilteredList extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           isHigh
-              ? Text('!', style: TextStyle(color: severity.color, fontSize: 12, fontWeight: FontWeight.w900, height: 1))
-              : Container(width: 7, height: 7, decoration: BoxDecoration(color: severity.color, shape: BoxShape.circle)),
+              ? Text(
+                  '!',
+                  style: TextStyle(
+                    color: severity.color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                )
+              : Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: severity.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
           const SizedBox(width: 4),
-          Text(severity.label, style: TextStyle(color: severity.color, fontSize: 10.5, fontWeight: FontWeight.w600)),
+          Text(
+            severity.label,
+            style: TextStyle(
+              color: severity.color,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -531,8 +621,18 @@ class _FilteredList extends StatelessWidget {
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
-      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+      decoration: BoxDecoration(
+        color: emasColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'ใหม่',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
@@ -546,7 +646,11 @@ class _FilteredList extends StatelessWidget {
       ),
       child: Text(
         'Admin',
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: emasColorDarker),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: emasColorDarker,
+        ),
       ),
     );
   }
@@ -555,8 +659,18 @@ class _FilteredList extends StatelessWidget {
     final colors = getStatusColors(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: colors.bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(status, style: TextStyle(color: colors.fg, fontSize: 10.5, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: colors.bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: colors.fg,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

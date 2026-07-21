@@ -78,9 +78,11 @@ class EmergencyPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
-      ),
-      title: const Text('เบอร์โทรฉุกเฉิน',
-        style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        title: const Text(
+          'เบอร์โทรฉุกเฉิน',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: emasColor,
         foregroundColor: Colors.white,
@@ -106,22 +108,29 @@ class EmergencyPage extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.phone_in_talk,
-                      color: Colors.white, size: 28),
+                  child: const Icon(
+                    Icons.phone_in_talk,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('กดที่การ์ดเพื่อโทรออกทันที',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
+                    Text(
+                      'กดที่การ์ดเพื่อโทรออกทันที',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     SizedBox(height: 2),
-                    Text('สายด่วนฉุกเฉินในพื้นที่',
-                        style: TextStyle(
-                            color: Colors.white70, fontSize: 12)),
+                    Text(
+                      'สายด่วนฉุกเฉินในพื้นที่',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
                   ],
                 ),
               ],
@@ -185,20 +194,27 @@ class _ContactCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(contact.label,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text(
+                      contact.label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(contact.subtitle,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.grey)),
+                    Text(
+                      contact.subtitle,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ],
                 ),
               ),
 
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: contact.color,
                   borderRadius: BorderRadius.circular(20),
@@ -211,9 +227,10 @@ class _ContactCard extends StatelessWidget {
                     Text(
                       contact.number,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),

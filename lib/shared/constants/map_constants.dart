@@ -3,10 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 // Map mode [MapMode]
-enum MapMode {
-  normal,
-  satellite,
-}
+enum MapMode { normal, satellite }
 
 // Map Location & Bounds
 // Google Map Location and Bounds config [mapLocation, mapBounds]

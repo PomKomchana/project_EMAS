@@ -41,11 +41,7 @@ class AdminService {
     final fileName =
         '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
 
-    final ref = _storage
-        .ref()
-        .child('news')
-        .child(uid)
-        .child(fileName);
+    final ref = _storage.ref().child('news').child(uid).child(fileName);
 
     final uploadTask = await ref.putFile(image);
 
@@ -68,13 +64,13 @@ class AdminService {
   }
 
   // Reports created by an admin (via createReport), newest first — used to
-// merge admin-created reports into the announcements feed. [adminReportsStream]
-Stream<QuerySnapshot> adminReportsStream() {
-  return _reportsRef
-      .where('createdBy', isEqualTo: 'admin')
-      .orderBy('createdAt', descending: true)
-      .snapshots();
-}
+  // merge admin-created reports into the announcements feed. [adminReportsStream]
+  Stream<QuerySnapshot> adminReportsStream() {
+    return _reportsRef
+        .where('createdBy', isEqualTo: 'admin')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
 
   /// ============================== [Report Writes] ==============================
   // Create a report on behalf of the admin (username fixed to 'Admin').

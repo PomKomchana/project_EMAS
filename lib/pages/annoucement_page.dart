@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../report/pages/report_detail_page.dart';
 import '../shared/constants/emas_colors.dart';
 import '../shared/constants/report_constants.dart';
+//import '../shared/widgets/news_detail_sheet.dart';
 
 // Filter for announcement feed [FeedFilter]
 enum _FeedType { news, report }
@@ -62,7 +63,6 @@ class AnnouncementPage extends StatefulWidget {
 
 class _AnnouncementPageState extends State<AnnouncementPage>
     with TickerProviderStateMixin {
-
   /// ============================== [Controllers & Services] ==============================
   late final AnimationController _fadeController;
   late final AnimationController _shimmerController;
@@ -105,7 +105,10 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
       return Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(parent: _fadeController, curve: Interval(start, 1.0, curve: Curves.easeOut)),
+        CurvedAnimation(
+          parent: _fadeController,
+          curve: Interval(start, 1.0, curve: Curves.easeOut),
+        ),
       );
     });
   }
@@ -113,8 +116,14 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   List<Animation<Offset>> _buildStaggeredSlideList() {
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
-      return Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
-        CurvedAnimation(parent: _fadeController, curve: Interval(start, 1.0, curve: Curves.easeOutCubic)),
+      return Tween<Offset>(
+        begin: const Offset(0, 0.15),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _fadeController,
+          curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
+        ),
       );
     });
   }
@@ -218,7 +227,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   // Opens an external/attached link in the browser [_openLink]
   Future<void> _openLink(String url) async {
     var normalized = url.trim();
-    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    if (!normalized.startsWith('http://') &&
+        !normalized.startsWith('https://')) {
       normalized = 'https://$normalized';
     }
     final uri = Uri.tryParse(normalized);
@@ -227,8 +237,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     }
   }
 
-// Opens feed filter sheet [showFeedFilterSheet]
-void _showFeedFilterSheet() {
+  // Opens feed filter sheet [showFeedFilterSheet]
+  void _showFeedFilterSheet() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -315,13 +325,17 @@ void _showFeedFilterSheet() {
           expand: false,
           builder: (context, scrollController) {
             return ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.92),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                   ),
                   child: ListView(
                     controller: scrollController,
@@ -348,10 +362,15 @@ void _showFeedFilterSheet() {
                               child: Image.network(
                                 item.imageUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey.shade200,
-                                  child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
-                                ),
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      color: Colors.grey.shade200,
+                                      child: Icon(
+                                        Icons.image_outlined,
+                                        color: Colors.grey.shade400,
+                                        size: 32,
+                                      ),
+                                    ),
                               ),
                             ),
                           ),
@@ -363,22 +382,43 @@ void _showFeedFilterSheet() {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.title,
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                            Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
                             if (date != null) ...[
                               const SizedBox(height: 10),
                               Row(
                                 children: [
-                                  Icon(Icons.calendar_today_outlined, size: 12, color: Colors.grey.shade500),
+                                  Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 12,
+                                    color: Colors.grey.shade500,
+                                  ),
                                   const SizedBox(width: 4),
-                                  Text(date, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                  Text(
+                                    date,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
                             const SizedBox(height: 16),
-                            Text(item.content,
-                                style: TextStyle(fontSize: 14, height: 1.6, color: Colors.grey.shade800)),
+                            Text(
+                              item.content,
+                              style: TextStyle(
+                                fontSize: 14,
+                                height: 1.6,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
                             if (hasLink) ...[
                               const SizedBox(height: 20),
                               _buildLinkButton(item.link!),
@@ -401,44 +441,35 @@ void _showFeedFilterSheet() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: const Color(0xFFF2F2F7),
 
-    appBar: AppBar(
-      elevation: 0,
-      centerTitle: false,
-      foregroundColor: Colors.white,
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: false,
+        foregroundColor: Colors.white,
 
-      leading: IconButton(
-        icon: const Icon(Icons.menu),
-        onPressed: widget.onMenuTap,
-      ),
-
-      title: const Text(
-        'ประกาศ',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 17,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: widget.onMenuTap,
         ),
-      ),
 
-      actions: [
-        _buildFilterChip(),
-        const SizedBox(width: 12),
-      ],
+        title: const Text(
+          'ประกาศ',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
 
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              emasColor,
-              emasColorDarker,
-            ],
+        actions: [_buildFilterChip(), const SizedBox(width: 12)],
+
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [emasColor, emasColorDarker],
+            ),
           ),
         ),
       ),
-    ),
 
       body: StreamBuilder<QuerySnapshot>(
         stream: _newsStream(),
@@ -451,7 +482,9 @@ void _showFeedFilterSheet() {
             stream: _adminReportsStream(),
             builder: (context, reportSnap) {
               if (reportSnap.hasError) {
-                return Center(child: Text('เกิดข้อผิดพลาด: ${reportSnap.error}'));
+                return Center(
+                  child: Text('เกิดข้อผิดพลาด: ${reportSnap.error}'),
+                );
               }
 
               if (newsSnap.connectionState == ConnectionState.waiting ||
@@ -518,7 +551,11 @@ void _showFeedFilterSheet() {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.filter_list_rounded, size: 17, color: Colors.white),
+              const Icon(
+                Icons.filter_list_rounded,
+                size: 17,
+                color: Colors.white,
+              ),
               const SizedBox(width: 6),
               Text(
                 feedFilterLabel(_currentFilter),
@@ -534,7 +571,7 @@ void _showFeedFilterSheet() {
       ),
     );
   }
-  
+
   Widget _buildSkeletonList() {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -563,7 +600,10 @@ void _showFeedFilterSheet() {
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -573,19 +613,28 @@ void _showFeedFilterSheet() {
                       Container(
                         width: double.infinity,
                         height: 14,
-                        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Container(
                         width: 180,
                         height: 12,
-                        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Container(
                         width: 120,
                         height: 12,
-                        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ],
                   ),
@@ -605,8 +654,14 @@ void _showFeedFilterSheet() {
         children: [
           Icon(Icons.campaign_outlined, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 12),
-          Text('ยังไม่มีประกาศ',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 16, fontWeight: FontWeight.w500)),
+          Text(
+            'ยังไม่มีประกาศ',
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -634,7 +689,11 @@ void _showFeedFilterSheet() {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Material(
@@ -665,7 +724,11 @@ void _showFeedFilterSheet() {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: Colors.grey.shade200,
-                child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                child: Icon(
+                  Icons.image_outlined,
+                  color: Colors.grey.shade400,
+                  size: 32,
+                ),
               ),
             ),
           ),
@@ -679,34 +742,59 @@ void _showFeedFilterSheet() {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(item.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    child: Text(
+                      item.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
-                  if (isRecent) ...[
-                    const SizedBox(width: 6),
-                    _buildNewBadge(),
-                  ],
+                  if (isRecent) ...[const SizedBox(width: 6), _buildNewBadge()],
                 ],
               ),
               if (item.content.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text(item.content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
+                Text(
+                  item.content,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13,
+                    height: 1.3,
+                  ),
+                ),
               ],
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 11,
+                    color: Colors.grey.shade500,
+                  ),
                   const SizedBox(width: 4),
-                  Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  Text(
+                    _formatDate(item.createdAt),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
                   if (hasLink) ...[
                     const Spacer(),
-                    Icon(Icons.link_rounded, size: 14, color: Colors.blue.shade400),
+                    Icon(
+                      Icons.link_rounded,
+                      size: 14,
+                      color: Colors.blue.shade400,
+                    ),
                     const SizedBox(width: 3),
-                    Text('มีลิงก์แนบ',
-                        style: TextStyle(fontSize: 11, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
+                    Text(
+                      'มีลิงก์แนบ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.blue.shade400,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -727,8 +815,15 @@ void _showFeedFilterSheet() {
           Container(
             width: 52,
             height: 52,
-            decoration: BoxDecoration(color: emasColor.withOpacity(0.1), shape: BoxShape.circle),
-            child: const Icon(Icons.campaign_rounded, color: emasColor, size: 24),
+            decoration: BoxDecoration(
+              color: emasColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.campaign_rounded,
+              color: emasColor,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -739,8 +834,13 @@ void _showFeedFilterSheet() {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(item.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      child: Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                     if (isRecent) ...[
                       const SizedBox(width: 6),
@@ -750,23 +850,49 @@ void _showFeedFilterSheet() {
                 ),
                 if (item.content.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(item.content,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
+                  Text(
+                    item.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 11,
+                      color: Colors.grey.shade500,
+                    ),
                     const SizedBox(width: 4),
-                    Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    Text(
+                      _formatDate(item.createdAt),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
                     if (hasLink) ...[
                       const Spacer(),
-                      Icon(Icons.link_rounded, size: 13, color: Colors.blue.shade400),
+                      Icon(
+                        Icons.link_rounded,
+                        size: 13,
+                        color: Colors.blue.shade400,
+                      ),
                       const SizedBox(width: 3),
-                      Text('มีลิงก์แนบ',
-                          style: TextStyle(fontSize: 10.5, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
+                      Text(
+                        'มีลิงก์แนบ',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Colors.blue.shade400,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -774,7 +900,11 @@ void _showFeedFilterSheet() {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: Colors.grey.shade400,
+            size: 20,
+          ),
         ],
       ),
     );
@@ -802,7 +932,11 @@ void _showFeedFilterSheet() {
                 link,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13.5, color: emasColor, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  color: emasColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const Icon(Icons.open_in_new_rounded, size: 16, color: emasColor),
@@ -825,7 +959,11 @@ void _showFeedFilterSheet() {
         borderRadius: BorderRadius.circular(14),
         border: Border(left: BorderSide(color: statusColor, width: 4)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Material(
@@ -849,8 +987,13 @@ void _showFeedFilterSheet() {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(item.title,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            child: Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
 
                           const SizedBox(width: 6),
@@ -871,18 +1014,34 @@ void _showFeedFilterSheet() {
                       ),
 
                       const SizedBox(height: 4),
-                      Text(item.content,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
+                      Text(
+                        item.content,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                          height: 1.3,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           _buildStatusChip(item.status ?? ReportStatus.pending),
                           const SizedBox(width: 8),
-                          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 11,
+                            color: Colors.grey.shade500,
+                          ),
                           const SizedBox(width: 4),
-                          Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                          Text(
+                            _formatDate(item.createdAt),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -903,8 +1062,15 @@ void _showFeedFilterSheet() {
       return Container(
         width: 52,
         height: 52,
-        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
-        child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.image_outlined,
+          color: Colors.grey.shade400,
+          size: 24,
+        ),
       );
     }
     return ClipRRect(
@@ -917,8 +1083,15 @@ void _showFeedFilterSheet() {
         errorBuilder: (context, error, stackTrace) => Container(
           width: 52,
           height: 52,
-          decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
-          child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.image_outlined,
+            color: Colors.grey.shade400,
+            size: 24,
+          ),
         ),
       ),
     );
@@ -927,8 +1100,18 @@ void _showFeedFilterSheet() {
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
-      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+      decoration: BoxDecoration(
+        color: emasColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'ใหม่',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
@@ -942,7 +1125,11 @@ void _showFeedFilterSheet() {
       ),
       child: Text(
         'Admin',
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: emasColorDarker),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: emasColorDarker,
+        ),
       ),
     );
   }
@@ -960,10 +1147,32 @@ void _showFeedFilterSheet() {
         mainAxisSize: MainAxisSize.min,
         children: [
           isHigh
-              ? Text('!', style: TextStyle(color: severity.color, fontSize: 12, fontWeight: FontWeight.w900, height: 1))
-              : Container(width: 7, height: 7, decoration: BoxDecoration(color: severity.color, shape: BoxShape.circle)),
+              ? Text(
+                  '!',
+                  style: TextStyle(
+                    color: severity.color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                )
+              : Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: severity.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
           const SizedBox(width: 4),
-          Text(severity.label, style: TextStyle(color: severity.color, fontSize: 10.5, fontWeight: FontWeight.w600)),
+          Text(
+            severity.label,
+            style: TextStyle(
+              color: severity.color,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -973,8 +1182,18 @@ void _showFeedFilterSheet() {
     final colors = getStatusColors(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: colors.bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(status, style: TextStyle(color: colors.fg, fontSize: 10.5, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: colors.bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: colors.fg,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

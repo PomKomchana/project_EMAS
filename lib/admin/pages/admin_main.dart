@@ -20,7 +20,6 @@ class AdminMainPage extends StatefulWidget {
 }
 
 class _AdminMainPageState extends State<AdminMainPage> {
-
   /// ============================== [State] ==============================
   int _selectedIndex = 0;
 
@@ -39,9 +38,21 @@ class _AdminMainPageState extends State<AdminMainPage> {
 
   // Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
-    (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'แดชบอร์ด'),
-    (icon: Icons.list_alt_outlined, selectedIcon: Icons.list_alt_rounded, label: 'รายการแจ้งซ่อม'),
-    (icon: Icons.newspaper_outlined, selectedIcon: Icons.newspaper_rounded, label: 'ประกาศ'),
+    (
+      icon: Icons.dashboard_outlined,
+      selectedIcon: Icons.dashboard_rounded,
+      label: 'แดชบอร์ด',
+    ),
+    (
+      icon: Icons.list_alt_outlined,
+      selectedIcon: Icons.list_alt_rounded,
+      label: 'รายการแจ้งซ่อม',
+    ),
+    (
+      icon: Icons.newspaper_outlined,
+      selectedIcon: Icons.newspaper_rounded,
+      label: 'ประกาศ',
+    ),
   ];
 
   /// ============================== [Life Cycle] ==============================
@@ -171,7 +182,9 @@ class _AdminMainPageState extends State<AdminMainPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
-          color: isSelected ? emasColor.withValues(alpha: 0.1) : Colors.transparent,
+          color: isSelected
+              ? emasColor.withValues(alpha: 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -228,8 +241,10 @@ class _AdminDashboard extends StatelessWidget {
       builder: (context, reportSnap) {
         if (reportSnap.hasError) {
           return Center(
-            child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล',
-                style: TextStyle(color: Colors.red.shade400)),
+            child: Text(
+              'เกิดข้อผิดพลาดในการโหลดข้อมูล',
+              style: TextStyle(color: Colors.red.shade400),
+            ),
           );
         }
 
@@ -256,7 +271,10 @@ class _AdminDashboard extends StatelessWidget {
         }
 
         final pending = _StatusCount(user: pendingUser, admin: pendingAdmin);
-        final inProgress = _StatusCount(user: inProgressUser, admin: inProgressAdmin);
+        final inProgress = _StatusCount(
+          user: inProgressUser,
+          admin: inProgressAdmin,
+        );
         final done = _StatusCount(user: doneUser, admin: doneAdmin);
 
         return StreamBuilder<QuerySnapshot>(
@@ -274,8 +292,10 @@ class _AdminDashboard extends StatelessWidget {
                   _buildHeroCard(reportDocs.length),
                   const SizedBox(height: 22),
 
-                  const Text('ภาพรวม',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'ภาพรวม',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -285,7 +305,12 @@ class _AdminDashboard extends StatelessWidget {
                           counts: pending,
                           color: Colors.orange,
                           icon: Icons.pending_actions_rounded,
-                          onTap: () => _openScopeChooser(context, 0, 'รอดำเนินการ', pending),
+                          onTap: () => _openScopeChooser(
+                            context,
+                            0,
+                            'รอดำเนินการ',
+                            pending,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -295,7 +320,12 @@ class _AdminDashboard extends StatelessWidget {
                           counts: inProgress,
                           color: Colors.blue,
                           icon: Icons.engineering_rounded,
-                          onTap: () => _openScopeChooser(context, 1, 'กำลังดำเนินการ', inProgress),
+                          onTap: () => _openScopeChooser(
+                            context,
+                            1,
+                            'กำลังดำเนินการ',
+                            inProgress,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -305,21 +335,26 @@ class _AdminDashboard extends StatelessWidget {
                           counts: done,
                           color: Colors.green,
                           icon: Icons.check_circle_rounded,
-                          onTap: () => _openScopeChooser(context, 2, 'เสร็จสิ้น', done),
+                          onTap: () =>
+                              _openScopeChooser(context, 2, 'เสร็จสิ้น', done),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  const Text('แนวโน้มการแจ้งซ่อม (7 วันล่าสุด)',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'แนวโน้มการแจ้งซ่อม (7 วันล่าสุด)',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   _buildTrendCard(trend),
                   const SizedBox(height: 24),
 
-                  const Text('กิจกรรมล่าสุด',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'กิจกรรมล่าสุด',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
                   _buildActivityCard(context, activity),
                   const SizedBox(height: 20),
@@ -343,28 +378,32 @@ class _AdminDashboard extends StatelessWidget {
     for (final doc in reportDocs) {
       final data = doc.data() as Map<String, dynamic>;
       final ts = data['createdAt'];
-      items.add(_ActivityItem(
-        type: _ActivityType.report,
-        title: '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}',
-        subtitle: data['description'] ?? '-',
-        time: ts is Timestamp ? ts.toDate() : null,
-        status: data['status'],
-        docId: doc.id,
-        data: data,
-      ));
+      items.add(
+        _ActivityItem(
+          type: _ActivityType.report,
+          title: '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}',
+          subtitle: data['description'] ?? '-',
+          time: ts is Timestamp ? ts.toDate() : null,
+          status: data['status'],
+          docId: doc.id,
+          data: data,
+        ),
+      );
     }
 
     for (final doc in newsDocs) {
       final data = doc.data() as Map<String, dynamic>;
       final ts = data['createdAt'];
-      items.add(_ActivityItem(
-        type: _ActivityType.news,
-        title: data['title'] ?? '-',
-        subtitle: data['content'] ?? '-',
-        time: ts is Timestamp ? ts.toDate() : null,
-        docId: doc.id,
-        data: data,
-      ));
+      items.add(
+        _ActivityItem(
+          type: _ActivityType.news,
+          title: data['title'] ?? '-',
+          subtitle: data['content'] ?? '-',
+          time: ts is Timestamp ? ts.toDate() : null,
+          docId: doc.id,
+          data: data,
+        ),
+      );
     }
 
     items.sort((a, b) {
@@ -428,7 +467,8 @@ class _AdminDashboard extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AdminReportDetailPage(reportId: item.docId, data: item.data),
+        builder: (_) =>
+            AdminReportDetailPage(reportId: item.docId, data: item.data),
       ),
     );
   }
@@ -469,9 +509,15 @@ class _AdminDashboard extends StatelessWidget {
               width: 40,
               height: 4,
               margin: const EdgeInsets.only(bottom: 18),
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-            Text('ดูรายการ "$status"', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'ดูรายการ "$status"',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 18),
             _buildScopeOption(
               icon: Icons.apps_rounded,
@@ -540,20 +586,31 @@ class _AdminDashboard extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.waving_hand_rounded, color: Colors.white, size: 22),
+                child: const Icon(
+                  Icons.waving_hand_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
-              const Text('สวัสดี, Admin',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  )),
+              const Text(
+                'สวัสดี, Admin',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          Text('รายการทั้งหมด $totalCount รายการ',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
+          Text(
+            'รายการทั้งหมด $totalCount รายการ',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
@@ -602,7 +659,10 @@ class _AdminDashboard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               for (final label in labels)
-                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                ),
             ],
           ),
         ],
@@ -624,7 +684,10 @@ class _AdminDashboard extends StatelessWidget {
           children: [
             Icon(Icons.history_rounded, size: 36, color: Colors.grey.shade300),
             const SizedBox(height: 10),
-            Text('ยังไม่มีกิจกรรม', style: TextStyle(color: Colors.grey.shade400)),
+            Text(
+              'ยังไม่มีกิจกรรม',
+              style: TextStyle(color: Colors.grey.shade400),
+            ),
           ],
         ),
       );
@@ -692,8 +755,13 @@ class _AdminDashboard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(item.title,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                            child: Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.5,
+                              ),
+                            ),
                           ),
                           if (isRecent) ...[
                             const SizedBox(width: 6),
@@ -702,19 +770,30 @@ class _AdminDashboard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(item.subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 12.5)),
+                      Text(
+                        item.subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12.5,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(_relativeTime(item.time),
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
+                Text(
+                  _relativeTime(item.time),
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                ),
                 if (isReport) ...[
                   const SizedBox(width: 4),
-                  Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 18),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.grey.shade400,
+                    size: 18,
+                  ),
                 ],
               ],
             ),
@@ -728,18 +807,32 @@ class _AdminDashboard extends StatelessWidget {
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
-      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w700)),
+      decoration: BoxDecoration(
+        color: emasColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'ใหม่',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
   // Accent color per report status, used for the activity icon badge + left border [_reportStatusColor]
   Color _reportStatusColor(String? status) {
     switch (status) {
-      case 'รอดำเนินการ': return Colors.orange;
-      case 'กำลังดำเนินการ': return Colors.blue;
-      case 'เสร็จสิ้น': return Colors.green;
-      default: return emasColor;
+      case 'รอดำเนินการ':
+        return Colors.orange;
+      case 'กำลังดำเนินการ':
+        return Colors.blue;
+      case 'เสร็จสิ้น':
+        return Colors.green;
+      default:
+        return emasColor;
     }
   }
 
@@ -765,7 +858,10 @@ class _AdminDashboard extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: emasColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: emasColor, size: 20),
             ),
             const SizedBox(width: 12),
@@ -773,9 +869,18 @@ class _AdminDashboard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.5,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -838,13 +943,19 @@ class _TrendChartPainter extends CustomPainter {
       final right = (i + 1) * barWidth - barWidth * 0.28;
 
       final trackRect = RRect.fromLTRBR(
-        left, 0, right, size.height,
+        left,
+        0,
+        right,
+        size.height,
         const Radius.circular(6),
       );
       canvas.drawRRect(trackRect, trackPaint);
 
       final barRect = RRect.fromLTRBR(
-        left, size.height - barHeight, right, size.height,
+        left,
+        size.height - barHeight,
+        right,
+        size.height,
         const Radius.circular(6),
       );
       canvas.drawRRect(barRect, barPaint);
@@ -928,16 +1039,33 @@ class _StatCard extends StatelessWidget {
                 child: Icon(icon, color: color, size: 22),
               ),
               const SizedBox(height: 10),
-              Text('${counts.user}/${counts.admin}',
-                  style: TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+              Text(
+                '${counts.user}/${counts.admin}',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text('ผู้ใช้/แอดมิน',
-                  style: TextStyle(fontSize: 9.5, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
+              Text(
+                'ผู้ใช้/แอดมิน',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  color: Colors.grey.shade400,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text(title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),

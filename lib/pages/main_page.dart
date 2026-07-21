@@ -17,6 +17,8 @@ import '../report/pages/report_form.dart';
 
 import '../shared/constants/emas_colors.dart';
 import '../shared/constants/map_constants.dart';
+import '../shared/services/navigation_service.dart';
+import '../shared/services/push_notification_service.dart';
 
 // App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency)
 // No AppBar here — each tab that needs one (ReportListPage/AnnouncementPage) owns its own [MainPage]
@@ -40,21 +42,36 @@ class _MainPageState extends State<MainPage> {
   // Display name shown in the drawer header, built from firstName + lastName [_userName]
   String? _userName;
 
-  /// ============================== [Data] ==============================
-  // Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
-  static const _navItems = [
-    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-  ];
-
   /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
     _loadUserData();
+
+    // ฟังคำขอสลับ tab จากภายนอก MainPage เช่นตอนกด push notification
+    // (ดู lib/shared/services/navigation_service.dart) [mainTabRequest-listener]
+    mainTabRequest.addListener(_onTabRequest);
+
+    // เริ่ม push notification service ตรงนี้ (ไม่ใช่ใน main()) เพราะ MainPage
+    // ถูกสร้างหลัง login สำเร็จเท่านั้น — การันตีว่ามี uid ให้ save fcmToken ได้แน่นอน
+    // [push-notification-init]
+    PushNotificationService.instance.init();
+  }
+
+  @override
+  void dispose() {
+    mainTabRequest.removeListener(_onTabRequest);
+    super.dispose();
+  }
+
+  // เรียกทุกครั้งที่ mainTabRequest.value เปลี่ยน — สลับ tab แล้ว consume (เคลียร์กลับเป็น null)
+  // เพื่อไม่ให้ trigger ซ้ำตอน MainPage rebuild ด้วยเหตุผลอื่น [_onTabRequest]
+  void _onTabRequest() {
+    final requested = mainTabRequest.value;
+    if (requested == null) return;
+    if (mounted) setState(() => _selectedIndex = requested);
+    mainTabRequest.value = null;
   }
 
   /// ============================== [User Data Logic] ==============================
@@ -128,8 +145,12 @@ class _MainPageState extends State<MainPage> {
         index: _selectedIndex,
         children: [
           _HomePage(isAdmin: _isAdmin),
-          ReportListPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
-          AnnouncementPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
+          ReportListPage(
+            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          AnnouncementPage(
+            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
           ProfilePage(
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             isAdmin: _isAdmin,
@@ -151,6 +172,15 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
+
+  /// ============================== [Data] ==============================
+  // Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
+  static const _navItems = [
+    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+  ];
 }
 
 // Side drawer: profile header + nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
@@ -192,7 +222,11 @@ class _AppDrawer extends StatelessWidget {
                       CircleAvatar(
                         radius: 24,
                         backgroundColor: emasColor,
-                        child: const Icon(Icons.person, color: Colors.white, size: 24),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -221,7 +255,10 @@ class _AppDrawer extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.grey.shade400,
+                      ),
                     ],
                   ),
                 ),
@@ -241,10 +278,26 @@ class _AppDrawer extends StatelessWidget {
             ],
 
             _SectionLabel('เมนูหลัก'),
-            _DrawerItem(icon: Icons.home_rounded, label: 'หน้าหลัก', onTap: () => onTap(0)),
-            _DrawerItem(icon: Icons.list_alt_rounded, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
-            _DrawerItem(icon: Icons.notifications_none_rounded, label: 'ข่าวสาร', onTap: () => onTap(2)),
-            _DrawerItem(icon: Icons.person_rounded, label: 'โปรไฟล์', onTap: () => onTap(3)),
+            _DrawerItem(
+              icon: Icons.home_rounded,
+              label: 'หน้าหลัก',
+              onTap: () => onTap(0),
+            ),
+            _DrawerItem(
+              icon: Icons.list_alt_rounded,
+              label: 'รายการแจ้งปัญหา',
+              onTap: () => onTap(1),
+            ),
+            _DrawerItem(
+              icon: Icons.notifications_none_rounded,
+              label: 'ข่าวสาร',
+              onTap: () => onTap(2),
+            ),
+            _DrawerItem(
+              icon: Icons.person_rounded,
+              label: 'โปรไฟล์',
+              onTap: () => onTap(3),
+            ),
 
             const SizedBox(height: 8),
             const _DrawerDivider(),
@@ -350,10 +403,6 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-// Single drawer item [_DrawerItem] rows plus divider [_DrawerDivider] are used above;
-// note: original file also has private widget classes below for the map tab
-// (_HomePage, ReportMarkerLayer usage, etc.) — unchanged from before, kept as-is.
-
 // Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
 class _HomePage extends StatefulWidget {
   final bool isAdmin;
@@ -365,7 +414,6 @@ class _HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<_HomePage> {
-
   /// ============================== [Controllers & Services] ==============================
   final MapController _mapController = MapController();
 
@@ -400,7 +448,8 @@ class _HomePageState extends State<_HomePage> {
       }
 
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) return;
+          permission == LocationPermission.deniedForever)
+        return;
 
       final pos = await Geolocator.getCurrentPosition();
 
@@ -534,7 +583,8 @@ class _HomePageState extends State<_HomePage> {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18)),
+                borderRadius: BorderRadius.circular(18),
+              ),
             ),
             icon: const Icon(Icons.add),
             label: const Text('แจ้งปัญหาใหม่'),

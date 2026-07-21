@@ -3,32 +3,17 @@ import 'package:flutter/material.dart';
 import '../../shared/constants/emas_colors.dart';
 
 // [buildingOptions]
-const buildingOptions = [
-  'อาคาร 1',
-  'อาคาร 2',
-  'อาคาร 3',
-  'อาคาร 4',
-  'อาคาร 5',
-];
+const buildingOptions = ['อาคาร 1', 'อาคาร 2', 'อาคาร 3', 'อาคาร 4', 'อาคาร 5'];
 
 // [floorOptions]
-const floorOptions = [
-  'ชั้น 1',
-  'ชั้น 2',
-  'ชั้น 3',
-  'ชั้น 4',
-  'ชั้น 5',
-];
+const floorOptions = ['ชั้น 1', 'ชั้น 2', 'ชั้น 3', 'ชั้น 4', 'ชั้น 5'];
 
 // Label + Color for one severity level [SeverityInfo]
 class SeverityInfo {
   final String label;
   final Color color;
 
-  const SeverityInfo({
-    required this.label,
-    required this.color,
-  });
+  const SeverityInfo({required this.label, required this.color});
 }
 
 // All severity levels, keyed by Firestore value
@@ -51,12 +36,7 @@ class ReportStatus {
   static const done = 'เสร็จสิ้น';
 
   // null = Show all statuses
-  static const List<String?> filterOptions = [
-    null,
-    pending,
-    inProgress,
-    done,
-  ];
+  static const List<String?> filterOptions = [null, pending, inProgress, done];
 }
 
 // bg/fg color pair for a status chip [getStatusColors]
