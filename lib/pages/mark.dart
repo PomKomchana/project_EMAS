@@ -24,42 +24,46 @@ class _ReportMarkerLayerState extends State<ReportMarkerLayer> {
   }
 
   Future<void> _loadMarkers() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('reports').get();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('reports')
+        .get();
 
-    final markers = snapshot.docs.map((doc) {
-      final data = doc.data();
+    final markers = snapshot.docs
+        .map((doc) {
+          final data = doc.data();
 
-      final lat = data['lat'];
-      final lng = data['lng'];
+          final lat = data['lat'];
+          final lng = data['lng'];
 
-      if (lat == null || lng == null) return null;
+          if (lat == null || lng == null) return null;
 
-      /// ดึงข้อมูลระดับความอันตรายของ report นี้ (เหมือนใน report_list_page.dart)
-      final severityKey = data['severity'] as String?;
-      final severity = getSeverityInfo(severityKey);
-      final isHigh = severity.label == severityLevels['high']!.label;
+          // ดึงข้อมูลระดับความอันตรายของ report นี้ (เหมือนใน report_list_page.dart)
+          final severityKey = data['severity'] as String?;
+          final severity = getSeverityInfo(severityKey);
+          final isHigh = severity.label == severityLevels['high']!.label;
 
-      return Marker(
-        point: LatLng(lat, lng),
-        // High severity ใหญ่กว่านิดหน่อยให้เด่นขึ้นบนแผนที่
-        width: isHigh ? 56 : 50,
-        height: isHigh ? 56 : 50,
-        child: GestureDetector(
-          onTap: () {
-            widget.onTapMarker?.call(data);
-          },
-          child: _buildMarkerIcon(severity, isHigh),
-        ),
-      );
-    }).whereType<Marker>().toList();
+          return Marker(
+            point: LatLng(lat, lng),
+            // High severity ใหญ่กว่านิดหน่อยให้เด่นขึ้นบนแผนที่
+            width: isHigh ? 56 : 50,
+            height: isHigh ? 56 : 50,
+            child: GestureDetector(
+              onTap: () {
+                widget.onTapMarker?.call(data);
+              },
+              child: _buildMarkerIcon(severity, isHigh),
+            ),
+          );
+        })
+        .whereType<Marker>()
+        .toList();
 
     setState(() {
       _markers = markers;
     });
   }
 
-  /// ไอคอนหมุด: สีตามระดับความอันตราย + มี outline สีขาวรอบไอคอน, high มี badge ตกใจ (!)
+  // ไอคอนหมุด: สีตามระดับความอันตราย + มี outline สีขาวรอบไอคอน, high มี badge ตกใจ (!)
   Widget _buildMarkerIcon(SeverityInfo severity, bool isHigh) {
     final iconSize = isHigh ? 44.0 : 40.0;
 
@@ -74,11 +78,7 @@ class _ReportMarkerLayerState extends State<ReportMarkerLayer> {
           size: iconSize + 4,
         ),
         // ไอคอนจริงสีตาม severity วางทับด้านบน
-        Icon(
-          Icons.location_on,
-          color: severity.color,
-          size: iconSize,
-        ),
+        Icon(Icons.location_on, color: severity.color, size: iconSize),
         if (isHigh)
           Positioned(
             top: 2,

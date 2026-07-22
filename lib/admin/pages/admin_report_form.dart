@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/admin_service.dart';
-
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/map_constants.dart';
 import '../../shared/constants/report_constants.dart';
@@ -17,14 +15,10 @@ import '../../shared/widgets/form_widgets.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/image_widgets.dart';
 import '../../shared/widgets/map_widgets.dart';
-import '../../shared/utils/geo_utils.dart';
 
-/// Bottom sheet: Admin. Resolves to `true` only when a report was actually
-/// saved (see AdminReportForm._submit) — `null`/`false` means the admin
-/// closed it without saving. Callers (e.g. AdminMainPage's global FAB) should
-/// check this before treating the flow as complete. [showAdminReportForm]
-Future<bool?> showAdminReportForm(BuildContext context) {
-  return showModalBottomSheet<bool>(
+// Bottom sheet: Admin [showAdminReportForm]
+Future<void> showAdminReportForm(BuildContext context) {
+  return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -32,7 +26,7 @@ Future<bool?> showAdminReportForm(BuildContext context) {
   );
 }
 
-/// Admin-created report form (building/floor/room, status, severity, image, description, map pin) [AdminReportForm]
+// Admin-created report form (building/floor/room, status, severity, image, description, map pin) [AdminReportForm]
 class AdminReportForm extends StatefulWidget {
   const AdminReportForm({super.key});
 
@@ -42,18 +36,15 @@ class AdminReportForm extends StatefulWidget {
 
 class _AdminReportFormState extends State<AdminReportForm>
     with TickerProviderStateMixin {
-
   /// ============================== [Controllers & Services] ==============================
-  /// Text/map controllers [_floorController, _roomController, _descController, _mapController, _adminService, _imagePicker, _buildingTextController]
-  final _floorController = TextEditingController();
+  // Text/map controllers [_roomController, _descController, _mapController]
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
   final _adminService = AdminService();
   final _imagePicker = ImagePicker();
-  final _buildingTextController = TextEditingController();
 
-  /// Staggered entrance animation [_fadeController, _fadeList, _slideList]
+  // Staggered entrance animation [_fadeController, _fadeList, _slideList]
   late final AnimationController _fadeController;
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
@@ -63,21 +54,21 @@ class _AdminReportFormState extends State<AdminReportForm>
   late final Animation<double> _mapHeightAnimation;
 
   /// ============================== [State] ==============================
-  /// Map State [_pickedLocation, _isPickingMode, _isMapExpanded, _mapMode]
+  // Map State [_pickedLocation, _isPickingMode, _isMapExpanded, _mapMode]
   LatLng? _pickedLocation;
   bool _isPickingMode = false;
   bool _isMapExpanded = false;
   MapMode _mapMode = MapMode.normal;
 
-  /// Form State [_selectedBuilding, _selectedFloor, _selectedSeverity, _selectedStatus, _selectedImage, _isSaving]
+  // Form State [_selectedBuilding, _selectedFloor, _selectedSeverity, _selectedStatus, _selectedImage, _isSaving]
   String? _selectedBuilding;
+  String? _selectedFloor;
   String? _selectedSeverity;
   String _selectedStatus = ReportStatus.pending;
   File? _selectedImage;
   bool _isSaving = false;
-  bool _isManualBuildingEntry = false;
 
-  /// Number of staggered sections: Map, Image, Location, Status, Severity, Description
+  // Number of staggered sections: Map, Image, Location, Status, Severity, Description
   static const _sectionCount = 6;
 
   /// ============================== [Life Cycle] ==============================
@@ -93,25 +84,19 @@ class _AdminReportFormState extends State<AdminReportForm>
     _slideList = _buildStaggeredSlideList();
     _fadeController.forward();
 
-    /// Map height animation: 200 → 520 [_mapAnimController]
+    // Map height animation: 200 → 520 [_mapAnimController]
     _mapAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     )..addListener(() => setState(() {}));
 
     _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
-      CurvedAnimation(
-        parent: _mapAnimController,
-        curve: Curves.easeInOutCubic,
-      ),
+      CurvedAnimation(parent: _mapAnimController, curve: Curves.easeInOutCubic),
     );
-    _requestLocationAndMove(); 
   }
-  
+
   @override
   void dispose() {
-    _buildingTextController.dispose();
-    _floorController.dispose();
     _roomController.dispose();
     _descController.dispose();
     _mapController.dispose();
@@ -121,7 +106,7 @@ class _AdminReportFormState extends State<AdminReportForm>
   }
 
   /// ============================== [Animation Logic] ==============================
-  /// Staggered fade-in per form section [_buildStaggeredFadeList]
+  // Staggered fade-in per form section [_buildStaggeredFadeList]
   List<Animation<double>> _buildStaggeredFadeList() {
     return List.generate(_sectionCount, (i) {
       final start = (i * 0.1).clamp(0.0, 0.9);
@@ -134,11 +119,14 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
-  /// Same as above but slide-up motion [_buildStaggeredSlideList]
+  // Same as above but slide-up motion [_buildStaggeredSlideList]
   List<Animation<Offset>> _buildStaggeredSlideList() {
     return List.generate(_sectionCount, (i) {
       final start = (i * 0.1).clamp(0.0, 0.9);
-      return Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
+      return Tween<Offset>(
+        begin: const Offset(0, 0.12),
+        end: Offset.zero,
+      ).animate(
         CurvedAnimation(
           parent: _fadeController,
           curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
@@ -147,7 +135,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
-  /// Apply fade + slide animation to a form section [_buildAnimatedSection]
+  // Apply fade + slide animation to a form section [_buildAnimatedSection]
   Widget _buildAnimatedSection(int index, Widget child) {
     return FadeTransition(
       opacity: _fadeList[index],
@@ -156,34 +144,7 @@ class _AdminReportFormState extends State<AdminReportForm>
   }
 
   /// ============================== [Location & Map Logic] ==============================
-  /// Request GPS permission and move map to user location (if inside campus bounds) [_requestLocationAndMove]
-  Future<void> _requestLocationAndMove() async {
-    try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) return;
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-
-      final userLatLng = LatLng(position.latitude, position.longitude);
-
-      if (mapBounds.contains(userLatLng)) {
-        _mapController.move(userLatLng, 16);
-      }
-    } catch (_) {
-      // if can't find GPS then use initialCenter location
-    }
-  }
-
-  /// Expand / collapse map and optionally enter picking mode [_toggleMapExpand]
+  // Expand / collapse map and optionally enter picking mode [_toggleMapExpand]
   void _toggleMapExpand({bool enterPickingMode = false}) {
     HapticFeedback.lightImpact();
     setState(() {
@@ -204,61 +165,42 @@ class _AdminReportFormState extends State<AdminReportForm>
     });
   }
 
-  /// Handle map tap and set pin location [_onMapTapped]
-void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
-  if (!_isPickingMode) return;
+  // Handle map tap and set pin location [_onMapTapped]
+  void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
+    if (!_isPickingMode) return;
 
-  if (!mapBounds.contains(tappedPosition)) {
-    HapticFeedback.heavyImpact();
-    _showSnackBar(
-      'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น', Colors.red.shade700, Icons.warning_amber_rounded
-    );
-    return;
+    if (!mapBounds.contains(tappedPosition)) {
+      HapticFeedback.heavyImpact();
+      _showSnack(
+        'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น',
+        Colors.orange.shade700,
+      );
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+    setState(() => _pickedLocation = tappedPosition);
+    _mapController.move(tappedPosition, 18);
   }
 
-  HapticFeedback.mediumImpact();
-  setState(() => _pickedLocation = tappedPosition);
-  _mapController.move(tappedPosition, 18);
+  // Confirm selected pin location [_confirmPin]
+  void _confirmPin() {
+    HapticFeedback.mediumImpact();
+    _toggleMapExpand();
+    _showSnack('ปักหมุดสำเร็จ ✓', Colors.green.shade600);
+  }
 
-  _autoDetectBuilding(tappedPosition);
-}
-
-/// Auto-fill the building field using point-in-polygon detection.
-/// Works in both dropdown mode and manual-typing mode. [_autoDetectBuilding]
-void _autoDetectBuilding(LatLng point) {
-  final detectedName = getBuildingNameFromPoint(point);
-  if (detectedName == null) return;
-
-  setState(() {
-    _selectedBuilding = detectedName;
-    _buildingTextController.text = detectedName;
-  });
-
-  _showSnackBar(
-    'ตรวจพบตำแหน่ง: $detectedName', Colors.green.shade600, Icons.location_city_rounded
-  );
-}
-
-/// Confirm selected pin location [_confirmPin]
-void _confirmPin() {
-  HapticFeedback.mediumImpact();
-  _toggleMapExpand();
-  _showSnackBar(
-    'ปักหมุดสำเร็จ', Colors.green.shade600, Icons.check_circle_outline
-  );
-}
-
-/// Switch to next map mode [_cycleMapMode]
-void _cycleMapMode() {
-  HapticFeedback.selectionClick();
-  setState(() {
-    final modes = MapMode.values;
-    _mapMode = modes[(modes.indexOf(_mapMode) + 1) % modes.length];
-  });
-}
+  // Switch to next map mode [_cycleMapMode]
+  void _cycleMapMode() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      final modes = MapMode.values;
+      _mapMode = modes[(modes.indexOf(_mapMode) + 1) % modes.length];
+    });
+  }
 
   /// ============================== [Image Picker Logic] ==============================
-  /// Show image picker bottom sheet [_showImagePickerSheet]
+  // Show image picker bottom sheet [_showImagePickerSheet]
   void _showImagePickerSheet() {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
@@ -268,7 +210,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Pick image from selected source [_pickImageFrom]
+  // Pick image from selected source [_pickImageFrom]
   Future<void> _pickImageFrom(ImageSource source) async {
     final picked = await _imagePicker.pickImage(source: source);
     if (picked != null) {
@@ -277,24 +219,18 @@ void _cycleMapMode() {
   }
 
   /// ============================== [Submit Logic] ==============================
-  /// Validate + create the admin report [_submit]
+  // Validate + create the admin report [_submit]
   Future<void> _submit() async {
-    if (_selectedBuilding == null || _floorController.text.trim().isEmpty) {
-      _showSnackBar(
-        'กรุณาเลือกอาคารและชั้น', Colors.red.shade600, Icons.error_outline
-        );
+    if (_selectedBuilding == null || _selectedFloor == null) {
+      _showSnack('กรุณาเลือกอาคารและชั้น', Colors.red.shade600);
       return;
     }
     if (_selectedSeverity == null) {
-      _showSnackBar(
-        'กรุณาเลือกระดับความรุนแรง', Colors.red.shade600, Icons.error_outline
-        );
+      _showSnack('กรุณาเลือกระดับความรุนแรง', Colors.red.shade600);
       return;
     }
     if (_descController.text.trim().isEmpty) {
-      _showSnackBar(
-        'กรุณากรอกรายละเอียดปัญหา', Colors.red.shade600, Icons.error_outline
-        );
+      _showSnack('กรุณากรอกรายละเอียดปัญหา', Colors.red.shade600);
       return;
     }
 
@@ -302,11 +238,11 @@ void _cycleMapMode() {
     setState(() => _isSaving = true);
 
     try {
-      /// NOTE: AdminService.createReport() ต้องรองรับพารามิเตอร์ `image` (File?)
-      /// และอัปโหลดขึ้น Firebase Storage แบบเดียวกับ ReportService.submitReport()
+      // NOTE: AdminService.createReport() ต้องรองรับพารามิเตอร์ `image` (File?)
+      // และอัปโหลดขึ้น Firebase Storage แบบเดียวกับ ReportService.submitReport()
       await _adminService.createReport(
         building: _selectedBuilding!,
-        floor: _floorController.text.trim(),
+        floor: _selectedFloor!,
         room: _roomController.text.trim(),
         description: _descController.text.trim(),
         severity: _selectedSeverity!,
@@ -317,28 +253,24 @@ void _cycleMapMode() {
       );
 
       if (!mounted) return;
-      /// Pop `true` — distinguishes a real save from the admin just closing
-      /// the sheet, so callers like AdminMainPage's global FAB know whether
-      /// to switch to the report list tab. [Navigator.pop(context, true)]
-      Navigator.pop(context, true);
-      _showSnackBar(
-        'เพิ่มรายการแจ้งซ่อมสำเร็จ', Colors.green.shade600, Icons.check_circle
-        );
+      Navigator.pop(context);
+      _showSnack('เพิ่มรายการแจ้งซ่อมสำเร็จ ✓', Colors.green.shade600);
     } catch (e) {
-      _showSnackBar(
-        'เกิดข้อผิดพลาด: $e', Colors.red.shade700, Icons.error_outline
-        );
+      _showSnack('เกิดข้อผิดพลาด: $e', Colors.red.shade600);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
   /// ============================== [UI Helpers] ==============================
-  /// Show snackbar message [_showSnack]
-  void _showSnackBar(String message, Color color, IconData icon) {
+  // Show snackbar message [_showSnack]
+  void _showSnack(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
+        content: Text(
+          message,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -400,7 +332,7 @@ void _cycleMapMode() {
   }
 
   /// ============================== [Widgets] ==============================
-  /// Drag handle at top of the sheet [_buildHandle]
+  // Drag handle at top of the sheet [_buildHandle]
   Widget _buildHandle() {
     return Container(
       margin: const EdgeInsets.only(top: 10, bottom: 6),
@@ -413,7 +345,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Title row with Admin badge + close button [_buildHeader]
+  // Title row with Admin badge + close button [_buildHeader]
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 12, 10),
@@ -451,7 +383,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Map section with pin picking, expand/collapse animation, and mode toggle [_buildMapSection]
+  // Map section with pin picking, expand/collapse animation, and mode toggle [_buildMapSection]
   Widget _buildMapSection() {
     return GlassCard(
       child: Column(
@@ -466,10 +398,8 @@ void _cycleMapMode() {
           // Map height changes with animation.
           AnimatedBuilder(
             animation: _mapAnimController,
-            builder: (_, child) => SizedBox(
-              height: _mapHeightAnimation.value,
-              child: child,
-            ),
+            builder: (_, child) =>
+                SizedBox(height: _mapHeightAnimation.value, child: child),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Stack(
@@ -481,7 +411,9 @@ void _cycleMapMode() {
                       initialZoom: 15,
                       minZoom: 14,
                       maxZoom: 20,
-                      cameraConstraint: CameraConstraint.containCenter(bounds: mapBounds),
+                      cameraConstraint: CameraConstraint.containCenter(
+                        bounds: mapBounds,
+                      ),
                       onTap: _onMapTapped,
                     ),
                     children: [
@@ -572,7 +504,9 @@ void _cycleMapMode() {
                 Expanded(
                   child: OutlineButton(
                     icon: Icons.my_location_rounded,
-                    label: _pickedLocation == null ? 'เลือกตำแหน่ง' : 'เปลี่ยนตำแหน่ง',
+                    label: _pickedLocation == null
+                        ? 'เลือกตำแหน่ง'
+                        : 'เปลี่ยนตำแหน่ง',
                     onTap: () => _toggleMapExpand(enterPickingMode: true),
                   ),
                 ),
@@ -587,7 +521,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Image upload section, shows placeholder or selected image with change button (same pattern as ReportForm) [_buildImageSection]
+  // Image upload section, shows placeholder or selected image with change button (same pattern as ReportForm) [_buildImageSection]
   Widget _buildImageSection() {
     return GlassCard(
       child: Column(
@@ -620,13 +554,14 @@ void _cycleMapMode() {
           ],
 
           // But if an image not present → show Placeholder box
-          if (_selectedImage == null) ImagePlaceholder(onTap: _showImagePickerSheet),
+          if (_selectedImage == null)
+            ImagePlaceholder(onTap: _showImagePickerSheet),
         ],
       ),
     );
   }
 
-  /// Bottom sheet to choose image source: camera or gallery (same pattern as ReportForm) [_buildImagePickerSheet]
+  // Bottom sheet to choose image source: camera or gallery (same pattern as ReportForm) [_buildImagePickerSheet]
   Widget _buildImagePickerSheet() {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -653,7 +588,11 @@ void _cycleMapMode() {
                 const SizedBox(height: 16),
                 const Text(
                   'เพิ่มรูปภาพ',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Padding(
@@ -693,160 +632,55 @@ void _cycleMapMode() {
     );
   }
 
-/// Location Section: Building / Floor dropdown + room number [_buildLocationSection]
-Widget _buildLocationSection() {
-  return GlassCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const CardHeader(
-          icon: Icons.apartment_rounded,
-          title: 'สถานที่',
-        ),
-        const SizedBox(height: 12),
-
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              child: _buildBuildingField(),
-            ),
-            const SizedBox(width: 8),
-            _buildBuildingModeToggle(),
-          ],
-        ),
-
-        const SizedBox(height: 10),
-
-        TextField(
-          controller: _floorController,
-          keyboardType: TextInputType.text,
-          decoration: InputDecoration(
-            labelText: 'ชั้น',
-            labelStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 14,
-            ),
-            prefixIcon: const Icon(
-              Icons.layers_rounded,
-              color: emasColor,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+  // Location section: building/floor dropdown + room number [_buildLocationSection]
+  Widget _buildLocationSection() {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CardHeader(icon: Icons.apartment_rounded, title: 'สถานที่'),
+          const SizedBox(height: 12),
+          StyledDropdown(
+            value: _selectedBuilding,
+            hint: 'เลือกอาคาร',
+            icon: Icons.domain_rounded,
+            items: buildingOptions,
+            onChanged: (v) => setState(() => _selectedBuilding = v),
+          ),
+          const SizedBox(height: 10),
+          StyledDropdown(
+            value: _selectedFloor,
+            hint: 'เลือกชั้น',
+            icon: Icons.layers_rounded,
+            items: floorOptions,
+            onChanged: (v) => setState(() => _selectedFloor = v),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _roomController,
+            decoration: InputDecoration(
+              labelText: 'ห้องเลขที่',
+              labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              prefixIcon: const Icon(
+                Icons.meeting_room_outlined,
                 color: emasColor,
-                width: 2,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: emasColor, width: 2),
               ),
             ),
           ),
-        ),
-
-        const SizedBox(height: 10),
-
-        TextField(
-          controller: _roomController,
-          decoration: InputDecoration(
-            labelText: 'ห้องเลขที่',
-            labelStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 14,
-            ),
-            prefixIcon: const Icon(
-              Icons.meeting_room_outlined,
-              color: emasColor,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: emasColor,
-                width: 2,
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Building input, switches between StyledDropdown and free-text TextField
-/// depending on _isManualBuildingEntry [_buildBuildingField]
-Widget _buildBuildingField() {
-  if (_isManualBuildingEntry) {
-    return TextField(
-      controller: _buildingTextController,
-      decoration: InputDecoration(
-        labelText: 'ชื่ออาคาร',
-        labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-        prefixIcon: const Icon(Icons.domain_rounded, color: emasColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: emasColor, width: 2),
-        ),
+        ],
       ),
-      onChanged: (value) => setState(() => _selectedBuilding = value),
     );
   }
 
-  return StyledDropdown(
-    value: _selectedBuilding,
-    hint: 'เลือกอาคาร',
-    icon: Icons.domain_rounded,
-    items: buildingOptions,
-    onChanged: (value) => setState(() => _selectedBuilding = value),
-  );
-}
-
-/// Toggle button between dropdown mode and manual-typing mode.
-/// Carries the current value over when switching so nothing gets lost. [_buildBuildingModeToggle]
-Widget _buildBuildingModeToggle() {
-  return Padding(
-    padding: const EdgeInsets.only(top: 4),
-    child: GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() {
-          if (!_isManualBuildingEntry) {
-            // Switching dropdown → manual: carry over current value as starting text
-            _buildingTextController.text = _selectedBuilding ?? '';
-          } else {
-            // Switching manual → dropdown: only keep the value if it matches a real option,
-            // otherwise clear it so the dropdown doesn't crash on an unknown value
-            if (!buildingOptions.contains(_selectedBuilding)) {
-              _selectedBuilding = null;
-            }
-          }
-          _isManualBuildingEntry = !_isManualBuildingEntry;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: emasColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: emasColor.withOpacity(0.3)),
-        ),
-        child: Icon(
-          _isManualBuildingEntry ? Icons.list_rounded : Icons.edit_rounded,
-          color: emasColorDarker,
-          size: 20,
-        ),
-      ),
-    ),
-  );
-}
-
-  /// [ADMIN] Report status picker: "รอดำเนินการ" / "กำลังดำเนินการ" [_buildStatusSection]
+  // [ADMIN] Report status picker: "รอดำเนินการ" / "กำลังดำเนินการ" [_buildStatusSection]
   Widget _buildStatusSection() {
     final options = [
       (
@@ -870,7 +704,10 @@ Widget _buildBuildingModeToggle() {
           // CardHeader + Admin Badge (In the same row)
           Row(
             children: [
-              const CardHeader(icon: Icons.flag_rounded, title: 'สถานะเริ่มต้น'),
+              const CardHeader(
+                icon: Icons.flag_rounded,
+                title: 'สถานะเริ่มต้น',
+              ),
               const Spacer(),
               _buildAdminBadge(),
             ],
@@ -937,7 +774,7 @@ Widget _buildBuildingModeToggle() {
     );
   }
 
-  /// [ADMIN] Severity picker: uses severityLevels from report_constants.dart [_buildSeveritySection]
+  // [ADMIN] Severity picker: uses severityLevels from report_constants.dart [_buildSeveritySection]
   Widget _buildSeveritySection() {
     final options = severityLevels.entries
         .where((e) => e.key != 'none')
@@ -986,7 +823,9 @@ Widget _buildBuildingModeToggle() {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? info.color.withOpacity(0.12) : Colors.grey.shade50,
+          color: isSelected
+              ? info.color.withOpacity(0.12)
+              : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? info.color : Colors.grey.shade200,
@@ -1008,7 +847,10 @@ Widget _buildBuildingModeToggle() {
                 : Container(
                     width: 10,
                     height: 10,
-                    decoration: BoxDecoration(color: info.color, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: info.color,
+                      shape: BoxShape.circle,
+                    ),
                   ),
             const SizedBox(height: 6),
             Text(
@@ -1025,13 +867,16 @@ Widget _buildBuildingModeToggle() {
     );
   }
 
-  /// Problem description section (free text) [_buildDescriptionSection]
+  // Problem description section (free text) [_buildDescriptionSection]
   Widget _buildDescriptionSection() {
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CardHeader(icon: Icons.edit_note_rounded, title: 'รายละเอียดปัญหา'),
+          const CardHeader(
+            icon: Icons.edit_note_rounded,
+            title: 'รายละเอียดปัญหา',
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _descController,
@@ -1055,11 +900,13 @@ Widget _buildBuildingModeToggle() {
     );
   }
 
-  /// Submit button bar pinned at bottom, shows loading spinner while saving [_buildSubmitBar]
+  // Submit button bar pinned at bottom, shows loading spinner while saving [_buildSubmitBar]
   Widget _buildSubmitBar() {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        16, 12, 16,
+        16,
+        12,
+        16,
         MediaQuery.of(context).padding.bottom + 12,
       ),
       decoration: BoxDecoration(
@@ -1078,7 +925,10 @@ Widget _buildBuildingModeToggle() {
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               )
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1095,7 +945,7 @@ Widget _buildBuildingModeToggle() {
     );
   }
 
-  /// Small "Admin" pill shown on admin-only sections [_buildAdminBadge]
+  // Small "Admin" pill shown on admin-only sections [_buildAdminBadge]
   Widget _buildAdminBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),

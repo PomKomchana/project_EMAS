@@ -5,15 +5,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'pages/main_page.dart';
 import 'auth/login.dart';
 import 'pages/loading_page.dart';
+import 'shared/services/navigation_service.dart';
 
 void main() async {
   // Make sure Flutter is ready
   WidgetsFlutterBinding.ensureInitialized();
 
   // Start Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Run the app
   runApp(const MyApp());
@@ -27,6 +26,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'EMAS',
+      // Root navigator key — ให้ service ที่ไม่มี BuildContext (เช่น push notification)
+      // เรียก Navigator.push ได้จากนอก widget tree [navigatorKey]
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -46,8 +48,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFe85d6a)),
       ),
       home: FirebaseAuth.instance.currentUser != null
-      ? const MainPage()
-      : const LoginPage(),
+          ? const MainPage()
+          : const LoginPage(),
     );
   }
 }

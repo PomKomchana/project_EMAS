@@ -17,9 +17,11 @@ import '../report/pages/report_form.dart';
 
 import '../shared/constants/emas_colors.dart';
 import '../shared/constants/map_constants.dart';
+import '../shared/services/navigation_service.dart';
+import '../shared/services/push_notification_service.dart';
 
-/// App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency)
-/// No AppBar here — each tab that needs one (ReportListPage/AnnouncementPage) owns its own [MainPage]
+// App shell: bottom nav (Home/Reports/News/Profile) + drawer (Admin/Emergency)
+// No AppBar here — each tab that needs one (ReportListPage/AnnouncementPage) owns its own [MainPage]
 class MainPage extends StatefulWidget {
   final int initialIndex;
 
@@ -30,8 +32,8 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  /// Key to reach MainPage's own Scaffold (the one that owns the Drawer)
-  /// from child tab pages that have their own Scaffold [_scaffoldKey]
+  // Key to reach MainPage's own Scaffold (the one that owns the Drawer)
+  // from child tab pages that have their own Scaffold [_scaffoldKey]
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   /// ============================== [State] ==============================
@@ -40,26 +42,41 @@ class _MainPageState extends State<MainPage> {
   // Display name shown in the drawer header, built from firstName + lastName [_userName]
   String? _userName;
 
-  /// ============================== [Data] ==============================
-  /// Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
-  static const _navItems = [
-    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-  ];
-
   /// ============================== [Life Cycle] ==============================
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
     _loadUserData();
+
+    // ฟังคำขอสลับ tab จากภายนอก MainPage เช่นตอนกด push notification
+    // (ดู lib/shared/services/navigation_service.dart) [mainTabRequest-listener]
+    mainTabRequest.addListener(_onTabRequest);
+
+    // เริ่ม push notification service ตรงนี้ (ไม่ใช่ใน main()) เพราะ MainPage
+    // ถูกสร้างหลัง login สำเร็จเท่านั้น — การันตีว่ามี uid ให้ save fcmToken ได้แน่นอน
+    // [push-notification-init]
+    PushNotificationService.instance.init();
+  }
+
+  @override
+  void dispose() {
+    mainTabRequest.removeListener(_onTabRequest);
+    super.dispose();
+  }
+
+  // เรียกทุกครั้งที่ mainTabRequest.value เปลี่ยน — สลับ tab แล้ว consume (เคลียร์กลับเป็น null)
+  // เพื่อไม่ให้ trigger ซ้ำตอน MainPage rebuild ด้วยเหตุผลอื่น [_onTabRequest]
+  void _onTabRequest() {
+    final requested = mainTabRequest.value;
+    if (requested == null) return;
+    if (mounted) setState(() => _selectedIndex = requested);
+    mainTabRequest.value = null;
   }
 
   /// ============================== [User Data Logic] ==============================
-  /// Reads users/{uid}.role (admin gating) + firstName/lastName (drawer header),
-  /// same fields written/read by ProfilePage / ProfileDetailPage. [_loadUserData]
+  // Reads users/{uid}.role (admin gating) + firstName/lastName (drawer header),
+  // same fields written/read by ProfilePage / ProfileDetailPage. [_loadUserData]
   Future<void> _loadUserData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -128,8 +145,12 @@ class _MainPageState extends State<MainPage> {
         index: _selectedIndex,
         children: [
           _HomePage(isAdmin: _isAdmin),
-          ReportListPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
-          AnnouncementPage(onMenuTap: () => _scaffoldKey.currentState?.openDrawer()),
+          ReportListPage(
+            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          AnnouncementPage(
+            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
           ProfilePage(
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             isAdmin: _isAdmin,
@@ -151,9 +172,18 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
+
+  /// ============================== [Data] ==============================
+  // Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
+  static const _navItems = [
+    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+  ];
 }
 
-/// Side drawer: profile header + nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
+// Side drawer: profile header + nav shortcuts + conditional Admin Dashboard entry [_AppDrawer]
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer({
     required this.onTap,
@@ -192,7 +222,11 @@ class _AppDrawer extends StatelessWidget {
                       CircleAvatar(
                         radius: 24,
                         backgroundColor: emasColor,
-                        child: const Icon(Icons.person, color: Colors.white, size: 24),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -221,7 +255,10 @@ class _AppDrawer extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.grey.shade400,
+                      ),
                     ],
                   ),
                 ),
@@ -241,10 +278,26 @@ class _AppDrawer extends StatelessWidget {
             ],
 
             _SectionLabel('เมนูหลัก'),
-            _DrawerItem(icon: Icons.home_rounded, label: 'หน้าหลัก', onTap: () => onTap(0)),
-            _DrawerItem(icon: Icons.list_alt_rounded, label: 'รายการแจ้งปัญหา', onTap: () => onTap(1)),
-            _DrawerItem(icon: Icons.notifications_none_rounded, label: 'ข่าวสาร', onTap: () => onTap(2)),
-            _DrawerItem(icon: Icons.person_rounded, label: 'โปรไฟล์', onTap: () => onTap(3)),
+            _DrawerItem(
+              icon: Icons.home_rounded,
+              label: 'หน้าหลัก',
+              onTap: () => onTap(0),
+            ),
+            _DrawerItem(
+              icon: Icons.list_alt_rounded,
+              label: 'รายการแจ้งปัญหา',
+              onTap: () => onTap(1),
+            ),
+            _DrawerItem(
+              icon: Icons.notifications_none_rounded,
+              label: 'ข่าวสาร',
+              onTap: () => onTap(2),
+            ),
+            _DrawerItem(
+              icon: Icons.person_rounded,
+              label: 'โปรไฟล์',
+              onTap: () => onTap(3),
+            ),
 
             const SizedBox(height: 8),
             const _DrawerDivider(),
@@ -265,7 +318,7 @@ class _AppDrawer extends StatelessWidget {
   }
 }
 
-/// Small uppercase section label above a group of drawer items [_SectionLabel]
+// Small uppercase section label above a group of drawer items [_SectionLabel]
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
   final String text;
@@ -287,7 +340,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Thin inset divider between sections, less harsh than full-width [_DrawerDivider]
+// Thin inset divider between sections, less harsh than full-width [_DrawerDivider]
 class _DrawerDivider extends StatelessWidget {
   const _DrawerDivider();
 
@@ -300,7 +353,7 @@ class _DrawerDivider extends StatelessWidget {
   }
 }
 
-/// Single drawer row, rounded + inset with tap ripple contained to the row [_DrawerItem]
+// Single drawer row, rounded + inset with tap ripple contained to the row [_DrawerItem]
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
     required this.icon,
@@ -350,11 +403,7 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-/// Single drawer item [_DrawerItem] rows plus divider [_DrawerDivider] are used above;
-/// note: original file also has private widget classes below for the map tab
-/// (_HomePage, ReportMarkerLayer usage, etc.) — unchanged from before, kept as-is.
-
-/// Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
+// Home tab: full-screen campus map + report markers + report shortcut button [_HomePage]
 class _HomePage extends StatefulWidget {
   final bool isAdmin;
 
@@ -365,7 +414,6 @@ class _HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<_HomePage> {
-
   /// ============================== [Controllers & Services] ==============================
   final MapController _mapController = MapController();
 
@@ -383,7 +431,7 @@ class _HomePageState extends State<_HomePage> {
   }
 
   /// ============================== [Location & Map Logic] ==============================
-  /// Switch to next map display mode [_cycleMapType]
+  // Switch to next map display mode [_cycleMapType]
   void _cycleMapType() {
     HapticFeedback.selectionClick();
     final modes = MapMode.values;
@@ -391,7 +439,7 @@ class _HomePageState extends State<_HomePage> {
     setState(() => _mapMode = modes[next]);
   }
 
-  /// Request GPS permission and move map to user location [_getUserLocation]
+  // Request GPS permission and move map to user location [_getUserLocation]
   Future<void> _getUserLocation() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -400,7 +448,8 @@ class _HomePageState extends State<_HomePage> {
       }
 
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) return;
+          permission == LocationPermission.deniedForever)
+        return;
 
       final pos = await Geolocator.getCurrentPosition();
 
@@ -418,7 +467,7 @@ class _HomePageState extends State<_HomePage> {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  /// Route to the correct report form depending on the user's role [_onNewReportTap]
+  // Route to the correct report form depending on the user's role [_onNewReportTap]
   void _onNewReportTap(BuildContext context) {
     if (widget.isAdmin) {
       Navigator.push(
@@ -437,8 +486,8 @@ class _HomePageState extends State<_HomePage> {
   }
 
   /// ============================== [Build] ==============================
-  /// NOTE: menu button / map-mode switch / report button are inline here rather
-  /// than extracted to _build... methods, unlike report_form.dart's pattern.
+  // NOTE: menu button / map-mode switch / report button are inline here rather
+  // than extracted to _build... methods, unlike report_form.dart's pattern.
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -534,7 +583,8 @@ class _HomePageState extends State<_HomePage> {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18)),
+                borderRadius: BorderRadius.circular(18),
+              ),
             ),
             icon: const Icon(Icons.add),
             label: const Text('แจ้งปัญหาใหม่'),

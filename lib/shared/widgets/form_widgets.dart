@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 
 import '../constants/emas_colors.dart';
 
-/// WIDGETS: StyledDropdown
-/// Dropdown for ("เลือกอาคาร" / "เลือกชั้น")
-/// Border turns pink once selected
+// WIDGETS: StyledDropdown
+// Dropdown for ("เลือกอาคาร" / "เลือกชั้น")
+// Border turns pink once selected
 class StyledDropdown extends StatelessWidget {
   const StyledDropdown({
     super.key,
@@ -29,15 +29,15 @@ class StyledDropdown extends StatelessWidget {
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: value != null ? emasColor.withOpacity(0.5) : Colors.grey.shade200,
+          color: value != null
+              ? emasColor.withOpacity(0.5)
+              : Colors.grey.shade200,
           width: value != null ? 1.5 : 1,
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButtonFormField<String>(
           value: value,
-          isExpanded: true,
-          menuMaxHeight: 320,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 18, color: emasColor.withOpacity(0.7)),
             hintText: hint,
@@ -46,14 +46,7 @@ class StyledDropdown extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(vertical: 4),
           ),
           items: items
-              .map((item) => DropdownMenuItem(
-                    value: item,
-                    child: Text(
-                      item,
-                      overflow: TextOverflow.ellipsis, // กันข้อความยาวล้นตอนแสดงค่าที่เลือก
-                      maxLines: 1,
-                    ),
-                  ))
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
               .toList(),
           onChanged: onChanged,
           dropdownColor: Colors.white,
@@ -64,8 +57,8 @@ class StyledDropdown extends StatelessWidget {
   }
 }
 
-/// WIDGETS: SheetOption
-/// One tappable option in the image-source bottom sheet ("ถ่ายรูป" / "คลังภาพ")
+// WIDGETS: SheetOption
+// One tappable option in the image-source bottom sheet ("ถ่ายรูป" / "คลังภาพ")
 class SheetOption extends StatelessWidget {
   const SheetOption({
     super.key,

@@ -18,9 +18,8 @@ import '../../shared/widgets/form_widgets.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/image_widgets.dart';
 import '../../shared/widgets/map_widgets.dart';
-import '../../shared/utils/geo_utils.dart';
 
-/// Report form page [ReportForm]
+// Report form page [ReportForm]
 class ReportForm extends StatefulWidget {
   const ReportForm({super.key});
 
@@ -28,66 +27,62 @@ class ReportForm extends StatefulWidget {
   State<ReportForm> createState() => _ReportFormState();
 }
 
-/// State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
+// State class of ReportForm (Handles UI state, animation, map, image picker, and Firestore submit)
 class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
-
   /// ============================== [Controllers & Services] ==============================
-  /// Service [_reportService]
+  // Service [_reportService]
   final _reportService = ReportService();
 
-  /// Text Controllers [_dateController, _floorController, _usernameController, _phoneController, _roomController, _descController, _buildingTextController]
+  // Text Controllers [_dateController, _usernameController, _phoneController, _roomController, _descController]
   final _dateController = TextEditingController();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _floorController = TextEditingController();
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
   final _mapController = MapController();
   final _imagePicker = ImagePicker();
-  final _buildingTextController = TextEditingController();
 
-  /// Animation Controllers
-    /// Map expansion animation [_mapAnimController, _mapHeightAnimation]
-    late final AnimationController _mapAnimController;
-    late final Animation<double> _mapHeightAnimation;
+  // Animation Controllers
+  // Map expansion animation [_mapAnimController, _mapHeightAnimation]
+  late final AnimationController _mapAnimController;
+  late final Animation<double> _mapHeightAnimation;
 
-    /// Page entrance animation (stagger fade + slide) [_sectionFadeController, _sectionFadeList, _sectionSlideList]
-    late final AnimationController _sectionFadeController;
-    late final List<Animation<double>> _sectionFadeList;
-    late final List<Animation<Offset>> _sectionSlideList;
+  // Page entrance animation (stagger fade + slide) [_sectionFadeController, _sectionFadeList, _sectionSlideList]
+  late final AnimationController _sectionFadeController;
+  late final List<Animation<double>> _sectionFadeList;
+  late final List<Animation<Offset>> _sectionSlideList;
 
   /// ============================== [State] ==============================
-  /// Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
-  bool _isMapExpanded = false;        // whether the map is currently expanded
-  bool _isPickingMode = false;        // whether the user is in pin selection mode (waiting for map tap)
-  MapMode _mapMode = MapMode.normal;  // current map display mode
-  LatLng? _pickedLocation;            // selected pinned location on the map
-  bool _isManualBuildingEntry = false;
+  // Map State [_isMapExpanded, _isPickingMode, _mapMode, _pickedLocation]
+  bool _isMapExpanded = false; // whether the map is currently expanded
+  bool _isPickingMode =
+      false; // whether the user is in pin selection mode (waiting for map tap)
+  MapMode _mapMode = MapMode.normal; // current map display mode
+  LatLng? _pickedLocation; // selected pinned location on the map
 
-  /// Form State [_selectedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
+  // Form State [_selectedBuilding, _selectedFloor, _selectedImage, _isSubmitting]
   String? _selectedBuilding;
+  String? _selectedFloor;
   File? _selectedImage;
   bool _isSubmitting = false;
 
   /// ============================== [Life Cycle] ==============================
-  /// InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
+  // InitState (Initialize state and prepare data before UI renders) [_setupAnimations, _sectionFadeController, _requestLocationAndMove]
   @override
   void initState() {
     super.initState();
     _setupAnimations();
     _sectionFadeController.forward(); // start animation
-    _requestLocationAndMove();        // request GPS and move the camera
+    _requestLocationAndMove(); // request GPS and move the camera
   }
 
-  /// Dispose (Return resource when you leave this page)
+  // Dispose (Return resource when you leave this page)
   @override
   void dispose() {
     _mapAnimController.dispose();
     _sectionFadeController.dispose();
 
-    _floorController.dispose();
     _dateController.dispose();
-    _buildingTextController.dispose();
     _usernameController.dispose();
     _phoneController.dispose();
     _roomController.dispose();
@@ -98,22 +93,19 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [Animation Logic] ==============================
-  /// Setup Animations [_setupAnimations]
+  // Setup Animations [_setupAnimations]
   void _setupAnimations() {
-    /// Map height grows from 200 to 520 when expanded.
+    // Map height grows from 200 to 520 when expanded.
     _mapAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     )..addListener(() => setState(() {}));
 
     _mapHeightAnimation = Tween<double>(begin: 200, end: 520).animate(
-      CurvedAnimation(
-        parent: _mapAnimController,
-        curve: Curves.easeInOutCubic,
-      ),
+      CurvedAnimation(parent: _mapAnimController, curve: Curves.easeInOutCubic),
     );
 
-    /// Fade + slide animation for 5 sections (Stagger per section)
+    // Fade + slide animation for 5 sections (Stagger per section)
     _sectionFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -146,7 +138,7 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
   }
 
   /// ============================== [Location & Map Logic] ==============================
-  /// Request GPS permission and move map to user location [_requestLocationAndMove]
+  // Request GPS permission and move map to user location [_requestLocationAndMove]
   Future<void> _requestLocationAndMove() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -154,7 +146,8 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) return;
+          permission == LocationPermission.deniedForever)
+        return;
 
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -196,64 +189,49 @@ class _ReportFormState extends State<ReportForm> with TickerProviderStateMixin {
     });
   }
 
-  /// Handle map tap and set pin location [_onMapTapped]
-void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
-  if (!_isPickingMode) return;
+  // Handle map tap and set pin location [_onMapTapped]
+  void _onMapTapped(TapPosition tapPosition, LatLng tappedPosition) {
+    if (!_isPickingMode) return;
 
-  // Check if the selected location is within SWU Ongkharak campus
-  if (!mapBounds.contains(tappedPosition)) {
-    HapticFeedback.heavyImpact();
+    // ตรวจสอบว่าอยู่ใน มศว ไหม
+    if (!mapBounds.contains(tappedPosition)) {
+      HapticFeedback.heavyImpact();
+      _showSnackBar(
+        'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น',
+        Colors.orange.shade700,
+        Icons.warning_amber_rounded,
+      );
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+    setState(() => _pickedLocation = tappedPosition);
+    _mapController.move(tappedPosition, 18);
+  }
+
+  // Confirm selected pin location [_confirmPin]
+  void _confirmPin() {
+    HapticFeedback.mediumImpact();
+    _toggleMapExpand(); // ย่อแผนที่กลับ
     _showSnackBar(
-      'กรุณาเลือกตำแหน่งภายใน มศว องครักษ์ เท่านั้น', Colors.red.shade700, Icons.warning_amber_rounded,
-    );
-    return;
-  }
-
-  HapticFeedback.mediumImpact();
-  setState(() => _pickedLocation = tappedPosition);
-  _mapController.move(tappedPosition, 18);
-
-  // Try auto-detect which building this point belongs to [_autoDetectBuilding]
-  _autoDetectBuilding(tappedPosition);
-}
-
-/// Auto-fill the building field using point-in-polygon detection.
-/// Works in both dropdown mode and manual-typing mode. [_autoDetectBuilding]
-void _autoDetectBuilding(LatLng point) {
-  final detectedName = getBuildingNameFromPoint(point);
-  if (detectedName == null) return;
-
-  setState(() {
-    _selectedBuilding = detectedName;
-    _buildingTextController.text = detectedName;
-  });
-
-  _showSnackBar( // หรือ _showSnack(...) ใน AdminReportForm
-    'ตรวจพบตำแหน่ง: $detectedName', Colors.green.shade600, Icons.location_city_rounded,
-  );
-}
-
-/// Confirm selected pin location [_confirmPin]
-void _confirmPin() {
-  HapticFeedback.mediumImpact();
-  _toggleMapExpand(); // ย่อแผนที่กลับ
-  _showSnackBar(
-    'ปักหมุดสำเร็จ', Colors.green.shade600, Icons.check_circle_outline
+      'ปักหมุดสำเร็จ ✓',
+      Colors.green.shade600,
+      Icons.check_circle_outline,
     );
   }
 
-/// Switch to next map mode [_cycleMapMode]
-void _cycleMapMode() {
-  HapticFeedback.selectionClick();
-  setState(() {
-    final modes = MapMode.values; // [normal, hybrid]
-    final nextIndex = (modes.indexOf(_mapMode) + 1) % modes.length;
-    _mapMode = modes[nextIndex];
-  });
-}
+  // Switch to next map mode [_cycleMapMode]
+  void _cycleMapMode() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      final modes = MapMode.values; // [normal, hybrid]
+      final nextIndex = (modes.indexOf(_mapMode) + 1) % modes.length;
+      _mapMode = modes[nextIndex];
+    });
+  }
 
   /// ============================== [Image Picker Logic] ==============================
-  /// Show image picker bottom sheet [_showImagePickerSheet]
+  // Show image picker bottom sheet [_showImagePickerSheet]
   void _showImagePickerSheet() {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
@@ -263,7 +241,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Pick image from selected source [_pickImageFrom]
+  // Pick image from selected source [_pickImageFrom]
   Future<void> _pickImageFrom(ImageSource source) async {
     final picked = await _imagePicker.pickImage(source: source);
     if (picked != null) {
@@ -272,36 +250,14 @@ void _cycleMapMode() {
   }
 
   /// ============================== [Submit Logic] ==============================
-  /// Submit report via ReportService [_submitReport]
+  // Submit report via ReportService [_submitReport]
   Future<void> _submitReport() async {
-    if (_dateController.text.trim().isEmpty) {
+    if (_selectedBuilding == null || _selectedFloor == null) {
       _showSnackBar(
-        'กรุณากรอกวันที่แจ้งซ่อม', Colors.red.shade600, Icons.error_outline
-        );
-      return;
-    }
-    if (_usernameController.text.trim().isEmpty) {
-      _showSnackBar(
-        'กรุณากรอกชื่อผู้แจ้ง', Colors.red.shade600, Icons.error_outline
-        );
-      return;
-    }
-    if (_phoneController.text.trim().isEmpty) {
-      _showSnackBar(
-        'กรุณากรอกเบอร์ติดต่อ', Colors.red.shade600, Icons.error_outline
-        );
-      return;
-    }
-    if (_selectedBuilding == null || _floorController.text.trim().isEmpty == null) {
-      _showSnackBar(
-        'กรุณาเลือกอาคารและชั้น', Colors.red.shade700, Icons.error_outline
+        'กรุณาเลือกอาคารและชั้น',
+        Colors.red.shade600,
+        Icons.error_outline,
       );
-      return;
-    }
-    if (_descController.text.trim().isEmpty) {
-      _showSnackBar(
-        'กรุณากรอกรายละเอียดปัญหา', Colors.red.shade600, Icons.error_outline
-        );
       return;
     }
 
@@ -317,7 +273,7 @@ void _cycleMapMode() {
         username: _usernameController.text,
         phone: _phoneController.text,
         building: _selectedBuilding!,
-        floor: _floorController.text.trim(),
+        floor: _selectedFloor!,
         room: _roomController.text,
         description: _descController.text,
       );
@@ -325,8 +281,10 @@ void _cycleMapMode() {
       if (!mounted) return;
 
       _showSnackBar(
-        'ส่งแจ้งปัญหาเรียบร้อยแล้ว', Colors.green.shade600, Icons.check_circle
-        );
+        'ส่งแจ้งปัญหาเรียบร้อยแล้ว',
+        Colors.green,
+        Icons.check_circle,
+      );
 
       // Submit to ReportListPage
       Navigator.pushAndRemoveUntil(
@@ -337,9 +295,7 @@ void _cycleMapMode() {
         (route) => false,
       );
     } catch (e) {
-      _showSnackBar(
-        'เกิดข้อผิดพลาด: $e', Colors.red.shade700, Icons.error_outline
-        );
+      _showSnackBar('เกิดข้อผิดพลาด: $e', Colors.red, Icons.error);
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -348,15 +304,17 @@ void _cycleMapMode() {
   }
 
   /// ============================== [UI Helpers] ==============================
-  /// Show snackbar message [_showSnackBar]
+  // Show snackbar message [_showSnackBar]
   void _showSnackBar(String message, Color color, IconData icon) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ]),
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
+          ],
+        ),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -365,7 +323,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Apply fade + slide animation to section [_withSectionAnimation]
+  // Apply fade + slide animation to section [_withSectionAnimation]
   Widget _withSectionAnimation(int sectionIndex, Widget child) {
     return FadeTransition(
       opacity: _sectionFadeList[sectionIndex],
@@ -418,7 +376,7 @@ void _cycleMapMode() {
   }
 
   /// ============================== [Widgets] ==============================
-  /// App Bar with back button and title [_buildAppBar]
+  // App Bar with back button and title [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -448,10 +406,15 @@ void _cycleMapMode() {
     );
   }
 
-  /// Submit Button Bar pinned at bottom, shows loading spinner while submitting [_buildSubmitBar]
+  // Submit Button Bar pinned at bottom, shows loading spinner while submitting [_buildSubmitBar]
   Widget _buildSubmitBar() {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        MediaQuery.of(context).padding.bottom + 12,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFF2F2F7),
         boxShadow: [
@@ -468,7 +431,10 @@ void _cycleMapMode() {
             ? const SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               )
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -477,36 +443,39 @@ void _cycleMapMode() {
                   SizedBox(width: 8),
                   Text(
                     'ส่งแจ้งปัญหา',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ],
               ),
-            ),
-          );
-        }
+      ),
+    );
+  }
 
-  /// Map Section with pin picking, Expand / Collapse animation, and mode toggle [_buildMapSection]
+  // Map Section with pin picking, Expand / Collapse animation, and mode toggle [_buildMapSection]
   Widget _buildMapSection() {
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          const CardHeader(icon: Icons.location_on_rounded, title: 'ตำแหน่งที่เกิดเหตุ'),
+          const CardHeader(
+            icon: Icons.location_on_rounded,
+            title: 'ตำแหน่งที่เกิดเหตุ',
+          ),
           const SizedBox(height: 12),
 
           // Map height changes with animation.
           AnimatedBuilder(
             animation: _mapAnimController,
-            builder: (_, child) => SizedBox(
-              height: _mapHeightAnimation.value,
-              child: child,
-            ),
+            builder: (_, child) =>
+                SizedBox(height: _mapHeightAnimation.value, child: child),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Stack(
                 children: [
-
                   // Flutter Map
                   FlutterMap(
                     mapController: _mapController,
@@ -515,7 +484,9 @@ void _cycleMapMode() {
                       initialZoom: 15,
                       minZoom: 14,
                       maxZoom: 20,
-                      cameraConstraint: CameraConstraint.containCenter(bounds: mapBounds),
+                      cameraConstraint: CameraConstraint.containCenter(
+                        bounds: mapBounds,
+                      ),
                       onTap: _onMapTapped,
                     ),
                     children: [
@@ -546,7 +517,9 @@ void _cycleMapMode() {
 
                   // Map Mode Button
                   Positioned(
-                    top: _isMapExpanded ? 50 : 10, // Move down when expanded so it clears the app bar area.
+                    top: _isMapExpanded
+                        ? 50
+                        : 10, // Move down when expanded so it clears the app bar area.
                     left: 10,
                     child: GlassMapButton(
                       icon: mapModeIcon(_mapMode),
@@ -579,7 +552,10 @@ void _cycleMapMode() {
                           children: [
                             Icon(Icons.check_rounded, size: 18),
                             SizedBox(width: 6),
-                            Text('ยืนยันตำแหน่งนี้', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              'ยืนยันตำแหน่งนี้',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         ),
                       ),
@@ -606,7 +582,9 @@ void _cycleMapMode() {
                 Expanded(
                   child: OutlineButton(
                     icon: Icons.my_location_rounded,
-                    label: _pickedLocation == null ? 'เลือกตำแหน่ง' : 'เปลี่ยนตำแหน่ง',
+                    label: _pickedLocation == null
+                        ? 'เลือกตำแหน่ง'
+                        : 'เปลี่ยนตำแหน่ง',
                     onTap: () => _toggleMapExpand(enterPickingMode: true),
                   ),
                 ),
@@ -621,7 +599,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Image Upload Section, shows placeholder or selected image with change button [_buildImageSection]
+  // Image Upload Section, shows placeholder or selected image with change button [_buildImageSection]
   Widget _buildImageSection() {
     return GlassCard(
       child: Column(
@@ -654,13 +632,14 @@ void _cycleMapMode() {
           ],
 
           // But if an image not present → show Placeholder box
-          if (_selectedImage == null) ImagePlaceholder(onTap: _showImagePickerSheet),
+          if (_selectedImage == null)
+            ImagePlaceholder(onTap: _showImagePickerSheet),
         ],
       ),
     );
   }
 
-  /// Bottom Sheet to choose image source: camera or gallery [_buildImagePickerSheet]
+  // Bottom Sheet to choose image source: camera or gallery [_buildImagePickerSheet]
   Widget _buildImagePickerSheet() {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -689,7 +668,11 @@ void _cycleMapMode() {
                 const SizedBox(height: 16),
                 const Text(
                   'เพิ่มรูปภาพ',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -731,7 +714,7 @@ void _cycleMapMode() {
     );
   }
 
-  /// Reporter Info Section: date picker, username, phone [_buildReporterSection]
+  // Reporter Info Section: date picker, username, phone [_buildReporterSection]
   Widget _buildReporterSection() {
     return GlassCard(
       child: Column(
@@ -816,166 +799,64 @@ void _cycleMapMode() {
     );
   }
 
-/// Location Section: Building / Floor dropdown + room number [_buildLocationSection]
-Widget _buildLocationSection() {
-  return GlassCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const CardHeader(
-          icon: Icons.apartment_rounded,
-          title: 'สถานที่',
-        ),
-        const SizedBox(height: 12),
-
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _buildBuildingField(),
-            ),
-            const SizedBox(width: 8),
-            _buildBuildingModeToggle(),
-          ],
-        ),
-
-        const SizedBox(height: 10),
-
-        TextField(
-          controller: _floorController,
-          keyboardType: TextInputType.text,
-          decoration: InputDecoration(
-            labelText: 'ชั้น',
-            labelStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 14,
-            ),
-            prefixIcon: const Icon(
-              Icons.layers_rounded,
-              color: emasColor,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+  // Location Section: Building / Floor dropdown + room number [_buildLocationSection]
+  Widget _buildLocationSection() {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CardHeader(icon: Icons.apartment_rounded, title: 'สถานที่'),
+          const SizedBox(height: 12),
+          StyledDropdown(
+            value: _selectedBuilding,
+            hint: 'เลือกอาคาร',
+            icon: Icons.domain_rounded,
+            items: buildingOptions,
+            onChanged: (value) => setState(() => _selectedBuilding = value),
+          ),
+          const SizedBox(height: 10),
+          StyledDropdown(
+            value: _selectedFloor,
+            hint: 'เลือกชั้น',
+            icon: Icons.layers_rounded,
+            items: floorOptions,
+            onChanged: (value) => setState(() => _selectedFloor = value),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _roomController,
+            decoration: InputDecoration(
+              labelText: 'ห้องเลขที่',
+              labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              prefixIcon: const Icon(
+                Icons.meeting_room_outlined,
                 color: emasColor,
-                width: 2,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: emasColor, width: 2),
               ),
             ),
           ),
-        ),
-
-        const SizedBox(height: 10),
-
-        TextField(
-          controller: _roomController,
-          decoration: InputDecoration(
-            labelText: 'ห้องเลขที่',
-            labelStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 14,
-            ),
-            prefixIcon: const Icon(
-              Icons.meeting_room_outlined,
-              color: emasColor,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: emasColor,
-                width: 2,
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// Building input, switches between StyledDropdown and free-text TextField
-/// depending on _isManualBuildingEntry [_buildBuildingField]
-Widget _buildBuildingField() {
-  if (_isManualBuildingEntry) {
-    return TextField(
-      controller: _buildingTextController,
-      decoration: InputDecoration(
-        labelText: 'ชื่ออาคาร',
-        labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-        prefixIcon: const Icon(Icons.domain_rounded, color: emasColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: emasColor, width: 2),
-        ),
+        ],
       ),
-      onChanged: (value) => setState(() => _selectedBuilding = value),
     );
   }
 
-  return StyledDropdown(
-    value: _selectedBuilding,
-    hint: 'เลือกอาคาร',
-    icon: Icons.domain_rounded,
-    items: buildingOptions,
-    onChanged: (value) => setState(() => _selectedBuilding = value),
-  );
-}
-
-/// Toggle button between dropdown mode and manual-typing mode.
-/// Carries the current value over when switching so nothing gets lost. [_buildBuildingModeToggle]
-Widget _buildBuildingModeToggle() {
-  return Padding(
-    padding: const EdgeInsets.only(top: 4),
-    child: GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() {
-          if (!_isManualBuildingEntry) {
-            // Switching dropdown → manual: carry over current value as starting text
-            _buildingTextController.text = _selectedBuilding ?? '';
-          } else {
-            // Switching manual → dropdown: only keep the value if it matches a real option,
-            // otherwise clear it so the dropdown doesn't crash on an unknown value
-            if (!buildingOptions.contains(_selectedBuilding)) {
-              _selectedBuilding = null;
-            }
-          }
-          _isManualBuildingEntry = !_isManualBuildingEntry;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: emasColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: emasColor.withOpacity(0.3)),
-        ),
-        child: Icon(
-          _isManualBuildingEntry ? Icons.list_rounded : Icons.edit_rounded,
-          color: emasColorDarker,
-          size: 20,
-        ),
-      ),
-    ),
-  );
-}
-
-  /// Problem Description Section (free text) [_buildDescriptionSection]
+  // Problem Description Section (free text) [_buildDescriptionSection]
   Widget _buildDescriptionSection() {
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CardHeader(icon: Icons.edit_note_rounded, title: 'รายละเอียดปัญหา'),
+          const CardHeader(
+            icon: Icons.edit_note_rounded,
+            title: 'รายละเอียดปัญหา',
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _descController,
