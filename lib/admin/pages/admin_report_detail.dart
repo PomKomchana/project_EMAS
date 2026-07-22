@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
+
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/buttons.dart';
 
-// Report detail + status/severity/note editor for admins [AdminReportDetailPage]
+/// Report detail page — admin can edit status, severity, and note [AdminReportDetailPage]
 class AdminReportDetailPage extends StatefulWidget {
   final String reportId;
   final Map<String, dynamic> data;
@@ -23,6 +25,7 @@ class AdminReportDetailPage extends StatefulWidget {
 }
 
 class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
+
   /// ============================== [Controllers & Services] ==============================
   final _noteCtrl = TextEditingController();
   final _adminService = AdminService();
@@ -32,18 +35,10 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   late String? _currentSeverity;
   bool _isSaving = false;
 
-  // Status options with icon + color, used for the segmented picker [_statusOptions]
+  /// Status options for the picker: label, icon, color [_statusOptions]
   static const _statusOptions = [
-    (
-      label: 'รอดำเนินการ',
-      icon: Icons.hourglass_empty_rounded,
-      color: Colors.orange,
-    ),
-    (
-      label: 'กำลังดำเนินการ',
-      icon: Icons.construction_rounded,
-      color: Colors.blue,
-    ),
+    (label: 'รอดำเนินการ', icon: Icons.hourglass_empty_rounded, color: Colors.orange),
+    (label: 'กำลังดำเนินการ', icon: Icons.construction_rounded, color: Colors.blue),
     (label: 'เสร็จสิ้น', icon: Icons.check_circle_rounded, color: Colors.green),
   ];
 
@@ -63,7 +58,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Report Actions Logic] ==============================
-  // Save status + severity + admin note [_saveStatus]
+  /// Save status, severity, and note [_saveStatus]
   Future<void> _saveStatus() async {
     if (_currentSeverity == null) {
       _showSnack('กรุณาเลือกระดับความรุนแรง', Colors.red.shade600);
@@ -73,8 +68,8 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     setState(() => _isSaving = true);
 
     try {
-      // TODO: เพิ่มพารามิเตอร์ severity ใน AdminService.updateReportStatus()
-      // ให้เขียนลง field 'severity' ใน Firestore ด้วย
+      // TODO: add a severity param to AdminService.updateReportStatus()
+      // so it also writes the 'severity' field in Firestore
       await _adminService.updateReportStatus(
         reportId: widget.reportId,
         status: _currentStatus,
@@ -92,45 +87,15 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
-  // Confirm + delete this report [_deleteReport]
+  /// Ask for password, then delete this report [_deleteReport]
   Future<void> _deleteReport() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        icon: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-        ),
-        title: const Text('ยืนยันการลบ'),
-        content: const Text(
-          'ต้องการลบรายการนี้หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้',
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('ลบ', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmDialog(
+      context,
+      title: 'ยืนยันการลบ',
+      message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการลบรายการนี้ การกระทำนี้ไม่สามารถย้อนกลับได้',
     );
 
-    if (confirm != true) return;
+    if (!confirmed) return;
 
     try {
       await _adminService.deleteReport(widget.reportId);
@@ -144,14 +109,11 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [UI Helpers] ==============================
-  // Show themed snackbar [_showSnack]
+  /// Show a snackbar message [_showSnack]
   void _showSnack(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w500)),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -177,14 +139,8 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-              title: const Text(
-                'รายละเอียดการแจ้งซ่อม',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              title: const Text('รายละเอียดการแจ้งซ่อม',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -216,26 +172,11 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CardHeader(
-                        icon: Icons.description_rounded,
-                        title: 'ข้อมูลรายงาน',
-                      ),
+                      const CardHeader(icon: Icons.description_rounded, title: 'ข้อมูลรายงาน'),
                       const SizedBox(height: 12),
-                      _info(
-                        Icons.apartment_rounded,
-                        'อาคาร',
-                        '${data['building'] ?? '-'}',
-                      ),
-                      _info(
-                        Icons.layers_rounded,
-                        'ชั้น',
-                        '${data['floor'] ?? '-'}',
-                      ),
-                      _info(
-                        Icons.edit_note_rounded,
-                        'รายละเอียด',
-                        '${data['description'] ?? '-'}',
-                      ),
+                      _info(Icons.apartment_rounded, 'อาคาร', '${data['building'] ?? '-'}'),
+                      _info(Icons.layers_rounded, 'ชั้น', '${data['floor'] ?? '-'}'),
+                      _info(Icons.edit_note_rounded, 'รายละเอียดปัญหา', '${data['description'] ?? '-'}'),
                       _info(
                         Icons.location_on_rounded,
                         'ตำแหน่ง',
@@ -253,17 +194,13 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CardHeader(
-                        icon: Icons.flag_rounded,
-                        title: 'อัพเดทสถานะ',
-                      ),
+                      const CardHeader(icon: Icons.flag_rounded, title: 'อัพเดทสถานะ'),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           for (final opt in _statusOptions) ...[
                             Expanded(child: _buildStatusChip(opt)),
-                            if (opt != _statusOptions.last)
-                              const SizedBox(width: 8),
+                            if (opt != _statusOptions.last) const SizedBox(width: 8),
                           ],
                         ],
                       ),
@@ -277,10 +214,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CardHeader(
-                        icon: Icons.priority_high_rounded,
-                        title: 'ระดับความรุนแรง',
-                      ),
+                      const CardHeader(icon: Icons.priority_high_rounded, title: 'ระดับความรุนแรง'),
                       const SizedBox(height: 12),
                       _buildSeverityRow(),
                     ],
@@ -293,10 +227,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CardHeader(
-                        icon: Icons.sticky_note_2_rounded,
-                        title: 'บันทึกของ Admin',
-                      ),
+                      const CardHeader(icon: Icons.sticky_note_2_rounded, title: 'บันทึกของ Admin'),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _noteCtrl,
@@ -304,20 +235,14 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                         style: const TextStyle(fontSize: 14, height: 1.5),
                         decoration: InputDecoration(
                           hintText: 'เช่น ส่งช่างไปแล้ว...',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 14,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.grey.shade200),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: emasColor,
-                              width: 2,
-                            ),
+                            borderSide: const BorderSide(color: emasColor, width: 2),
                           ),
                         ),
                       ),
@@ -332,23 +257,14 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.save_rounded, size: 18),
                             SizedBox(width: 8),
-                            Text(
-                              'บันทึก',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            Text('บันทึก', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                           ],
                         ),
                 ),
@@ -362,9 +278,8 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Widgets] ==============================
-  // Hero photo. NOTE: Hero tag 'img_${widget.reportId}' must match the tag used
-  // on the admin report list thumbnail for the hero animation to work — adjust
-  // if the admin list page uses a different tag pattern [_buildHeroImage]
+  /// Hero photo. Tag 'img_${reportId}' must match the tag used on the list
+  /// thumbnail for the hero animation to work. [_buildHeroImage]
   Widget _buildHeroImage(String? imageUrl) {
     return Hero(
       tag: 'img_${widget.reportId}',
@@ -382,7 +297,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // Shown when there's no photo [_buildNoImagePlaceholder]
+  /// Shown when there's no photo [_buildNoImagePlaceholder]
   Widget _buildNoImagePlaceholder() {
     return Container(
       height: 220,
@@ -402,7 +317,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // Icon + label + value row for the report info card [_info]
+  /// Icon + label + value row [_info]
   Widget _info(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -413,27 +328,18 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
           const SizedBox(width: 10),
           SizedBox(
             width: 78,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text(label,
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
+            child: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
           ),
         ],
       ),
     );
   }
 
-  // Single segmented status chip [_buildStatusChip]
+  /// One status option chip [_buildStatusChip]
   Widget _buildStatusChip(({String label, IconData icon, Color color}) opt) {
     final isSelected = _currentStatus == opt.label;
     return GestureDetector(
@@ -445,9 +351,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? opt.color.withValues(alpha: 0.12)
-              : Colors.grey.shade50,
+          color: isSelected ? opt.color.withValues(alpha: 0.12) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? opt.color : Colors.grey.shade200,
@@ -456,11 +360,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
         ),
         child: Column(
           children: [
-            Icon(
-              opt.icon,
-              size: 18,
-              color: isSelected ? opt.color : Colors.grey.shade400,
-            ),
+            Icon(opt.icon, size: 18, color: isSelected ? opt.color : Colors.grey.shade400),
             const SizedBox(height: 6),
             Text(
               opt.label,
@@ -477,11 +377,9 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // Severity row: reuses severityLevels from report_constants.dart [_buildSeverityRow]
+  /// Severity picker row, from report_constants.dart [_buildSeverityRow]
   Widget _buildSeverityRow() {
-    final options = severityLevels.entries
-        .where((e) => e.key != 'none')
-        .toList();
+    final options = severityLevels.entries.where((e) => e.key != 'none').toList();
 
     return Row(
       children: [
@@ -493,7 +391,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  // Single severity chip, same pattern as AdminReportForm [_buildSeverityChip]
+  /// One severity chip [_buildSeverityChip]
   Widget _buildSeverityChip(String key, SeverityInfo info) {
     final isSelected = _currentSeverity == key;
     final isHigh = key == 'high';
@@ -506,9 +404,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? info.color.withValues(alpha: 0.12)
-              : Colors.grey.shade50,
+          color: isSelected ? info.color.withValues(alpha: 0.12) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? info.color : Colors.grey.shade200,
@@ -530,10 +426,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                 : Container(
                     width: 10,
                     height: 10,
-                    decoration: BoxDecoration(
-                      color: info.color,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: info.color, shape: BoxShape.circle),
                   ),
             const SizedBox(height: 6),
             Text(

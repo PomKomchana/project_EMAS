@@ -2,36 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'admin_report_detail.dart';
+import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
-// Which subset of reports a status tab is showing — drives the nested
-// scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) inside each status page. [ReportScopeFilter]
+/// Which reports to show — drives the ทั้งหมด/ผู้ใช้/แอดมิน sub-tabs. [ReportScopeFilter]
 enum ReportScopeFilter { all, user, admin }
 
 extension ReportScopeFilterLabel on ReportScopeFilter {
   String get label {
     switch (this) {
-      case ReportScopeFilter.all:
-        return 'ทั้งหมด';
-      case ReportScopeFilter.user:
-        return 'ผู้ใช้';
-      case ReportScopeFilter.admin:
-        return 'แอดมิน';
+      case ReportScopeFilter.all: return 'ทั้งหมด';
+      case ReportScopeFilter.user: return 'ผู้ใช้';
+      case ReportScopeFilter.admin: return 'แอดมิน';
     }
   }
 }
 
-// Admin report list: tabbed by status ("รอดำเนินการ" / "กำลังดำเนินการ" / "เสร็จสิ้น").
-// Each status tab carries its own scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) so
-// user-submitted and admin-created reports live in one place. [AdminReportListPage]
-//
-// `showAppBar: false` (default) — embedded inside AdminMainPage's bottom-nav
-// shell, which already provides its own AppBar.
-// `showAppBar: true` — pushed standalone (e.g. from the dashboard stat cards),
-// so this page renders its own AppBar with a back button.
+/// Report list, tabbed by status (รอดำเนินการ / กำลังดำเนินการ / เสร็จสิ้น).
+/// Each status tab has its own (ทั้งหมด / ผู้ใช้ / แอดมิน) sub-tabs, so user and
+/// admin reports live in one place. [AdminReportListPage]
+///
+/// showAppBar: false (default) — used inside AdminMainPage's bottom nav,
+/// which already has its own AppBar.
+/// showAppBar: true — used standalone (e.g. from dashboard cards), shows
+/// its own AppBar with a back button.
 class AdminReportListPage extends StatefulWidget {
   final int initialTabIndex;
   final ReportScopeFilter initialScope;
@@ -50,8 +47,14 @@ class AdminReportListPage extends StatefulWidget {
 
 class _AdminReportListPageState extends State<AdminReportListPage>
     with SingleTickerProviderStateMixin {
+
   /// ============================== [Controllers & Services] ==============================
   late final TabController _tabController;
+
+  /// ============================== [State] ==============================
+  /// Shared by all 3 status tabs — pick "ผู้ใช้" on one tab, it stays picked
+  /// when you swipe to another. [_scope]
+  late ReportScopeFilter _scope = widget.initialScope;
 
   /// ============================== [Life Cycle] ==============================
   @override
@@ -96,14 +99,8 @@ class _AdminReportListPageState extends State<AdminReportListPage>
               controller: _tabController,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.grey.shade500,
-              labelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
               indicatorSize: TabBarIndicatorSize.tab,
               indicatorPadding: const EdgeInsets.symmetric(vertical: 2),
               indicator: BoxDecoration(
@@ -125,15 +122,18 @@ class _AdminReportListPageState extends State<AdminReportListPage>
               children: [
                 _StatusTabContent(
                   status: 'รอดำเนินการ',
-                  initialScope: widget.initialScope,
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
                 ),
                 _StatusTabContent(
                   status: 'กำลังดำเนินการ',
-                  initialScope: widget.initialScope,
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
                 ),
                 _StatusTabContent(
                   status: 'เสร็จสิ้น',
-                  initialScope: widget.initialScope,
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
                 ),
               ],
             ),
@@ -144,7 +144,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   }
 
   /// ============================== [Widgets] ==============================
-  // Gradient AppBar matching AdminMainPage's style — used only when pushed standalone [_buildAppBar]
+  /// AppBar shown only when pushed standalone [_buildAppBar]
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       elevation: 0,
@@ -171,31 +171,23 @@ class _AdminReportListPageState extends State<AdminReportListPage>
   }
 }
 
-// One status tab's content: scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) + the
-// filtered list beneath. Keeps its own scope selection alive when the user
-// swipes between status tabs. [_StatusTabContent]
-class _StatusTabContent extends StatefulWidget {
+/// One status tab: scope sub-tabs (ทั้งหมด/ผู้ใช้/แอดมิน) on top, list below.
+/// `scope` is owned by AdminReportListPage so it stays the same across all
+/// 3 status tabs. [_StatusTabContent]
+class _StatusTabContent extends StatelessWidget {
   final String status;
-  final ReportScopeFilter initialScope;
+  final ReportScopeFilter scope;
+  final ValueChanged<ReportScopeFilter> onScopeChanged;
 
-  const _StatusTabContent({required this.status, required this.initialScope});
-
-  @override
-  State<_StatusTabContent> createState() => _StatusTabContentState();
-}
-
-class _StatusTabContentState extends State<_StatusTabContent>
-    with AutomaticKeepAliveClientMixin {
-  late ReportScopeFilter _scope = widget.initialScope;
-
-  /// ============================== [Life Cycle] ==============================
-  @override
-  bool get wantKeepAlive => true;
+  const _StatusTabContent({
+    required this.status,
+    required this.scope,
+    required this.onScopeChanged,
+  });
 
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return Column(
       children: [
         Padding(
@@ -203,18 +195,17 @@ class _StatusTabContentState extends State<_StatusTabContent>
           child: _buildScopeTabs(),
         ),
         Expanded(
-          child: _FilteredList(status: widget.status, scope: _scope),
+          child: _FilteredList(status: status, scope: scope),
         ),
       ],
     );
   }
 
   /// ============================== [Widgets] ==============================
-  // Segmented control for ทั้งหมด/ผู้ใช้/แอดมิน within this status — an
-  // emasColor pill slides between segments via AnimatedPositioned, with
-  // labels crossfading between grey and white on top. [_buildScopeTabs]
+  /// Small tab bar for ทั้งหมด/ผู้ใช้/แอดมิน — an emasColor pill slides between
+  /// options, text fades white/grey. [_buildScopeTabs]
   Widget _buildScopeTabs() {
-    final selectedIndex = ReportScopeFilter.values.indexOf(_scope);
+    final selectedIndex = ReportScopeFilter.values.indexOf(scope);
 
     return Container(
       height: 38,
@@ -232,8 +223,7 @@ class _StatusTabContentState extends State<_StatusTabContent>
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final segmentWidth =
-              constraints.maxWidth / ReportScopeFilter.values.length;
+          final segmentWidth = constraints.maxWidth / ReportScopeFilter.values.length;
           return Stack(
             children: [
               AnimatedPositioned(
@@ -259,8 +249,7 @@ class _StatusTabContentState extends State<_StatusTabContent>
               ),
               Row(
                 children: [
-                  for (final s in ReportScopeFilter.values)
-                    Expanded(child: _buildScopeChip(s)),
+                  for (final s in ReportScopeFilter.values) Expanded(child: _buildScopeChip(s)),
                 ],
               ),
             ],
@@ -271,10 +260,10 @@ class _StatusTabContentState extends State<_StatusTabContent>
   }
 
   Widget _buildScopeChip(ReportScopeFilter s) {
-    final isSelected = _scope == s;
+    final isSelected = scope == s;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _scope = s),
+      onTap: () => onScopeChanged(s),
       child: Center(
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 220),
@@ -291,7 +280,7 @@ class _StatusTabContentState extends State<_StatusTabContent>
   }
 }
 
-// Status + scope filtered list, newest first [_FilteredList]
+/// List of reports, filtered by status + scope, newest first [_FilteredList]
 class _FilteredList extends StatelessWidget {
   final String status;
   final ReportScopeFilter scope;
@@ -303,27 +292,21 @@ class _FilteredList extends StatelessWidget {
   /// ============================== [UI Helpers] ==============================
   Color _statusColor(String s) {
     switch (s) {
-      case 'รอดำเนินการ':
-        return Colors.orange;
-      case 'กำลังดำเนินการ':
-        return Colors.blue;
-      case 'เสร็จสิ้น':
-        return Colors.green;
-      default:
-        return emasColor;
+      case 'รอดำเนินการ': return Colors.orange;
+      case 'กำลังดำเนินการ': return Colors.blue;
+      case 'เสร็จสิ้น': return Colors.green;
+      default: return emasColor;
     }
   }
 
-  // Apply the ทั้งหมด/ผู้ใช้/แอดมิน sub-filter on top of the status stream [_filterByScope]
+  /// Apply the ทั้งหมด/ผู้ใช้/แอดมิน filter on top of the status list [_filterByScope]
   List<QueryDocumentSnapshot> _filterByScope(List<QueryDocumentSnapshot> docs) {
     if (scope == ReportScopeFilter.all) return docs;
 
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final isAdminCreated = data['createdBy'] == 'admin';
-      return scope == ReportScopeFilter.admin
-          ? isAdminCreated
-          : !isAdminCreated;
+      return scope == ReportScopeFilter.admin ? isAdminCreated : !isAdminCreated;
     }).toList();
   }
 
@@ -333,11 +316,24 @@ class _FilteredList extends StatelessWidget {
     return '${d.day}/${d.month}/${d.year}';
   }
 
-  // "ใหม่" badge if posted within the last 24 hours [_isRecent]
+  /// "ใหม่" badge for reports made in the last 24 hours [_isRecent]
   bool _isRecent(dynamic createdAt) {
     if (createdAt is! Timestamp) return false;
     final diff = DateTime.now().difference(createdAt.toDate());
     return diff.inHours < 24 && !diff.isNegative;
+  }
+
+  /// ============================== [Report Actions Logic] ==============================
+  /// Ask for password, then delete — trash icon in the list [_deleteReport]
+  Future<void> _deleteReport(BuildContext context, String docId) async {
+    final confirmed = await showDeleteConfirmDialog(
+      context,
+      title: 'ยืนยันการลบ',
+      message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการลบรายการนี้ การกระทำนี้ไม่สามารถย้อนกลับได้',
+    );
+
+    if (!confirmed) return;
+    await _adminService.deleteReport(docId);
   }
 
   /// ============================== [Build] ==============================
@@ -354,10 +350,8 @@ class _FilteredList extends StatelessWidget {
 
         if (snapshot.hasError) {
           return Center(
-            child: Text(
-              'เกิดข้อผิดพลาดในการโหลดข้อมูล',
-              style: TextStyle(color: Colors.red.shade400),
-            ),
+            child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล',
+                style: TextStyle(color: Colors.red.shade400)),
           );
         }
 
@@ -374,20 +368,11 @@ class _FilteredList extends StatelessWidget {
                     color: emasColor.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.inbox_rounded,
-                    size: 40,
-                    color: emasColor.withValues(alpha: 0.6),
-                  ),
+                  child: Icon(Icons.inbox_rounded, size: 40, color: emasColor.withValues(alpha: 0.6)),
                 ),
                 const SizedBox(height: 14),
-                Text(
-                  'ไม่มีรายการ "$status"',
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text('ไม่มีรายการ "$status"',
+                    style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
               ],
             ),
           );
@@ -407,9 +392,9 @@ class _FilteredList extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  // Full-info card: thumbnail, severity badge, status chip + date. Tags
-  // admin-created reports with a small "Admin" pill so scope is visible
-  // even in the "ทั้งหมด" sub-tab. [_buildReportCard]
+  /// One report card: thumbnail, severity badge, status chip + date. Tags
+  /// admin-made reports with a small "Admin" pill. Pencil icon opens detail,
+  /// trash icon deletes — no more whole-card tap. [_buildReportCard]
   Widget _buildReportCard(
     BuildContext context,
     String docId,
@@ -440,94 +425,86 @@ class _FilteredList extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    AdminReportDetailPage(reportId: docId, data: data),
-              ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildThumbnail(imageUrl),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildThumbnail(imageUrl),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '$building · $floor · ห้อง $room',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                          if (isAdminCreated) ...[
-                            const SizedBox(width: 6),
-                            _buildAdminBadge(),
-                          ],
-                          const SizedBox(width: 6),
-                          if (isRecent) ...[
-                            _buildNewBadge(),
-                            const SizedBox(width: 6),
-                          ],
-                          _buildSeverityBadge(severity),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        desc,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                          height: 1.3,
+                      Expanded(
+                        child: Text(
+                          '$building · $floor · ห้อง $room',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _buildStatusChip(status),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 11,
-                            color: Colors.grey.shade500,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      if (isAdminCreated) ...[
+                        const SizedBox(width: 6),
+                        _buildAdminBadge(),
+                      ],
+                      const SizedBox(width: 6),
+                      _buildSeverityBadge(severity),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    desc,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildStatusChip(status),
+                      if (isRecent) ...[
+                        const SizedBox(width: 6),
+                        _buildNewBadge(),
+                      ],
+                      const SizedBox(width: 8),
+                      Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminReportDetailPage(reportId: docId, data: data),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(Icons.edit_rounded, size: 19, color: Colors.grey.shade500),
+                  ),
                 ),
-                const SizedBox(width: 4),
-                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _deleteReport(context, docId),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red.shade400),
+                  ),
+                ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -538,15 +515,8 @@ class _FilteredList extends StatelessWidget {
       return Container(
         width: 52,
         height: 52,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          Icons.image_outlined,
-          color: Colors.grey.shade400,
-          size: 24,
-        ),
+        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+        child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
       );
     }
     return ClipRRect(
@@ -559,15 +529,8 @@ class _FilteredList extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => Container(
           width: 52,
           height: 52,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.image_outlined,
-            color: Colors.grey.shade400,
-            size: 24,
-          ),
+          decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
         ),
       ),
     );
@@ -586,57 +549,25 @@ class _FilteredList extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           isHigh
-              ? Text(
-                  '!',
-                  style: TextStyle(
-                    color: severity.color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
-                  ),
-                )
-              : Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: severity.color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+              ? Text('!', style: TextStyle(color: severity.color, fontSize: 12, fontWeight: FontWeight.w900, height: 1))
+              : Container(width: 7, height: 7, decoration: BoxDecoration(color: severity.color, shape: BoxShape.circle)),
           const SizedBox(width: 4),
-          Text(
-            severity.label,
-            style: TextStyle(
-              color: severity.color,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(severity.label, style: TextStyle(color: severity.color, fontSize: 10.5, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  // Small pink "ใหม่" pill for reports created within the last 24 hours [_buildNewBadge]
+  /// Small pink "ใหม่" pill, sits next to the status chip [_buildNewBadge]
   Widget _buildNewBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: emasColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'ใหม่',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
+      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
     );
   }
 
-  // Small "Admin" pill so admin-created reports are still identifiable in the "ทั้งหมด" sub-tab [_buildAdminBadge]
+  /// Small "Admin" pill for admin-made reports [_buildAdminBadge]
   Widget _buildAdminBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -646,11 +577,7 @@ class _FilteredList extends StatelessWidget {
       ),
       child: Text(
         'Admin',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: emasColorDarker,
-        ),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: emasColorDarker),
       ),
     );
   }
@@ -659,18 +586,8 @@ class _FilteredList extends StatelessWidget {
     final colors = getStatusColors(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: colors.bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: colors.fg,
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      decoration: BoxDecoration(color: colors.bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(status, style: TextStyle(color: colors.fg, fontSize: 10.5, fontWeight: FontWeight.w600)),
     );
   }
 }

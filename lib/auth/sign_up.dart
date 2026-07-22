@@ -44,8 +44,7 @@ String? validatePassword(String? value) {
 }
 
 FormFieldValidator<String> validateConfirmPassword(
-  String Function() getOriginalPassword,
-) {
+    String Function() getOriginalPassword) {
   return (value) {
     if (value == null || value.isEmpty) return 'กรุณายืนยันรหัสผ่าน';
     if (value != getOriginalPassword()) return 'รหัสผ่านไม่ตรงกัน';
@@ -90,7 +89,7 @@ class SignupHeader extends StatelessWidget {
             color: Colors.black87,
           ),
         ),
-
+        
         const Text(
           'Fill your information to get started with EMAS',
           style: TextStyle(fontSize: 13, color: Colors.black54),
@@ -157,7 +156,9 @@ class SignupTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: emasColor, width: 1.5),
@@ -196,7 +197,9 @@ class SignupPasswordField extends StatelessWidget {
           icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
           onPressed: onToggleObscure,
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: emasColor, width: 1.5),
@@ -261,7 +264,10 @@ class SignupLoginLink extends StatelessWidget {
           onPressed: onTap,
           child: const Text(
             'Login',
-            style: TextStyle(color: emasColor, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: emasColor,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],
@@ -321,17 +327,14 @@ class _SignUpPageState extends State<SignUpPage> {
 
       final uid = credential.user!.uid;
 
-      await FirebaseFirestore.instance
-          .collection(usersCollection)
-          .doc(uid)
-          .set({
-            'firstName': _firstNameController.text.trim(),
-            'lastName': _lastNameController.text.trim(),
-            'email': _emailController.text.trim(),
-            'phone': _phoneController.text.trim(),
-            'role': defaultNewUserRole,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+      await FirebaseFirestore.instance.collection(usersCollection).doc(uid).set({
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'role': defaultNewUserRole,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
       if (!mounted) return;
 
@@ -354,7 +357,8 @@ class _SignUpPageState extends State<SignUpPage> {
   Future<void> _rollbackAuthUser(UserCredential? credential) async {
     try {
       await credential?.user?.delete();
-    } catch (_) {}
+    } catch (_) {
+    }
   }
 
   void _showSuccessAndReturnToLogin() {
@@ -370,6 +374,7 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: Colors.white,
 
       body: Center(
@@ -440,11 +445,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   label: 'ยืนยันรหัสผ่าน',
                   obscure: _obscureConfirmPassword,
                   onToggleObscure: () => setState(
-                    () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                  ),
-                  validator: validateConfirmPassword(
-                    () => _passwordController.text,
-                  ),
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  validator:
+                      validateConfirmPassword(() => _passwordController.text),
                 ),
                 const SizedBox(height: 24),
 

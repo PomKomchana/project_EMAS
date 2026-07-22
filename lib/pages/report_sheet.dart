@@ -69,9 +69,8 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF7F7F9),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(32),
-                  ),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(32)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.12),
@@ -124,11 +123,7 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.location_on_rounded,
-                          size: 20,
-                          color: emasColor,
-                        ),
+                        Icon(Icons.location_on_rounded, size: 20, color: emasColor),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -153,31 +148,20 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
                       runSpacing: 6,
                       children: [
                         if (widget.report['severity'] != null)
-                          Builder(
-                            builder: (_) {
-                              final severity = getSeverityInfo(
-                                widget.report['severity'],
-                              );
-                              return _dotChip(
-                                severity.label,
-                                dotColor: severity.color,
-                                bg: severity.color.withOpacity(0.12),
-                                fg: severity.color,
-                              );
-                            },
-                          ),
-                        Builder(
-                          builder: (_) {
-                            final status =
-                                widget.report['status'] ?? ReportStatus.pending;
-                            final colors = getStatusColors(status);
-                            return _chip(
-                              status,
-                              bg: colors.bg,
-                              color: colors.fg,
+                          Builder(builder: (_) {
+                            final severity = getSeverityInfo(widget.report['severity']);
+                            return _dotChip(
+                              severity.label,
+                              dotColor: severity.color,
+                              bg: severity.color.withOpacity(0.12),
+                              fg: severity.color,
                             );
-                          },
-                        ),
+                          }),
+                        Builder(builder: (_) {
+                          final status = widget.report['status'] ?? ReportStatus.pending;
+                          final colors = getStatusColors(status);
+                          return _chip(status, bg: colors.bg, color: colors.fg);
+                        }),
                         _chip(
                           widget.report['date'] ?? '-',
                           bg: Colors.grey.shade200,
@@ -258,21 +242,13 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
       errorBuilder: (context, error, stack) => Container(
         color: Colors.grey.shade200,
         alignment: Alignment.center,
-        child: Icon(
-          Icons.broken_image_outlined,
-          size: 32,
-          color: Colors.grey.shade400,
-        ),
+        child: Icon(Icons.broken_image_outlined,
+            size: 32, color: Colors.grey.shade400),
       ),
     );
   }
 
-  Widget _chip(
-    String text, {
-    required Color bg,
-    required Color color,
-    IconData? icon,
-  }) {
+  Widget _chip(String text, {required Color bg, required Color color, IconData? icon}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -288,23 +264,14 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
           ],
           Text(
             text,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 
-  Widget _dotChip(
-    String text, {
-    required Color dotColor,
-    required Color bg,
-    required Color fg,
-  }) {
+  Widget _dotChip(String text, {required Color dotColor, required Color bg, required Color fg}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -323,11 +290,7 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
           const SizedBox(width: 5),
           Text(
             text,
-            style: TextStyle(
-              color: fg,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -367,10 +330,7 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: TextStyle(color: color, fontSize: 14, height: 1.5),
-                ),
+                Text(text, style: TextStyle(color: color, fontSize: 14, height: 1.5)),
               ],
             ),
           ),

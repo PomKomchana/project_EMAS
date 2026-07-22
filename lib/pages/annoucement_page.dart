@@ -3,55 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../report/pages/report_detail_page.dart';
 import '../shared/constants/emas_colors.dart';
-import '../shared/constants/report_constants.dart';
-//import '../shared/widgets/news_detail_sheet.dart';
 
-// Filter for announcement feed [FeedFilter]
-enum _FeedType { news, report }
-
-enum FeedFilter { all, news, report }
-
-// Display label per filter option [feedFilterLabel]
-String feedFilterLabel(FeedFilter f) {
-  switch (f) {
-    case FeedFilter.all:
-      return 'ทั้งหมด';
-    case FeedFilter.news:
-      return 'ข่าวสาร';
-    case FeedFilter.report:
-      return 'แจ้งปัญหา';
-  }
-}
-
-// One merged feed entry shown in the announcements list [_FeedItem]
-class _FeedItem {
-  final _FeedType type;
+/// One news item shown in the announcements list [_NewsItem]
+class _NewsItem {
   final QueryDocumentSnapshot doc;
   final String title;
   final String content;
   final String? imageUrl;
   final String? link;
   final DateTime? createdAt;
-  final String? severity;
-  final String? status;
 
-  _FeedItem({
-    required this.type,
+  _NewsItem({
     required this.doc,
     required this.title,
     required this.content,
     required this.createdAt,
     this.imageUrl,
     this.link,
-    this.severity,
-    this.status,
   });
 }
 
-// Announcements feed: realtime list (news + admin reports).
-// Report items open the shared ReportDetailPage; news items open a bottom sheet. [AnnouncementPage]
+/// Announcements feed: realtime news list.
+/// News items open a bottom sheet with full content + optional image/link. [AnnouncementPage]
 class AnnouncementPage extends StatefulWidget {
   final VoidCallback onMenuTap;
 
@@ -63,14 +37,12 @@ class AnnouncementPage extends StatefulWidget {
 
 class _AnnouncementPageState extends State<AnnouncementPage>
     with TickerProviderStateMixin {
+
   /// ============================== [Controllers & Services] ==============================
   late final AnimationController _fadeController;
   late final AnimationController _shimmerController;
   late final List<Animation<double>> _fadeList;
   late final List<Animation<Offset>> _slideList;
-
-  // Current selected feed filter [FeedFilter]
-  FeedFilter _currentFilter = FeedFilter.all;
 
   /// ============================== [Life Cycle] ==============================
   @override
@@ -105,10 +77,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
       return Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: _fadeController,
-          curve: Interval(start, 1.0, curve: Curves.easeOut),
-        ),
+        CurvedAnimation(parent: _fadeController, curve: Interval(start, 1.0, curve: Curves.easeOut)),
       );
     });
   }
@@ -116,20 +85,14 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   List<Animation<Offset>> _buildStaggeredSlideList() {
     return List.generate(20, (i) {
       final start = (i * 0.05).clamp(0.0, 0.9);
-      return Tween<Offset>(
-        begin: const Offset(0, 0.15),
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(
-          parent: _fadeController,
-          curve: Interval(start, 1.0, curve: Curves.easeOutCubic),
-        ),
+      return Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
+        CurvedAnimation(parent: _fadeController, curve: Interval(start, 1.0, curve: Curves.easeOutCubic)),
       );
     });
   }
 
   /// ============================== [Data] ==============================
-  // News stream, newest first [_newsStream]
+  /// News stream, newest first [_newsStream]
   Stream<QuerySnapshot> _newsStream() {
     return FirebaseFirestore.instance
         .collection('news')
@@ -137,73 +100,25 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         .snapshots();
   }
 
-  // Admin-created reports, newest first [_adminReportsStream]
-  Stream<QuerySnapshot> _adminReportsStream() {
-    return FirebaseFirestore.instance
-        .collection('reports')
-        .where('createdBy', isEqualTo: 'admin')
-        .orderBy('createdAt', descending: true)
-        .snapshots();
-  }
+  /// Map raw docs into display-ready items [_buildNewsFeed]
+  List<_NewsItem> _buildNewsFeed(List<QueryDocumentSnapshot> newsDocs) {
+    final items = <_NewsItem>[];
 
-  // Merge news + admin reports into one feed, newest first [_mergeFeed]
-  List<_FeedItem> _mergeFeed(
-    List<QueryDocumentSnapshot> newsDocs,
-    List<QueryDocumentSnapshot> reportDocs,
-  ) {
-    final items = <_FeedItem>[];
+    for (final doc in newsDocs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final ts = data['createdAt'];
 
-    if (_currentFilter != FeedFilter.report) {
-      for (final doc in newsDocs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final ts = data['createdAt'];
-
-        items.add(
-          _FeedItem(
-            type: _FeedType.news,
-            doc: doc,
-            title: data['title'] ?? '-',
-            content: data['content'] ?? '',
-            imageUrl: data['imageUrl'] as String?,
-            link: data['link'] as String?,
-            createdAt: ts is Timestamp ? ts.toDate() : null,
-          ),
-        );
-      }
+      items.add(
+        _NewsItem(
+          doc: doc,
+          title: data['title'] ?? '-',
+          content: data['content'] ?? '',
+          imageUrl: data['imageUrl'] as String?,
+          link: data['link'] as String?,
+          createdAt: ts is Timestamp ? ts.toDate() : null,
+        ),
+      );
     }
-
-    if (_currentFilter != FeedFilter.news) {
-      for (final doc in reportDocs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final ts = data['createdAt'];
-
-        final room = (data['room'] ?? '').toString();
-
-        final location = room.isEmpty
-            ? '${data['building'] ?? '-'} · ${data['floor'] ?? '-'}'
-            : '${data['building'] ?? '-'} · ${data['floor'] ?? '-'} · ห้อง $room';
-
-        items.add(
-          _FeedItem(
-            type: _FeedType.report,
-            doc: doc,
-            title: location,
-            content: data['description'] ?? '-',
-            imageUrl: data['imageUrl'] as String?,
-            createdAt: ts is Timestamp ? ts.toDate() : null,
-            severity: data['severity'],
-            status: data['status'],
-          ),
-        );
-      }
-    }
-
-    items.sort((a, b) {
-      if (a.createdAt == null && b.createdAt == null) return 0;
-      if (a.createdAt == null) return 1;
-      if (b.createdAt == null) return -1;
-      return b.createdAt!.compareTo(a.createdAt!);
-    });
 
     return items;
   }
@@ -224,11 +139,10 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     await Future.delayed(const Duration(milliseconds: 600));
   }
 
-  // Opens an external/attached link in the browser [_openLink]
+  /// Opens an external/attached link in the browser [_openLink]
   Future<void> _openLink(String url) async {
     var normalized = url.trim();
-    if (!normalized.startsWith('http://') &&
-        !normalized.startsWith('https://')) {
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
       normalized = 'https://$normalized';
     }
     final uri = Uri.tryParse(normalized);
@@ -237,78 +151,9 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     }
   }
 
-  // Opens feed filter sheet [showFeedFilterSheet]
-  void _showFeedFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            color: Colors.white.withValues(alpha: 0.85),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'กรองประเภทประกาศ',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  for (final f in FeedFilter.values)
-                    ListTile(
-                      leading: Icon(
-                        _currentFilter == f
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                        color: emasColor,
-                      ),
-                      title: Text(feedFilterLabel(f)),
-                      onTap: () {
-                        setState(() {
-                          _currentFilter = f;
-                        });
-                        Navigator.pop(context);
-                      },
-                    ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// ============================== [Navigation Logic] ==============================
-  // Report items → shared ReportDetailPage (same page the "รายการแจ้งปัญหา" tab uses) [_openReportDetail]
-  void _openReportDetail(_FeedItem item) {
-    final data = item.doc.data() as Map<String, dynamic>;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ReportDetailPage(data: data, id: item.doc.id),
-      ),
-    );
-  }
-
-  // News items → bottom sheet (no dedicated news detail page exists).
-  // Now shows the attached image full-width at the top (if any) and a
-  // tappable link row at the bottom (if any). [_openNewsDetail]
-  void _openNewsDetail(_FeedItem item) {
+  /// News items → bottom sheet with image (if any), content, and link (if any) [_openNewsDetail]
+  void _openNewsDetail(_NewsItem item) {
     final date = item.createdAt != null ? _formatDate(item.createdAt) : null;
     final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
     final hasLink = item.link != null && item.link!.isNotEmpty;
@@ -325,17 +170,13 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           expand: false,
           builder: (context, scrollController) {
             return ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.92),
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(24),
-                    ),
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   ),
                   child: ListView(
                     controller: scrollController,
@@ -362,15 +203,10 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                               child: Image.network(
                                 item.imageUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      color: Colors.grey.shade200,
-                                      child: Icon(
-                                        Icons.image_outlined,
-                                        color: Colors.grey.shade400,
-                                        size: 32,
-                                      ),
-                                    ),
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey.shade200,
+                                  child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                                ),
                               ),
                             ),
                           ),
@@ -382,43 +218,22 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              item.title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
+                            Text(item.title,
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                             if (date != null) ...[
                               const SizedBox(height: 10),
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.calendar_today_outlined,
-                                    size: 12,
-                                    color: Colors.grey.shade500,
-                                  ),
+                                  Icon(Icons.calendar_today_outlined, size: 12, color: Colors.grey.shade500),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    date,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
+                                  Text(date, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
                                 ],
                               ),
                             ],
                             const SizedBox(height: 16),
-                            Text(
-                              item.content,
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.6,
-                                color: Colors.grey.shade800,
-                              ),
-                            ),
+                            Text(item.content,
+                                style: TextStyle(fontSize: 14, height: 1.6, color: Colors.grey.shade800)),
                             if (hasLink) ...[
                               const SizedBox(height: 20),
                               _buildLinkButton(item.link!),
@@ -455,17 +270,21 @@ class _AnnouncementPageState extends State<AnnouncementPage>
 
         title: const Text(
           'ประกาศ',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
         ),
-
-        actions: [_buildFilterChip(), const SizedBox(width: 12)],
 
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [emasColor, emasColorDarker],
+              colors: [
+                emasColor,
+                emasColorDarker,
+              ],
             ),
           ),
         ),
@@ -478,59 +297,46 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             return Center(child: Text('เกิดข้อผิดพลาด: ${newsSnap.error}'));
           }
 
-          return StreamBuilder<QuerySnapshot>(
-            stream: _adminReportsStream(),
-            builder: (context, reportSnap) {
-              if (reportSnap.hasError) {
-                return Center(
-                  child: Text('เกิดข้อผิดพลาด: ${reportSnap.error}'),
-                );
-              }
+          if (newsSnap.connectionState == ConnectionState.waiting) {
+            return _buildSkeletonList();
+          }
 
-              if (newsSnap.connectionState == ConnectionState.waiting ||
-                  reportSnap.connectionState == ConnectionState.waiting) {
-                return _buildSkeletonList();
-              }
+          final newsDocs = newsSnap.data?.docs ?? [];
+          final items = _buildNewsFeed(newsDocs);
 
-              final newsDocs = newsSnap.data?.docs ?? [];
-              final reportDocs = reportSnap.data?.docs ?? [];
-              final items = _mergeFeed(newsDocs, reportDocs);
+          if (items.isEmpty) {
+            return RefreshIndicator(
+              color: emasColor,
+              onRefresh: _handleRefresh,
+              child: ListView(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: _buildEmptyState(),
+                  ),
+                ],
+              ),
+            );
+          }
 
-              if (items.isEmpty) {
-                return RefreshIndicator(
-                  color: emasColor,
-                  onRefresh: _handleRefresh,
-                  child: ListView(
-                    children: [
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.7,
-                        child: _buildEmptyState(),
-                      ),
-                    ],
+          return RefreshIndicator(
+            color: emasColor,
+            onRefresh: _handleRefresh,
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final animIndex = index % _fadeList.length;
+                return FadeTransition(
+                  opacity: _fadeList[animIndex],
+                  child: SlideTransition(
+                    position: _slideList[animIndex],
+                    child: _buildNewsCard(items[index]),
                   ),
                 );
-              }
-
-              return RefreshIndicator(
-                color: emasColor,
-                onRefresh: _handleRefresh,
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final animIndex = index % _fadeList.length;
-                    return FadeTransition(
-                      opacity: _fadeList[animIndex],
-                      child: SlideTransition(
-                        position: _slideList[animIndex],
-                        child: _buildFeedCard(items[index]),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
+              },
+            ),
           );
         },
       ),
@@ -538,40 +344,6 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   }
 
   /// ============================== [Widgets] ==============================
-  // Pill-shaped filter chip in AppBar showing current filter label [_buildFilterChip]
-  Widget _buildFilterChip() {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: _showFeedFilterSheet,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.filter_list_rounded,
-                size: 17,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                feedFilterLabel(_currentFilter),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildSkeletonList() {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -600,10 +372,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(12)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -613,28 +382,19 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                       Container(
                         width: double.infinity,
                         height: 14,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
                       ),
                       const SizedBox(height: 8),
                       Container(
                         width: 180,
                         height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(4)),
                       ),
                       const SizedBox(height: 6),
                       Container(
                         width: 120,
                         height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(4)),
                       ),
                     ],
                   ),
@@ -654,32 +414,18 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         children: [
           Icon(Icons.campaign_outlined, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 12),
-          Text(
-            'ยังไม่มีประกาศ',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text('ยังไม่มีประกาศ',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 16, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
-  // Dispatch to the right card style [_buildFeedCard]
-  Widget _buildFeedCard(_FeedItem item) {
-    if (item.type == _FeedType.news) {
-      return _buildNewsCard(item);
-    }
-    return _buildReportCard(item);
-  }
-
-  // News card. Two layouts depending on whether an image is attached:
-  // - With image: full-width banner on top, text block below (bigger, more editorial feel)
-  // - Without image: compact icon-row layout (unchanged from before)
-  // A link chip is shown under the content whenever the news item has one. [_buildNewsCard]
-  Widget _buildNewsCard(_FeedItem item) {
+  /// News card. Two layouts depending on whether an image is attached:
+  /// - With image: full-width banner on top, text block below (editorial feel)
+  /// - Without image: compact icon-row layout
+  /// A link chip is shown whenever the news item has one. [_buildNewsCard]
+  Widget _buildNewsCard(_NewsItem item) {
     final isRecent = _isRecent(item.createdAt);
     final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
     final hasLink = item.link != null && item.link!.isNotEmpty;
@@ -688,12 +434,9 @@ class _AnnouncementPageState extends State<AnnouncementPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: emasColor, width: 4)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Material(
@@ -710,8 +453,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     );
   }
 
-  // Editorial-style card: banner image on top, title/badge/content/date below [_buildNewsCardWithImage]
-  Widget _buildNewsCardWithImage(_FeedItem item, bool isRecent, bool hasLink) {
+  /// Editorial-style card: banner image on top, title/badge/content/date below [_buildNewsCardWithImage]
+  Widget _buildNewsCardWithImage(_NewsItem item, bool isRecent, bool hasLink) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -724,11 +467,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
                 color: Colors.grey.shade200,
-                child: Icon(
-                  Icons.image_outlined,
-                  color: Colors.grey.shade400,
-                  size: 32,
-                ),
+                child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
               ),
             ),
           ),
@@ -742,59 +481,34 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      item.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
+                    child: Text(item.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ),
-                  if (isRecent) ...[const SizedBox(width: 6), _buildNewBadge()],
+                  if (isRecent) ...[
+                    const SizedBox(width: 6),
+                    _buildNewBadge(),
+                  ],
                 ],
               ),
               if (item.content.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text(
-                  item.content,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
-                    height: 1.3,
-                  ),
-                ),
+                Text(item.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
               ],
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 11,
-                    color: Colors.grey.shade500,
-                  ),
+                  Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
-                  Text(
-                    _formatDate(item.createdAt),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                  ),
+                  Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                   if (hasLink) ...[
                     const Spacer(),
-                    Icon(
-                      Icons.link_rounded,
-                      size: 14,
-                      color: Colors.blue.shade400,
-                    ),
+                    Icon(Icons.link_rounded, size: 14, color: Colors.blue.shade400),
                     const SizedBox(width: 3),
-                    Text(
-                      'มีลิงก์แนบ',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.blue.shade400,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text('มีลิงก์แนบ',
+                        style: TextStyle(fontSize: 11, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
                   ],
                 ],
               ),
@@ -805,8 +519,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     );
   }
 
-  // Compact icon-row layout, used when the news item has no attached image [_buildNewsCardCompact]
-  Widget _buildNewsCardCompact(_FeedItem item, bool isRecent, bool hasLink) {
+  /// Compact icon-row layout, used when the news item has no attached image [_buildNewsCardCompact]
+  Widget _buildNewsCardCompact(_NewsItem item, bool isRecent, bool hasLink) {
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -815,15 +529,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           Container(
             width: 52,
             height: 52,
-            decoration: BoxDecoration(
-              color: emasColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.campaign_rounded,
-              color: emasColor,
-              size: 24,
-            ),
+            decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: const Icon(Icons.campaign_rounded, color: emasColor, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -834,13 +541,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        item.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
+                      child: Text(item.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     ),
                     if (isRecent) ...[
                       const SizedBox(width: 6),
@@ -850,49 +552,23 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                 ),
                 if (item.content.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    item.content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
-                      height: 1.3,
-                    ),
-                  ),
+                  Text(item.content,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
                 ],
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 11,
-                      color: Colors.grey.shade500,
-                    ),
+                    Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
                     const SizedBox(width: 4),
-                    Text(
-                      _formatDate(item.createdAt),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
+                    Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                     if (hasLink) ...[
                       const Spacer(),
-                      Icon(
-                        Icons.link_rounded,
-                        size: 13,
-                        color: Colors.blue.shade400,
-                      ),
+                      Icon(Icons.link_rounded, size: 13, color: Colors.blue.shade400),
                       const SizedBox(width: 3),
-                      Text(
-                        'มีลิงก์แนบ',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          color: Colors.blue.shade400,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text('มีลิงก์แนบ',
+                          style: TextStyle(fontSize: 10.5, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
                     ],
                   ],
                 ),
@@ -900,17 +576,21 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             ),
           ),
           const SizedBox(width: 4),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: Colors.grey.shade400,
-            size: 20,
-          ),
+          Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
         ],
       ),
     );
   }
 
-  // Tappable link button shown inside the news detail sheet [_buildLinkButton]
+  Widget _buildNewBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: emasColor, borderRadius: BorderRadius.circular(20)),
+      child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  /// Tappable link button shown inside the news detail sheet [_buildLinkButton]
   Widget _buildLinkButton(String link) {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -919,9 +599,9 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: emasColor.withOpacity(0.08),
+          color: emasColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: emasColor.withOpacity(0.25)),
+          border: Border.all(color: emasColor.withValues(alpha: 0.25)),
         ),
         child: Row(
           children: [
@@ -932,266 +612,11 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                 link,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  color: emasColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontSize: 13.5, color: emasColor, fontWeight: FontWeight.w600),
               ),
             ),
             const Icon(Icons.open_in_new_rounded, size: 16, color: emasColor),
           ],
-        ),
-      ),
-    );
-  }
-
-  // Report card: left border by status, thumbnail, admin badge, severity badge, status chip + date.
-  // Every report in this feed is admin-created (query filter), so the "Admin" badge is unconditional. [_buildReportCard]
-  Widget _buildReportCard(_FeedItem item) {
-    final statusColor = getStatusColors(item.status ?? ReportStatus.pending).fg;
-    final severity = getSeverityInfo(item.severity);
-    final isRecent = _isRecent(item.createdAt);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border(left: BorderSide(color: statusColor, width: 4)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => _openReportDetail(item),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildThumbnail(item.imageUrl),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 6),
-                          _buildAdminBadge(),
-                          const SizedBox(width: 6),
-
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              _buildSeverityBadge(severity),
-                              if (isRecent) ...[
-                                const SizedBox(height: 4),
-                                _buildNewBadge(),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 4),
-                      Text(
-                        item.content,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 13,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _buildStatusChip(item.status ?? ReportStatus.pending),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 11,
-                            color: Colors.grey.shade500,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(item.createdAt),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThumbnail(String? imageUrl) {
-    if (imageUrl == null || imageUrl.isEmpty) {
-      return Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          Icons.image_outlined,
-          color: Colors.grey.shade400,
-          size: 24,
-        ),
-      );
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Image.network(
-        imageUrl,
-        width: 52,
-        height: 52,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.image_outlined,
-            color: Colors.grey.shade400,
-            size: 24,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNewBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: emasColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'ใหม่',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  // Static "Admin" badge — every report in this feed is admin-created [_buildAdminBadge]
-  Widget _buildAdminBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: emasColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Admin',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: emasColorDarker,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSeverityBadge(SeverityInfo severity) {
-    final isHigh = severity.label == severityLevels['high']!.label;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: severity.color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: severity.color.withOpacity(0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          isHigh
-              ? Text(
-                  '!',
-                  style: TextStyle(
-                    color: severity.color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
-                  ),
-                )
-              : Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: severity.color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-          const SizedBox(width: 4),
-          Text(
-            severity.label,
-            style: TextStyle(
-              color: severity.color,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(String status) {
-    final colors = getStatusColors(status);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: colors.bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: colors.fg,
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
         ),
       ),
     );

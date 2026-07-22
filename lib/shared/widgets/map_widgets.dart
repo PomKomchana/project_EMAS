@@ -19,11 +19,7 @@ class PinBadge extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.check_circle_rounded,
-            color: Colors.green.shade600,
-            size: 15,
-          ),
+          Icon(Icons.check_circle_rounded, color: Colors.green.shade600, size: 15),
           const SizedBox(width: 4),
           Text(
             'ปักหมุดแล้ว',
@@ -66,10 +62,7 @@ class GlassMapButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.65),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.8),
-                width: 1,
-              ),
+              border: Border.all(color: Colors.white.withOpacity(0.8), width: 1),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -145,11 +138,7 @@ class CloseMapButton extends StatelessWidget {
               color: Colors.white.withOpacity(0.6),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.close_rounded,
-              size: 18,
-              color: Colors.black87,
-            ),
+            child: const Icon(Icons.close_rounded, size: 18, color: Colors.black87),
           ),
         ),
       ),

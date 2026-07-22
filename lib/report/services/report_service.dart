@@ -6,29 +6,33 @@ import 'package:latlong2/latlong.dart';
 
 import '../../shared/constants/report_constants.dart';
 
-// Service for managing the Firestore collection "reports" [ReportService]
+/// Service for managing the Firestore collection "reports" [ReportService]
 class ReportService {
   final _reportsRef = FirebaseFirestore.instance.collection('reports');
   final _storage = FirebaseStorage.instance;
 
   /// ============================== [Image Upload] ==============================
-  // Upload a picked image to Storage, return its download URL. Returns null if image is null. [_uploadImage]
-  Future<String?> _uploadImage(File image) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+  /// Upload a picked image to Storage, return its download URL. Returns null if image is null. [_uploadImage]
+ Future<String?> _uploadImage(File image) async {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
 
-    final fileName =
-        '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
+  final fileName =
+      '${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}';
 
-    final ref = _storage.ref().child('reports').child(uid).child(fileName);
+  final ref = _storage
+      .ref()
+      .child('reports')
+      .child(uid)
+      .child(fileName);
 
-    final uploadTask = await ref.putFile(image);
+  final uploadTask = await ref.putFile(image);
 
-    return uploadTask.ref.getDownloadURL();
-  }
+  return uploadTask.ref.getDownloadURL();
+}
 
   /// ============================== [Report Write] ==============================
-  // Submit new report to Firestore. Uploads image first (if provided) so imageUrl
-  // is written in the same add() call — avoids a partial doc with no image. [submitReport]
+  /// Submit new report to Firestore. Uploads image first (if provided) so imageUrl
+  /// is written in the same add() call — avoids a partial doc with no image. [submitReport]
   Future<void> submitReport({
     required String date,
     required String username,

@@ -15,6 +15,7 @@ class LoadingPage extends StatefulWidget {
 
 class _LoadingPageState extends State<LoadingPage>
     with SingleTickerProviderStateMixin {
+
   /// ============================== [Controllers & Services] ==============================
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
@@ -36,7 +37,10 @@ class _LoadingPageState extends State<LoadingPage>
       duration: const Duration(milliseconds: 500),
     );
 
-    _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
+    _fade = CurvedAnimation(
+      parent: _fadeCtrl,
+      curve: Curves.easeIn,
+    );
 
     _fadeCtrl.forward();
 
@@ -79,7 +83,10 @@ class _LoadingPageState extends State<LoadingPage>
           children: [
             // Logo center
             Center(
-              child: Image.asset('assets/images/emas_logo.png', width: 240),
+              child: Image.asset(
+                'assets/images/emas_logo.png',
+                width: 240,
+              ),
             ),
           ],
         ),

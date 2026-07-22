@@ -40,29 +40,26 @@ exports.onNewsCreated = onDocumentCreated("news/{newsId}", async (event) => {
   });
 });
 
-// ---------- Report ใหม่ → แจ้งเฉพาะ severity สูง (high) เท่านั้น ----------
+// ---------- Report ใหม่ → แจ้งทุกคน (low/medium/high) ----------
 exports.onReportCreated = onDocumentCreated(
     "reports/{reportId}",
     async (event) => {
       const data = event.data.data();
-
-      // [severity-gate] ไม่ใช่ high → ไม่ต้องดึง token ไม่ต้องส่งอะไรเลย
-      if (data.severity !== "high") {
-        return;
-      }
-
       const tokens = await getAllTokens();
       if (tokens.length === 0) return;
+
+      const severityLabel =
+        data.severity === "high" ? "🔴 ร้ายแรง" :
+        data.severity === "medium" ? "🟠 ปานกลาง" : "🟢 เล็กน้อย";
 
       await getMessaging().sendEachForMulticast({
         tokens,
         notification: {
-          title: "🔴 แจ้งปัญหาใหม่ (ร้ายแรง)",
-          body: data.description || "มีการแจ้งปัญหาระดับร้ายแรงใหม่",
+          title: `แจ้งปัญหาใหม่ (${severityLabel})`,
+          body: data.description || "มีการแจ้งปัญหาใหม่",
         },
         data: {
           type: "report",
-          severity: data.severity,
           reportId: event.params.reportId,
         },
       });

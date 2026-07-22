@@ -14,7 +14,11 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback onMenuTap;
   final bool isAdmin;
 
-  const ProfilePage({super.key, required this.onMenuTap, this.isAdmin = false});
+  const ProfilePage({
+    super.key,
+    required this.onMenuTap,
+    this.isAdmin = false,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -55,10 +59,8 @@ class _ProfilePageState extends State<ProfilePage> {
     if (uid == null) return;
 
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final data = doc.data();
       if (data == null || !mounted) return;
 
@@ -159,11 +161,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ? FileImage(_profileImage!)
                                 : null,
                             child: _profileImage == null
-                                ? const Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 52,
-                                  )
+                                ? const Icon(Icons.person,
+                                    color: Colors.white, size: 52)
                                 : null,
                           ),
                           Container(
@@ -173,11 +172,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               color: Colors.white,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              size: 16,
-                              color: emasColor,
-                            ),
+                            child: const Icon(Icons.camera_alt_rounded,
+                                size: 16, color: emasColor),
                           ),
                         ],
                       ),
@@ -319,7 +315,8 @@ class _InfoTile extends StatelessWidget {
             bottom: isLast ? const Radius.circular(20) : Radius.zero,
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
                 Container(
@@ -348,11 +345,8 @@ class _InfoTile extends StatelessWidget {
         ),
         if (!isLast)
           const Divider(
-            height: 1,
-            indent: 70,
-            endIndent: 0,
-            color: Color(0xFFF0F0F0),
-          ),
+              height: 1, indent: 70, endIndent: 0,
+              color: Color(0xFFF0F0F0)),
       ],
     );
   }
@@ -440,10 +434,8 @@ class _SheetTile extends StatelessWidget {
         ),
         child: Icon(icon, color: color ?? const Color(0xFFe85d6a), size: 20),
       ),
-      title: Text(
-        label,
-        style: TextStyle(color: c, fontWeight: FontWeight.w500),
-      ),
+      title: Text(label,
+          style: TextStyle(color: c, fontWeight: FontWeight.w500)),
       onTap: onTap,
     );
   }

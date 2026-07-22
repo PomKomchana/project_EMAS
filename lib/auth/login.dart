@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../pages/main_page.dart';
 import 'sign_up.dart';
-import '../../shared/services/push_notification_service.dart';
+import '../pages/PushNotificationService.dart';
 
 import '../../shared/constants/emas_colors.dart';
 
@@ -92,9 +92,9 @@ class _LoginPageState extends State<LoginPage> {
 
       try {
         await PushNotificationService.instance.init();
-      } catch (e) {
-        debugPrint('Push notification init failed: $e');
-      }
+        } catch (e) {
+          debugPrint('Push notification init failed: $e');
+        }
 
       if (!mounted) return;
 
@@ -141,6 +141,7 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Stack(
           children: [
+
             ///  เนื้อหาหลัก
             Center(
               child: SingleChildScrollView(
@@ -150,6 +151,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      
                       const Text(
                         'Login',
                         style: TextStyle(
@@ -209,11 +211,9 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passCtrl,
                         label: 'Password',
                         obscure: _obscure,
-                        onToggleObscure: () =>
-                            setState(() => _obscure = !_obscure),
+                        onToggleObscure: () => setState(() => _obscure = !_obscure),
                         validator: (v) {
-                          if (v == null || v.isEmpty)
-                            return 'กรุณากรอกรหัสผ่าน';
+                          if (v == null || v.isEmpty) return 'กรุณากรอกรหัสผ่าน';
                           if (v.length < 6) return 'ต้องมีอย่างน้อย 6 ตัว';
                           return null;
                         },
@@ -230,8 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Checkbox(
                               value: _rememberMe,
                               activeColor: emasColor,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               onChanged: (v) {
                                 setState(() => _rememberMe = v ?? false);
                               },

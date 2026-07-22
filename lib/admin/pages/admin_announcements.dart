@@ -8,8 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
-import '../../shared/constants/report_constants.dart';
 
+<<<<<<< HEAD
 // Filter for the merged feed — owned by AdminMainPage, passed down [FeedFilter]
 enum FeedFilter { all, news, report }
 
@@ -74,6 +74,11 @@ void showFeedFilterSheet(
 
 // Announcements tab: merges 'news' + admin-created 'reports' into one feed.
 // Filter is owned by AdminMainPage and rendered in the shared AppBar. [AdminAnnouncementsPage]
+=======
+/// News-only feed. Admin-made reports live in AdminReportListPage now, with
+/// their own ทั้งหมด/ผู้ใช้/แอดมิน filter — this page is just news, no filter.
+/// The "add" button now lives on AdminMainPage (global), not here. [AdminAnnouncementsPage]
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
 class AdminAnnouncementsPage extends StatelessWidget {
   const AdminAnnouncementsPage({super.key});
 
@@ -85,6 +90,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
+<<<<<<< HEAD
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: emasColor,
         foregroundColor: Colors.white,
@@ -94,18 +100,19 @@ class AdminAnnouncementsPage extends StatelessWidget {
         label: const Text('เพิ่มประกาศ', style: TextStyle(fontWeight: FontWeight.w600)),
         onPressed: () => _showCreateChooser(context),
       ),
+=======
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
       body: StreamBuilder<QuerySnapshot>(
         stream: _adminService.newsStream(),
         builder: (context, newsSnap) {
           if (newsSnap.hasError) {
             return Center(
-              child: Text(
-                'เกิดข้อผิดพลาดในการโหลดข้อมูล',
-                style: TextStyle(color: Colors.red.shade400),
-              ),
+              child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล',
+                  style: TextStyle(color: Colors.red.shade400)),
             );
           }
 
+<<<<<<< HEAD
           return StreamBuilder<QuerySnapshot>(
             stream: _adminService.adminReportsStream(),
             builder: (context, reportSnap) {
@@ -115,12 +122,15 @@ class AdminAnnouncementsPage extends StatelessWidget {
                       style: TextStyle(color: Colors.red.shade400)),
                 );
               }
+=======
+          if (newsSnap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
 
-              if (newsSnap.connectionState == ConnectionState.waiting ||
-                  reportSnap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          final newsDocs = newsSnap.data?.docs ?? [];
 
+<<<<<<< HEAD
           final newsDocs = newsSnap.data?.docs ?? [];
 
           if (newsDocs.isEmpty) {
@@ -133,12 +143,23 @@ class AdminAnnouncementsPage extends StatelessWidget {
                 itemBuilder: (context, index) => _buildFeedCard(context, items[index]),
               );
             },
+=======
+          if (newsDocs.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 90),
+            itemCount: newsDocs.length,
+            itemBuilder: (context, index) => _buildNewsCard(context, newsDocs[index]),
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
           );
         },
       ),
     );
   }
 
+<<<<<<< HEAD
   /// ============================== [Data] ==============================
   // Merge news + admin reports into one feed, filtered by `filter`, newest first [_mergeFeed]
   List<_FeedItem> _mergeFeed(
@@ -195,6 +216,8 @@ class AdminAnnouncementsPage extends StatelessWidget {
     return items;
   }
 
+=======
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
   /// ============================== [UI Helpers] ==============================
   String _formatDate(dynamic createdAt) {
     if (createdAt is! Timestamp) return '-';
@@ -204,8 +227,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
 
   Future<void> _openLink(String url) async {
     var normalized = url.trim();
-    if (!normalized.startsWith('http://') &&
-        !normalized.startsWith('https://')) {
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
       normalized = 'https://$normalized';
     }
     final uri = Uri.tryParse(normalized);
@@ -220,14 +242,19 @@ class AdminAnnouncementsPage extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
+<<<<<<< HEAD
         builder: (_) => AdminReportDetailPage(
           reportId: item.doc.id,
           data: data,
         ),
+=======
+        builder: (_) => NewsFormPage(adminService: _adminService, doc: doc),
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
       ),
     );
   }
 
+<<<<<<< HEAD
   // Bottom sheet: choose "ข่าวสาร" or "แจ้งปัญหา" before creating [_showCreateChooser]
   void _showCreateChooser(BuildContext context) {
     showModalBottomSheet(
@@ -272,7 +299,19 @@ class AdminAnnouncementsPage extends StatelessWidget {
           ],
         ),
       ),
+=======
+  /// ============================== [News Logic] ==============================
+  /// Ask for password, then delete this news post [_deleteNews]
+  Future<void> _deleteNews(BuildContext context, String docId) async {
+    final confirmed = await showDeleteConfirmDialog(
+      context,
+      title: 'ยืนยันการลบ',
+      message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการลบข่าวสารนี้',
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
     );
+
+    if (!confirmed) return;
+    await _adminService.deleteNews(docId);
   }
 
   /// ============================== [Widgets] ==============================
@@ -287,20 +326,11 @@ class AdminAnnouncementsPage extends StatelessWidget {
               color: emasColor.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.campaign_outlined,
-              size: 40,
-              color: emasColor.withValues(alpha: 0.6),
-            ),
+            child: Icon(Icons.campaign_outlined, size: 40, color: emasColor.withValues(alpha: 0.6)),
           ),
           const SizedBox(height: 14),
-          Text(
-            'ยังไม่มีประกาศ',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text('ยังไม่มีประกาศ',
+              style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -323,11 +353,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: const Border(left: BorderSide(color: emasColor, width: 4)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Padding(
@@ -344,15 +370,8 @@ class AdminAnnouncementsPage extends StatelessWidget {
                 ] else ...[
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: emasColor.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.campaign_rounded,
-                      color: emasColor,
-                      size: 20,
-                    ),
+                    decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.campaign_rounded, color: emasColor, size: 20),
                   ),
                   const SizedBox(width: 12),
                 ],
@@ -360,22 +379,28 @@ class AdminAnnouncementsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+<<<<<<< HEAD
                       Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       const SizedBox(height: 4),
                       Text(item.subtitle,
+=======
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const SizedBox(height: 4),
+                      Text(content,
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 11,
-                            color: Colors.grey.shade500,
-                          ),
+                          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
                           const SizedBox(width: 4),
+<<<<<<< HEAD
                           Text(_formatDate(item.time), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+=======
+                          Text(_formatDate(createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
                         ],
                       ),
                     ],
@@ -388,11 +413,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
                       onTap: () => _openNewsForm(context, doc: doc),
                       child: Padding(
                         padding: const EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.edit_rounded,
-                          size: 19,
-                          color: Colors.grey.shade500,
-                        ),
+                        child: Icon(Icons.edit_rounded, size: 19, color: Colors.grey.shade500),
                       ),
                     ),
                     InkWell(
@@ -400,11 +421,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
                       onTap: () => _deleteNews(context, doc.id),
                       child: Padding(
                         padding: const EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.delete_outline_rounded,
-                          size: 19,
-                          color: Colors.red.shade400,
-                        ),
+                        child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red.shade400),
                       ),
                     ),
                   ],
@@ -417,32 +434,21 @@ class AdminAnnouncementsPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 onTap: () => _openLink(link),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.blue.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.link_rounded,
-                        size: 16,
-                        color: Colors.blue,
-                      ),
+                      const Icon(Icons.link_rounded, size: 16, color: Colors.blue),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           link,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
+                          style: const TextStyle(fontSize: 12.5, color: Colors.blue, decoration: TextDecoration.underline),
                         ),
                       ),
                     ],
@@ -456,6 +462,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildReportCard(BuildContext context, _FeedItem item) {
     final data = item.doc.data() as Map<String, dynamic>;
     final isAdminCreated = data['createdBy'] == 'admin';
@@ -549,20 +556,15 @@ class AdminAnnouncementsPage extends StatelessWidget {
     );
   }
 
+=======
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
   Widget _buildThumbnail(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
       return Container(
         width: 52,
         height: 52,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          Icons.image_outlined,
-          color: Colors.grey.shade400,
-          size: 24,
-        ),
+        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+        child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
       );
     }
     return ClipRRect(
@@ -575,19 +577,13 @@ class AdminAnnouncementsPage extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => Container(
           width: 52,
           height: 52,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.image_outlined,
-            color: Colors.grey.shade400,
-            size: 24,
-          ),
+          decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 24),
         ),
       ),
     );
   }
+<<<<<<< HEAD
 
   Widget _buildSeverityBadge(SeverityInfo severity) {
     final isHigh = severity.label == severityLevels['high']!.label;
@@ -728,6 +724,8 @@ class _FeedItem {
     this.imageUrl,
     this.link,
   });
+=======
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
 }
 
 /// ============================== [News Form Page] ==============================
@@ -749,8 +747,13 @@ class _NewsFormPageState extends State<NewsFormPage> {
   late final TextEditingController _linkCtrl;
 
   File? _pickedImage;
+<<<<<<< HEAD
   String? _originalImageUrl; // image already on the doc when editing (immutable snapshot)
   bool _imageRemoved = false; // true if the admin cleared the existing image without picking a new one
+=======
+  String? _originalImageUrl; // image already on the post, before any edit
+  bool _imageRemoved = false; // true if admin cleared the image without picking a new one
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
   bool _saving = false;
 
   bool get _isEdit => widget.doc != null;
@@ -776,15 +779,15 @@ class _NewsFormPageState extends State<NewsFormPage> {
   /// ============================== [Image Attachment] ==============================
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: source,
-      imageQuality: 80,
-      maxWidth: 1600,
-    );
+    final picked = await picker.pickImage(source: source, imageQuality: 80, maxWidth: 1600);
     if (picked != null) {
       setState(() {
         _pickedImage = File(picked.path);
+<<<<<<< HEAD
         _imageRemoved = false; // a freshly picked image supersedes any "removed" state
+=======
+        _imageRemoved = false; // picking a new image cancels any "removed" state
+>>>>>>> parent of 53fe2b2 (Merge branch '3lines')
       });
     }
   }
@@ -806,16 +809,10 @@ class _NewsFormPageState extends State<NewsFormPage> {
               width: 40,
               height: 4,
               margin: const EdgeInsets.only(bottom: 18),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
-              ),
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
             ),
             ListTile(
-              leading: const Icon(
-                Icons.photo_library_outlined,
-                color: emasColor,
-              ),
+              leading: const Icon(Icons.photo_library_outlined, color: emasColor),
               title: const Text('เลือกจากคลังภาพ'),
               onTap: () {
                 Navigator.pop(ctx);
@@ -848,9 +845,9 @@ class _NewsFormPageState extends State<NewsFormPage> {
   /// switch to the ประกาศ tab. [_save]
   Future<void> _save() async {
     if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('กรุณากรอกหัวข้อ')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กรุณากรอกหัวข้อ')),
+      );
       return;
     }
 
@@ -880,9 +877,9 @@ class _NewsFormPageState extends State<NewsFormPage> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -898,10 +895,8 @@ class _NewsFormPageState extends State<NewsFormPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black87,
-        title: Text(
-          _isEdit ? 'แก้ไขประกาศ' : 'เพิ่มประกาศ',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(_isEdit ? 'แก้ไขประกาศ' : 'เพิ่มประกาศ',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -945,9 +940,7 @@ class _NewsFormPageState extends State<NewsFormPage> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: emasColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
                   onPressed: _saving ? null : _save,
@@ -955,19 +948,10 @@ class _NewsFormPageState extends State<NewsFormPage> {
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.4,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.4),
                         )
-                      : Text(
-                          _isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มประกาศ',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15.5,
-                          ),
-                        ),
+                      : Text(_isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มประกาศ',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15.5)),
                 ),
               ),
             ],
@@ -978,14 +962,7 @@ class _NewsFormPageState extends State<NewsFormPage> {
   }
 
   Widget _buildSectionLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontWeight: FontWeight.w700,
-        fontSize: 14.5,
-        color: Colors.black87,
-      ),
-    );
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5, color: Colors.black87));
   }
 
   Widget _buildTextField({
@@ -1001,11 +978,7 @@ class _NewsFormPageState extends State<NewsFormPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: TextField(
@@ -1017,21 +990,13 @@ class _NewsFormPageState extends State<NewsFormPage> {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-          prefixIcon: icon != null
-              ? Icon(icon, color: emasColor, size: 20)
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
+          prefixIcon: icon != null ? Icon(icon, color: emasColor, size: 20) : null,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: emasColor, width: 1.6),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
@@ -1039,8 +1004,7 @@ class _NewsFormPageState extends State<NewsFormPage> {
 
   Widget _buildImagePicker() {
     final hasNewImage = _pickedImage != null;
-    final hasExistingImage =
-        !hasNewImage &&
+    final hasExistingImage = !hasNewImage &&
         !_imageRemoved &&
         _originalImageUrl != null &&
         _originalImageUrl!.isNotEmpty;
@@ -1055,24 +1019,14 @@ class _NewsFormPageState extends State<NewsFormPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.grey.shade300,
-              style: BorderStyle.solid,
-            ),
+            border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.add_photo_alternate_outlined,
-                size: 34,
-                color: Colors.grey.shade400,
-              ),
+              Icon(Icons.add_photo_alternate_outlined, size: 34, color: Colors.grey.shade400),
               const SizedBox(height: 8),
-              Text(
-                'เพิ่มรูปภาพ',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-              ),
+              Text('เพิ่มรูปภาพ', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
             ],
           ),
         ),
@@ -1096,10 +1050,7 @@ class _NewsFormPageState extends State<NewsFormPage> {
           right: 8,
           child: Row(
             children: [
-              _buildImageActionButton(
-                Icons.edit_rounded,
-                _showImageSourceSheet,
-              ),
+              _buildImageActionButton(Icons.edit_rounded, _showImageSourceSheet),
               const SizedBox(width: 8),
               _buildImageActionButton(Icons.close_rounded, _removeImage),
             ],
@@ -1115,10 +1066,7 @@ class _NewsFormPageState extends State<NewsFormPage> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(7),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.55),
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), shape: BoxShape.circle),
         child: Icon(icon, size: 17, color: Colors.white),
       ),
     );
