@@ -502,16 +502,6 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
-    buildingCode: '43',
-    buildingName: 'อาคารเรียนและปฏิบัติการวิชาพื้นฐาน',
-    polygon: [
-      LatLng(),
-      LatLng(),
-      LatLng(),
-      LatLng(),
-    ],
-  ),
-  BuildingBoundary(
     buildingCode: '46',
     buildingName: 'หอพักนิสิต 1',
     polygon: [
