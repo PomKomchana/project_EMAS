@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../constants/emas_colors.dart';
 
-// WIDGETS: GradientButton
-// Gradient pill button (color1 / color2)
+/// WIDGETS: GradientButton
+/// Gradient pill button (color1 / color2)
 class GradientButton extends StatelessWidget {
   const GradientButton({
     super.key,
@@ -54,8 +54,8 @@ class GradientButton extends StatelessWidget {
   }
 }
 
-// WIDGETS: OutlineButton
-// Red outline button ("เลือกตำแหน่ง" / "เปลี่ยนตำแหน่ง")
+/// WIDGETS: OutlineButton
+/// Red outline button ("เลือกตำแหน่ง" / "เปลี่ยนตำแหน่ง")
 class OutlineButton extends StatelessWidget {
   const OutlineButton({
     super.key,

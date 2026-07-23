@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../constants/emas_colors.dart';
 
-// WIDGETS: PinBadge
-// Green "ปักหมุดแล้ว" badge shown once a pin is placed
+/// WIDGETS: PinBadge
+/// Green "ปักหมุดแล้ว" badge shown once a pin is placed
 class PinBadge extends StatelessWidget {
   const PinBadge({super.key});
 
@@ -39,8 +39,8 @@ class PinBadge extends StatelessWidget {
   }
 }
 
-// WIDGETS: GlassMapButton
-// Frosted-glass pill overlaid on the map (Map-Mode Switcher)
+/// WIDGETS: GlassMapButton
+/// Frosted-glass pill overlaid on the map (Map-Mode Switcher)
 class GlassMapButton extends StatelessWidget {
   const GlassMapButton({
     super.key,
@@ -93,8 +93,8 @@ class GlassMapButton extends StatelessWidget {
   }
 }
 
-// WIDGETS: PickingBanner
-// Banner shown over the map in pin-picking mode ("แตะเพื่อปักหมุด")
+/// WIDGETS: PickingBanner
+/// Banner shown over the map in pin-picking mode ("แตะเพื่อปักหมุด")
 class PickingBanner extends StatelessWidget {
   const PickingBanner({super.key});
 
@@ -124,8 +124,8 @@ class PickingBanner extends StatelessWidget {
   }
 }
 
-// WIDGETS: CloseMapButton
-// Round "X" button to collapse the expanded map
+/// WIDGETS: CloseMapButton
+/// Round "X" button to collapse the expanded map
 class CloseMapButton extends StatelessWidget {
   const CloseMapButton({super.key, required this.onTap});
 

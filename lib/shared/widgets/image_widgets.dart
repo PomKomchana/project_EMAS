@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../constants/emas_colors.dart';
 
-// WIDGETS: ChangeImageButton
-// Pill overlaid on the picked image, reopens the image picker sheet ("เปลี่ยน")
+/// WIDGETS: ChangeImageButton
+/// Pill overlaid on the picked image, reopens the image picker sheet ("เปลี่ยน")
 class ChangeImageButton extends StatelessWidget {
   const ChangeImageButton({super.key, required this.onTap});
 
@@ -45,8 +45,8 @@ class ChangeImageButton extends StatelessWidget {
   }
 }
 
-// WIDGETS: ImagePlaceholder
-// Empty-state box shown when no image is picked yet
+/// WIDGETS: ImagePlaceholder
+/// Empty-state box shown when no image is picked yet
 class ImagePlaceholder extends StatelessWidget {
   const ImagePlaceholder({super.key, required this.onTap});
 

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 
-// Detail view for a single report, opened from ReportListPage
+/// Detail view for a single report, opened from ReportListPage
 class ReportDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
   final String id;
@@ -64,7 +64,7 @@ class ReportDetailPage extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  // App Bar with back button and title [_buildAppBar]
+  /// App Bar with back button and title [_buildAppBar]
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -94,7 +94,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Hero photo, shares tag with the list page thumbnail [_buildHeroImage]
+  /// Hero photo, shares tag with the list page thumbnail [_buildHeroImage]
   Widget _buildHeroImage(String? imageUrl) {
     return Hero(
       tag: 'img_$id',
@@ -112,7 +112,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Shown when there's no photo [_buildNoImagePlaceholder]
+  /// Shown when there's no photo [_buildNoImagePlaceholder]
   Widget _buildNoImagePlaceholder() {
     return Container(
       height: 220,
@@ -132,7 +132,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Title + severity badge + status/date chips [_buildHeaderSection]
+  /// Title + severity badge + status/date chips [_buildHeaderSection]
   Widget _buildHeaderSection({
     required String building,
     required String floor,
@@ -179,7 +179,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Icon for the status chip, matches AdminReportDetailPage's _statusOptions [_statusIcon]
+  /// Icon for the status chip, matches AdminReportDetailPage's _statusOptions [_statusIcon]
   IconData _statusIcon(String status) {
     switch (status) {
       case ReportStatus.pending:
@@ -193,7 +193,7 @@ class ReportDetailPage extends StatelessWidget {
     }
   }
 
-  // Severity dot + label (duplicate of list page's version) [_buildSeverityBadge]
+  /// Severity dot + label (duplicate of list page's version) [_buildSeverityBadge]
   Widget _buildSeverityBadge(SeverityInfo severity) {
     final isHigh = severity.label == severityLevels['high']!.label;
     return Container(
@@ -238,7 +238,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // "รายละเอียดปัญหา" card [_buildDescriptionSection]
+  /// "รายละเอียดปัญหา" card [_buildDescriptionSection]
   Widget _buildDescriptionSection(String desc) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +257,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // "ข้อมูลผู้แจ้ง" card [_buildReporterSection]
+  /// "ข้อมูลผู้แจ้ง" card [_buildReporterSection]
   Widget _buildReporterSection({
     required String username,
     required String phone,
@@ -274,7 +274,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Glass card background (duplicate of list page's glass container) [_buildGlassCard]
+  /// Glass card background (duplicate of list page's glass container) [_buildGlassCard]
   Widget _buildGlassCard({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -301,7 +301,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Icon chip + bold title for each section [_buildSectionHeader]
+  /// Icon chip + bold title for each section [_buildSectionHeader]
   Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
@@ -326,7 +326,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // "label: value" row, used for name/phone [_buildInfoRow]
+  /// "label: value" row, used for name/phone [_buildInfoRow]
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
@@ -344,7 +344,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  // Outlined pill for the status/date chips [_buildInfoChip]
+  /// Outlined pill for the status/date chips [_buildInfoChip]
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

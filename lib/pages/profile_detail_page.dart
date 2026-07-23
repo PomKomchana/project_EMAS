@@ -5,8 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../shared/constants/emas_colors.dart';
 
 // Shows/edits the signed-in user's profile fields: firstName, lastName,
-// phone, email. Reads/writes Firestore collection 'users/{uid}'.
-// NOTE: adjust collection/field names to match your actual schema. [ProfileDetailPage]
+/// phone, email. Reads/writes Firestore collection 'users/{uid}'.
+/// NOTE: adjust collection/field names to match your actual schema. [ProfileDetailPage]
 class ProfileDetailPage extends StatefulWidget {
   const ProfileDetailPage({super.key});
 

@@ -19,11 +19,11 @@ class ReportDetailSheet extends StatefulWidget {
 }
 
 class _ReportDetailSheetState extends State<ReportDetailSheet> {
-  // [SHEET-CONFIG] ขนาดต่างๆ ของ sheet (สัดส่วนของความสูงหน้าจอ)
+  /// [SHEET-CONFIG] ขนาดต่างๆ ของ sheet (สัดส่วนของความสูงหน้าจอ)
   static const double _initialSize = 0.55;
   static const double _minSize = 0.15;
   static const double _maxSize = 1.0;
-  // [SHEET-CLOSE-THRESHOLD] ถ้าลากลงมาต่ำกว่านี้ ให้ถือว่าผู้ใช้ต้องการปิด
+  /// [SHEET-CLOSE-THRESHOLD] ถ้าลากลงมาต่ำกว่านี้ ให้ถือว่าผู้ใช้ต้องการปิด
   static const double _closeThreshold = 0.2;
 
   final DraggableScrollableController _sheetController =
@@ -48,7 +48,7 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
     return Positioned.fill(
       child: NotificationListener<DraggableScrollableNotification>(
         onNotification: (notification) {
-          // [SHEET-DRAG-DOWN-TO-CLOSE] เมื่อผู้ใช้ลากลงมาต่ำกว่า threshold ให้ปิด sheet
+          /// [SHEET-DRAG-DOWN-TO-CLOSE] เมื่อผู้ใช้ลากลงมาต่ำกว่า threshold ให้ปิด sheet
           if (notification.extent <= _closeThreshold + 0.001) {
             _handleClose();
           }
@@ -61,7 +61,7 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
           maxChildSize: _maxSize,
           expand: true,
           snap: true,
-          // [SHEET-SNAP-POINTS] ระยะที่ sheet จะ snap ไปหาเมื่อปล่อยนิ้ว
+          /// [SHEET-SNAP-POINTS] ระยะที่ sheet จะ snap ไปหาเมื่อปล่อยนิ้ว
           snapSizes: [_minSize, _initialSize, _maxSize],
           builder: (context, scrollController) {
             return Material(
@@ -193,7 +193,7 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
 
                     _sectionSimple(
                       icon: Icons.description_outlined,
-                      title: "รายละเอียด",
+                      title: "รายละเอียดปัญหา",
                       color: Colors.black87,
                       text: widget.report['description'] ?? 'ไม่มีรายละเอียด',
                     ),
