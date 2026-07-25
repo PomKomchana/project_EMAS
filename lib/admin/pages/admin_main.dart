@@ -33,11 +33,23 @@ class _AdminMainPageState extends State<AdminMainPage> {
   /// Filter for the announcements feed (ทั้งหมด/ข่าวสาร/แจ้งปัญหา) [_announcementFilter]
   FeedFilter _announcementFilter = FeedFilter.all;
 
-  /// Nav item metadata, used to build both destinations + track label [_navItems]
+  /// Nav items — icon changes on select via activeIcon, label shows only when selected [_navItems]
   static const _navItems = [
-    (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'แดชบอร์ด'),
-    (icon: Icons.list_alt_outlined, selectedIcon: Icons.list_alt_rounded, label: 'รายการแจ้งซ่อม'),
-    (icon: Icons.newspaper_outlined, selectedIcon: Icons.newspaper_rounded, label: 'ประกาศ'),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.dashboard_outlined),
+      activeIcon: Icon(Icons.dashboard_rounded),
+      label: 'แดชบอร์ด',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.list_alt_outlined),
+      activeIcon: Icon(Icons.list_alt_rounded),
+      label: 'รายการแจ้งซ่อม',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.newspaper_outlined),
+      activeIcon: Icon(Icons.newspaper_rounded),
+      label: 'ประกาศ',
+    ),
   ];
 
   /// ============================== [Life Cycle] ==============================
@@ -181,7 +193,18 @@ class _AdminMainPageState extends State<AdminMainPage> {
         label: const Text('เพิ่มประกาศ', style: TextStyle(fontWeight: FontWeight.w600)),
         onPressed: _showCreateChooser,
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (i) => setState(() => _selectedIndex = i),
+        backgroundColor: Colors.white,
+        selectedItemColor: emasColor,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        showSelectedLabels: true,
+        showUnselectedLabels: false,
+        selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        items: _navItems,
+      ),
     );
   }
 
@@ -222,70 +245,6 @@ class _AdminMainPageState extends State<AdminMainPage> {
               ),
             ),
             Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Themed bottom nav bar, pill-style selected indicator matching brand color [_buildBottomNav]
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            children: [
-              for (var i = 0; i < _navItems.length; i++)
-                Expanded(child: _buildNavItem(i)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Single bottom nav destination [_buildNavItem]
-  Widget _buildNavItem(int index) {
-    final item = _navItems[index];
-    final isSelected = _selectedIndex == index;
-
-    return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? emasColor.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? item.selectedIcon : item.icon,
-              color: isSelected ? emasColor : Colors.grey.shade400,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.label,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? emasColor : Colors.grey.shade400,
-              ),
-            ),
           ],
         ),
       ),

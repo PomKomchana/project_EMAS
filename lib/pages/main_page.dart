@@ -43,10 +43,10 @@ class _MainPageState extends State<MainPage> {
   /// ============================== [Data] ==============================
   /// Bottom nav icons, order: Home / Reports / News / Profile [_navItems]
   static const _navItems = [
-    BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: ''),
-    BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+    BottomNavigationBarItem(icon: Icon(Icons.home), label: 'หน้าหลัก'),
+    BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'รายการแจ้งปัญหา'),
+    BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: 'ประกาศ'),
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'โปรไฟล์'),
   ];
 
   /// ============================== [Life Cycle] ==============================
@@ -145,8 +145,9 @@ class _MainPageState extends State<MainPage> {
         selectedItemColor: emasColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
+        showSelectedLabels: true,
         showUnselectedLabels: false,
+        selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         items: _navItems,
       ),
     );
