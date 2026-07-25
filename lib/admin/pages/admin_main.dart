@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 
 import 'admin_announcements.dart';
 import 'admin_report_list.dart';
@@ -1085,92 +1086,154 @@ class _TrendSectionState extends State<_TrendSection> {
     );
   }
 
-  /// Month/year picker: year arrows + a grid of 12 months [_showMonthYearPicker]
+  /// Month/year picker: Cupertino wheel style, bottom sheet [_showMonthYearPicker]
   void _showMonthYearPicker() {
-    int pickerYear = _selectedMonth.year;
     final now = DateTime.now();
 
-    showDialog(
+    int pickedMonthIndex = _selectedMonth.month - 1;
+    int pickedYear = _selectedMonth.year;
+
+    final yearStart = now.year - 5;
+    // Years from yearStart..now.year
+    final years = List.generate(now.year - yearStart + 1, (i) => yearStart + i);
+
+    final monthController = FixedExtentScrollController(initialItem: pickedMonthIndex);
+    final yearController = FixedExtentScrollController(
+      initialItem: years.indexOf(pickedYear).clamp(0, years.length - 1),
+    );
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: Container(
+            color: Colors.white,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      color: emasColor,
-                      onPressed: () => setDialogState(() => pickerYear--),
-                    ),
-                    SizedBox(
-                      width: 64,
-                      child: Text(
-                        '$pickerYear',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      color: emasColor,
-                      // Can't pick a future year [pickerYear < now.year]
-                      onPressed: pickerYear < now.year ? () => setDialogState(() => pickerYear++) : null,
-                    ),
-                  ],
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                const SizedBox(height: 8),
-                GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.8,
-                  children: List.generate(12, (i) {
-                    final m = i + 1;
-                    final isSelected = pickerYear == _selectedMonth.year && m == _selectedMonth.month;
-                    // Can't pick a future month [isFuture]
-                    final isFuture = pickerYear == now.year && m > now.month;
-
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: isFuture
-                          ? null
-                          : () {
-                              setState(() => _selectedMonth = DateTime(pickerYear, m));
+                SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 16),
+                      const Text(
+                        'เลือกเดือน-ปี',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 200,
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: Container(
+                                height: 40,
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                color: Colors.pink.shade50,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                // Month wheel
+                                Expanded(
+                                  flex: 3,
+                                  child: CupertinoPicker(
+                                    scrollController: monthController,
+                                    itemExtent: 40,
+                                    looping: true,
+                                    onSelectedItemChanged: (index) {
+                                      pickedMonthIndex = index;
+                                    },
+                                    children: _thaiMonths.map((m) {
+                                      return Center(
+                                        child: Text(
+                                          m,
+                                          style: const TextStyle(color: Colors.black87, fontSize: 15),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                                // Year wheel
+                                Expanded(
+                                  flex: 2,
+                                  child: CupertinoPicker(
+                                    scrollController: yearController,
+                                    itemExtent: 40,
+                                    onSelectedItemChanged: (index) {
+                                      pickedYear = years[index];
+                                    },
+                                    children: years.map((y) {
+                                      return Center(
+                                        child: Text(
+                                          '$y',
+                                          style: const TextStyle(color: Colors.black87, fontSize: 16),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: emasColor,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: () {
+                              // Can't confirm a future month/year [isFuture]
+                              final isFuture = pickedYear == now.year && pickedMonthIndex + 1 > now.month;
+                              if (isFuture) {
+                                Navigator.pop(ctx);
+                                return;
+                              }
+                              setState(() {
+                                _selectedMonth = DateTime(pickedYear, pickedMonthIndex + 1);
+                              });
                               Navigator.pop(ctx);
                             },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isSelected ? emasColor : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          _thaiMonthsShort[i],
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : (isFuture ? Colors.grey.shade300 : Colors.grey.shade700),
+                            child: const Text(
+                              'ยืนยัน',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
-                    );
-                  }),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
