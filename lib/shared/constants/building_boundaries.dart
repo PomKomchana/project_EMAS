@@ -577,7 +577,7 @@ const List<BuildingBoundary> campusBuildings = [
     polygon: [
       LatLng(14.1055454, 100.9891476),
       LatLng(14.1053558, 100.9887828),
-      LatLng(114.1051538, 100.9888909),
+      LatLng(14.1051538, 100.9888909),
       LatLng(14.105345, 100.9892572),
     ],
   ),
@@ -688,7 +688,7 @@ const List<BuildingBoundary> campusBuildings = [
       LatLng(14.1048084, 100.9886428),
       LatLng(14.1044744, 100.9880482),
       LatLng(14.1042389, 100.9881828),
-      LatLng(14.1045756, 1100.9887772),
+      LatLng(14.1045756, 100.9887772),
     ],
   ),
 ];

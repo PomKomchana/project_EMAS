@@ -130,15 +130,18 @@ class _AdminReportListPageState extends State<AdminReportListPage>
               children: [
                 _StatusTabContent(
                   status: 'รอดำเนินการ',
-                  initialScope: widget.initialScope,
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
                 ),
                 _StatusTabContent(
                   status: 'กำลังดำเนินการ',
-                  initialScope: widget.initialScope,
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
                 ),
                 _StatusTabContent(
                   status: 'เสร็จสิ้น',
-                  initialScope: widget.initialScope,
+                  scope: _scope,
+                  onScopeChanged: (s) => setState(() => _scope = s),
                 ),
               ],
             ),

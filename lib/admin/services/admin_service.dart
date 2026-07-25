@@ -79,6 +79,15 @@ class AdminService {
         .snapshots();
   }
 
+  /// Reports created by admin only, newest first. Used by the
+  /// announcements feed. [adminReportsStream]
+  Stream<QuerySnapshot> adminReportsStream() {
+    return _reportsRef
+        .where('createdBy', isEqualTo: 'admin')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
   /// ============================== [Report Writes] ==============================
   /// Create a report as admin (username set to 'Admin'). Uploads image
   /// first so imageUrl is set in the same write. [createReport]

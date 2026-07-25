@@ -81,6 +81,21 @@ void showFeedFilterSheet(
   );
 }
 
+// Opens the news composer (create or edit). Returns true if saved. Public
+// so other pages (e.g. AdminMainPage's FAB) can open it too. [showNewsForm]
+Future<bool?> showNewsForm(
+  BuildContext context, {
+  required AdminService adminService,
+  QueryDocumentSnapshot? doc,
+}) {
+  return Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => _NewsFormPage(adminService: adminService, doc: doc),
+    ),
+  );
+}
+
 // Announcements tab: merges 'news' + admin-created 'reports' into one feed.
 // Filter is owned by AdminMainPage and rendered in the shared AppBar. [AdminAnnouncementsPage]
 class AdminAnnouncementsPage extends StatelessWidget {
@@ -778,12 +793,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
   /// ============================== [News Logic] ==============================
   // Opens the full-page news composer (create or edit) instead of the old small AlertDialog [_openNewsForm]
   void _openNewsForm(BuildContext context, {QueryDocumentSnapshot? doc}) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _NewsFormPage(adminService: _adminService, doc: doc),
-      ),
-    );
+    showNewsForm(context, adminService: _adminService, doc: doc);
   }
 
   void _deleteNews(BuildContext context, String docId) {
@@ -999,7 +1009,7 @@ class _NewsFormPageState extends State<_NewsFormPage> {
         );
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

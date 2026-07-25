@@ -973,7 +973,7 @@ Widget _buildBuildingModeToggle() {
     );
   }
 
-  // Single severity chip used inside _buildSeveritySection [_buildSeverityOption]
+  /// Single severity chip used inside _buildSeveritySection [_buildSeverityOption]
   Widget _buildSeverityOption(String key, SeverityInfo info) {
     final isSelected = _selectedSeverity == key;
     final isHigh = key == 'high';

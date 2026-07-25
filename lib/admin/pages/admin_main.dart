@@ -30,6 +30,9 @@ class _AdminMainPageState extends State<AdminMainPage> {
   int _reportListTabIndex = 0;
   ReportScopeFilter _reportListScope = ReportScopeFilter.all;
 
+  /// Filter for the announcements feed (ทั้งหมด/ข่าวสาร/แจ้งปัญหา) [_announcementFilter]
+  FeedFilter _announcementFilter = FeedFilter.all;
+
   /// Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
     (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'แดชบอร์ด'),
@@ -62,7 +65,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
         );
       case 2:
       default:
-        return const AdminAnnouncementsPage();
+        return AdminAnnouncementsPage(filter: _announcementFilter);
     }
   }
 
@@ -126,10 +129,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
 
   /// Open the news form. Returns true if saved, so we can switch tabs [_createNews]
   Future<void> _createNews() async {
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => NewsFormPage(adminService: AdminService())),
-    );
+    final saved = await showNewsForm(context, adminService: AdminService());
     if (saved == true && mounted) {
       setState(() => _selectedIndex = 2);
     }
