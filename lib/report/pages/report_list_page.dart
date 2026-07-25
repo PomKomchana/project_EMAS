@@ -7,6 +7,7 @@ import 'report_detail_page.dart';
 
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
+import '../../shared/utils/thai_date.dart';
 
 /// Lists all submitted reports. Two tabs ("ทั้งหมด" / "ของฉัน") + status/severity/scope filter
 /// AppBar is now owned by MainPage — this page only renders the tab bar + list body
@@ -517,7 +518,7 @@ class _ReportListPageState extends State<ReportListPage>
     );
   }
 
-  /// One report card: thumbnail, title, admin badge (if applicable), status, date. Tap → detail page. [_buildReportCard]
+  /// One report card: thumbnail, title, admin badge (if applicable), status, dateTime. Tap → detail page. [_buildReportCard]
   Widget _buildReportCard(
     BuildContext context,
     Map<String, dynamic> data,
@@ -528,7 +529,7 @@ class _ReportListPageState extends State<ReportListPage>
     final room = data['room'] ?? '-';
     final desc = data['description'] ?? '-';
     final status = data['status'] ?? ReportStatus.pending;
-    final date = data['date'] ?? '-';
+    final dateTime = data['dateTime'] ?? '-';
     final imageUrl = data['imageUrl'] as String?;
     final isRecent = _isRecent(data['createdAt']);
     final isAdmin = data['createdBy'] == 'admin';
@@ -547,12 +548,12 @@ class _ReportListPageState extends State<ReportListPage>
             const SizedBox(width: 12),
             Expanded(
               child: _buildCardContent(
+                dateTime: dateTime,
                 building: building,
                 floor: floor,
                 room: room,
                 desc: desc,
                 status: status,
-                date: date,
                 severity: severity,
                 isRecent: isRecent,
                 isAdmin: isAdmin,
@@ -621,7 +622,7 @@ class _ReportListPageState extends State<ReportListPage>
     required String room,
     required String desc,
     required String status,
-    required String date,
+    required String dateTime,
     required SeverityInfo severity,
     required bool isRecent,
     required bool isAdmin,
@@ -680,9 +681,13 @@ class _ReportListPageState extends State<ReportListPage>
               color: Colors.grey.shade500,
             ),
             const SizedBox(width: 3),
-            Text(
-              date,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            Expanded(
+              child: Text(
+                shortenThaiDate(dateTime),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
             ),
           ],
         ),
