@@ -109,7 +109,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeroImage(context, imageUrl),
+            _buildHeroImage(context, imageUrl, id),
             const SizedBox(height: 16),
 
             _buildGlassCard(
@@ -182,7 +182,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
 
   /// Hero photo, shares tag with the list page thumbnail. Includes an expand
   /// button (bottom-right) to view the image at full/real size. [_buildHeroImage]
-  Widget _buildHeroImage(BuildContext context, String? imageUrl) {
+  Widget _buildHeroImage(BuildContext context, String? imageUrl, String id) {
     return Stack(
       children: [
         Hero(
