@@ -42,10 +42,18 @@ class _DeleteConfirmDialog extends StatefulWidget {
 class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
   /// ============================== [Controllers & Services] ==============================
   final _adminService = AdminService();
+  final _focusNode = FocusNode();
 
   /// ============================== [State] ==============================
   bool _isChecking = false;
+  bool _obscure = true;
   String? _errorText;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   /// ============================== [Delete Confirm Logic] ==============================
   /// Check password with Firebase before deleting [_confirm]
@@ -53,6 +61,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
     final password = widget.passwordCtrl.text;
     if (password.isEmpty) {
       setState(() => _errorText = 'กรุณากรอกรหัสผ่าน');
+      _focusNode.requestFocus();
       return;
     }
 
@@ -70,6 +79,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
         _isChecking = false;
         _errorText = 'รหัสผ่านไม่ถูกต้อง';
       });
+      _focusNode.requestFocus();
       return;
     }
 
@@ -79,62 +89,156 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      icon: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), shape: BoxShape.circle),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-      ),
-      title: Text(widget.title, textAlign: TextAlign.center),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            widget.message,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: widget.passwordCtrl,
-            obscureText: true,
-            autofocus: true,
-            enabled: !_isChecking,
-            onSubmitted: (_) => _confirm(),
-            decoration: InputDecoration(
-              labelText: 'รหัสผ่านของคุณ',
-              errorText: _errorText,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: emasColor, width: 2),
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Icon
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEBEE),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFE53935),
+                  size: 28,
+                ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 18),
+
+            // Title
+            Text(
+              widget.title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // Message
+            Text(
+              widget.message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.4,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            // Password field
+            TextField(
+              controller: widget.passwordCtrl,
+              focusNode: _focusNode,
+              obscureText: _obscure,
+              autofocus: true,
+              enabled: !_isChecking,
+              onChanged: (_) {
+                if (_errorText != null) setState(() => _errorText = null);
+              },
+              onSubmitted: (_) => _confirm(),
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                //labelText: 'รหัสผ่านของคุณ',
+                //labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13.5),
+                errorText: _errorText,
+                filled: true,
+                fillColor: const Color(0xFFF7F7F8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                suffixIcon: IconButton(
+                  splashRadius: 18,
+                  icon: Icon(
+                    _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: 19,
+                    color: Colors.grey.shade500,
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: emasColor, width: 1.6),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.2),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.6),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Actions
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isChecking ? null : () => Navigator.pop(context, false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey.shade700,
+                      side: BorderSide(color: Colors.grey.shade300),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('ยกเลิก', style: TextStyle(fontWeight: FontWeight.w500)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE53935),
+                      disabledBackgroundColor: const Color(0xFFE53935).withValues(alpha: 0.6),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _isChecking ? null : _confirm,
+                    child: _isChecking
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'ยืนยันลบ',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      actionsAlignment: MainAxisAlignment.center,
-      actions: [
-        TextButton(
-          onPressed: _isChecking ? null : () => Navigator.pop(context, false),
-          child: const Text('ยกเลิก'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          onPressed: _isChecking ? null : _confirm,
-          child: _isChecking
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                )
-              : const Text('ยืนยันลบ', style: TextStyle(color: Colors.white)),
-        ),
-      ],
     );
   }
 }
