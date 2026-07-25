@@ -75,7 +75,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
         );
       case 2:
       default:
-        return const AdminAnnouncementsPage();
+        return AdminAnnouncementsPage();
     }
   }
 
@@ -393,6 +393,7 @@ class _AdminDashboard extends StatelessWidget {
         status: data['status'],
         docId: doc.id,
         data: data,
+        doc: doc,
       ));
     }
 
@@ -406,6 +407,7 @@ class _AdminDashboard extends StatelessWidget {
         time: ts is Timestamp ? ts.toDate() : null,
         docId: doc.id,
         data: data,
+        doc: doc,
       ));
     }
 
@@ -440,16 +442,18 @@ class _AdminDashboard extends StatelessWidget {
   }
 
   /// ============================== [Navigation Logic] ==============================
-  /// Reports open the detail page. News has no detail page here. [_openActivityDetail]
+  /// Reports open the detail page, news opens the edit-news form [_openActivityDetail]
   void _openActivityDetail(BuildContext context, _ActivityItem item) {
-    if (item.type != _ActivityType.report) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AdminReportDetailPage(reportId: item.docId, data: item.data),
-      ),
-    );
+    if (item.type == _ActivityType.report) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AdminReportDetailPage(reportId: item.docId, data: item.data),
+        ),
+      );
+    } else {
+      showNewsForm(context, adminService: _adminService, doc: item.doc);
+    }
   }
 
   /// Pick ทั้งหมด/ผู้ใช้/แอดมิน before opening the report list. Skips the sheet
@@ -631,7 +635,7 @@ class _AdminDashboard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: isReport ? () => _openActivityDetail(context, item) : null,
+          onTap: () => _openActivityDetail(context, item),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -678,10 +682,8 @@ class _AdminDashboard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(_relativeTime(item.time),
                     style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
-                if (isReport) ...[
-                  const SizedBox(width: 4),
-                  Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 18),
-                ],
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 18),
               ],
             ),
           ),
@@ -764,6 +766,7 @@ class _ActivityItem {
   final String? status;
   final String docId;
   final Map<String, dynamic> data;
+  final QueryDocumentSnapshot doc;
 
   _ActivityItem({
     required this.type,
@@ -772,6 +775,7 @@ class _ActivityItem {
     required this.time,
     required this.docId,
     required this.data,
+    required this.doc,
     this.status,
   });
 }
