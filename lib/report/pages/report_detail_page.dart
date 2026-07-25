@@ -1,13 +1,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
 import '../../shared/utils/thai_date.dart';
 
 /// Detail view for a single report, opened from ReportListPage
-class ReportDetailPage extends StatelessWidget {
+class ReportDetailPage extends StatefulWidget {
   final Map<String, dynamic> data;
   final String id;
 
@@ -17,9 +18,58 @@ class ReportDetailPage extends StatelessWidget {
     required this.id,
   });
 
+  @override
+  State<ReportDetailPage> createState() => _ReportDetailPageState();
+}
+
+class _ReportDetailPageState extends State<ReportDetailPage> {
+
+  /// ============================== [State] ==============================
+  /// Whether the currently logged-in user has role == 'admin' in
+  /// users/{uid}. Admins can see everything regardless of ownership [_isViewerAdmin]
+  bool _isViewerAdmin = false;
+  bool _isCheckingRole = true;
+
+  /// ============================== [Life Cycle] ==============================
+  @override
+  void initState() {
+    super.initState();
+    _checkViewerRole();
+  }
+
+  /// ============================== [Data] ==============================
+  /// Reads users/{uid}.role from Firestore to determine admin access [_checkViewerRole]
+  Future<void> _checkViewerRole() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _isCheckingRole = false);
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+      final role = doc.data()?['role'] ?? 'user';
+
+      if (mounted) {
+        setState(() {
+          _isViewerAdmin = role == 'admin';
+          _isCheckingRole = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isCheckingRole = false);
+    }
+  }
+
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
+    final data = widget.data;
+    final id = widget.id;
+
     // Data Mapping — fall back to '-' for missing fields (older reports may lack some)
     final building = data['building'] ?? '-';
     final floor = data['floor'] ?? '-';
@@ -32,19 +82,24 @@ class ReportDetailPage extends StatelessWidget {
     final imageUrl = data['imageUrl'] as String?;
     final severityKey = data['severity'] as String?;
     final severity = getSeverityInfo(severityKey);
-    final location = data['lat'] != null
-        ? '${data['lat']}, ${data['lng']}'
-        : 'ไม่ได้ระบุ';
 
-    // Privacy guard — reporter details (location, name, phone) are only
-    // revealed to the person who submitted the report. Anyone else viewing
-    // (this page is user-facing, never the admin one) sees a locked
-    // placeholder instead [_isOwnReport]
+    // Privacy guard — reporter details (name, phone) are only revealed to
+    // the person who submitted the report, or to a viewer whose Firestore
+    /// role == 'admin'. Everyone else sees a locked placeholder [_isOwnReport, _canReveal]
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final isOwnReport = currentUid != null && data['createdBy'] == currentUid;
-    // Reports submitted by an admin have no real reporter — location stays
-    // visible, and name/phone collapse into a single "Admin" indicator [_isAdmin]
+    final canReveal = isOwnReport || _isViewerAdmin;
+    // Reports submitted by an admin have no real reporter — name/phone
+    /// collapse into a single "Admin" indicator [_isAdmin]
     final isAdmin = data['createdBy'] == 'admin';
+
+    if (_isCheckingRole) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF2F2F7),
+        appBar: _buildAppBar(context),
+        body: const Center(child: CircularProgressIndicator(color: emasColor)),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
@@ -54,7 +109,7 @@ class ReportDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeroImage(imageUrl),
+            _buildHeroImage(imageUrl, id),
             const SizedBox(height: 16),
 
             _buildGlassCard(
@@ -75,16 +130,13 @@ class ReportDetailPage extends StatelessWidget {
                 building: building,
                 floor: floor,
                 desc: desc,
-                location: location,
-                isOwnReport: isOwnReport,
-                isAdmin: isAdmin,
               ),
             ),
             const SizedBox(height: 12),
 
             _buildGlassCard(
               child: _buildReporterSection(
-                isOwnReport: isOwnReport,
+                canReveal: canReveal,
                 isAdmin: isAdmin,
                 username: username,
                 phone: phone,
@@ -129,7 +181,7 @@ class ReportDetailPage extends StatelessWidget {
   }
 
   /// Hero photo, shares tag with the list page thumbnail [_buildHeroImage]
-  Widget _buildHeroImage(String? imageUrl) {
+  Widget _buildHeroImage(String? imageUrl, String id) {
     return Hero(
       tag: 'img_$id',
       child: ClipRRect(
@@ -299,17 +351,12 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  /// "ข้อมูลรายงาน" card — building/floor/description/location rows,
-  /// mirrors AdminReportDetailPage's report-info card. ตำแหน่ง is always
-  /// visible for admin-submitted reports and for the viewer's own report;
-  /// otherwise it's locked (shows a lock icon + "Admin") [_buildReportInfoSection]
+  /// "ข้อมูลปัญหา" card — building/floor/description rows, mirrors
+  /// AdminReportDetailPage's report-info card [_buildReportInfoSection]
   Widget _buildReportInfoSection({
     required String building,
     required String floor,
     required String desc,
-    required String location,
-    required bool isOwnReport,
-    required bool isAdmin,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,19 +366,14 @@ class ReportDetailPage extends StatelessWidget {
         _buildDetailRow(Icons.apartment_rounded, 'อาคาร', building),
         _buildDetailRow(Icons.layers_rounded, 'ชั้น', floor),
         _buildDetailRow(Icons.edit_note_rounded, 'รายละเอียดปัญหา', desc),
-        (isAdmin || isOwnReport)
-            ? _buildDetailRow(Icons.location_on_rounded, 'ตำแหน่ง', location)
-            : _buildLockedDetailRow(Icons.location_on_rounded, 'ตำแหน่ง'),
       ],
     );
   }
 
   /// "ข้อมูลผู้แจ้ง" card — for admin-submitted reports, name/phone collapse
-  /// into a single combined "Admin" indicator; for other users' reports
-  /// they're locked (lock icon + "Admin"); for the viewer's own report the
-  /// real values show [_buildReporterSection]
+  /// when canReveal is true (owner or admin viewer), locked otherwise [_buildReporterSection]
   Widget _buildReporterSection({
-    required bool isOwnReport,
+    required bool canReveal,
     required bool isAdmin,
     required String username,
     required String phone,
@@ -343,7 +385,7 @@ class ReportDetailPage extends StatelessWidget {
         const SizedBox(height: 10),
         if (isAdmin)
           _buildCombinedAdminBadge()
-        else if (isOwnReport) ...[
+        else if (canReveal) ...[
           _buildInfoRow(Icons.person, 'ชื่อ', username),
           const SizedBox(height: 6),
           _buildInfoRow(Icons.phone, 'เบอร์', phone),
@@ -383,7 +425,7 @@ class ReportDetailPage extends StatelessWidget {
   }
 
   /// Lock icon + "Admin" text, used as the value placeholder wherever a
-  /// row is hidden from non-owners (ตำแหน่ง/ชื่อ/เบอร์) [_buildLockedValue]
+  /// row is hidden from non-owners (ชื่อ/เบอร์) [_buildLockedValue]
   Widget _buildLockedValue() {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -399,32 +441,6 @@ class ReportDetailPage extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  /// Locked variant of [_buildDetailRow] — value replaced with lock+Admin [_buildLockedDetailRow]
-  Widget _buildLockedDetailRow(IconData icon, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: emasColor),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 78,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          _buildLockedValue(),
-        ],
-      ),
     );
   }
 
