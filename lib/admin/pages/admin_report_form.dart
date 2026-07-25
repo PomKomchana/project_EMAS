@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -12,6 +13,7 @@ import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/map_constants.dart';
 import '../../shared/constants/report_constants.dart';
+import '../../shared/constants/date_constants.dart';
 import '../../shared/widgets/buttons.dart';
 import '../../shared/widgets/form_widgets.dart';
 import '../../shared/widgets/glass_card.dart';
@@ -44,7 +46,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     with TickerProviderStateMixin {
 
   /// ============================== [Controllers & Services] ==============================
-  /// Text/map controllers [_floorController, _roomController, _descController, _mapController, _adminService, _imagePicker, _buildingTextController]
+  /// Text/map controllers [_floorController, _roomController, _descController, _mapController, _adminService, _imagePicker, _buildingTextController, _dateController]
   final _floorController = TextEditingController();
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
@@ -52,6 +54,10 @@ class _AdminReportFormState extends State<AdminReportForm>
   final _adminService = AdminService();
   final _imagePicker = ImagePicker();
   final _buildingTextController = TextEditingController();
+  final _dateTimeController = TextEditingController();
+
+  /// The actual DateTime value backing _dateTimeController, used when submitting to backend [_selectedDateTime]
+  DateTime? _selectedDateTime;
 
   /// Staggered entrance animation [_fadeController, _fadeList, _slideList]
   late final AnimationController _fadeController;
@@ -77,8 +83,8 @@ class _AdminReportFormState extends State<AdminReportForm>
   bool _isSaving = false;
   bool _isManualBuildingEntry = false;
 
-  /// Number of staggered sections: Map, Image, Location, Status, Severity, Description
-  static const _sectionCount = 6;
+  /// Number of staggered sections: Map, Image, Reporter Info, Location, Status, Severity, Description
+  static const _sectionCount = 7;
 
   /// ============================== [Life Cycle] ==============================
   @override
@@ -114,6 +120,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     _floorController.dispose();
     _roomController.dispose();
     _descController.dispose();
+    _dateTimeController.dispose();
     _mapController.dispose();
     _fadeController.dispose();
     _mapAnimController.dispose();
@@ -276,9 +283,302 @@ void _cycleMapMode() {
     }
   }
 
+  /// ============================== [Date & Time Picker Logic] ==============================
+  /// Shared wrapper: white sheet with a plain handle bar. [_buildPickerSheetShell]
+  Widget _buildPickerSheetShell({required String title, required Widget child, required Widget button}) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: Container(
+        color: Colors.white,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  child,
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(width: double.infinity, child: button),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Step 1: date wheel (day / month / year), then opens step 2 (time). [_showThaiDatePickerSheet]
+  Future<void> _showThaiDatePickerSheet() async {
+    final now = _selectedDateTime ?? DateTime.now();
+
+    int selectedDay = now.day;
+    int selectedMonthIndex = now.month - 1;
+    int selectedYear = now.year;
+
+    final yearStart = DateTime.now().year - 5;
+
+    final dayController = FixedExtentScrollController(initialItem: selectedDay - 1);
+    final monthController = FixedExtentScrollController(initialItem: selectedMonthIndex);
+    final yearController = FixedExtentScrollController(initialItem: selectedYear - yearStart);
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return _buildPickerSheetShell(
+          title: 'วันที่แจ้งปัญหา ',
+          child: SizedBox(
+            height: 200,
+            child: Stack(
+              children: [
+                // Highlight bar behind the middle row
+                Center(
+                  child: Container(
+                    height: 40,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    color: Colors.pink.shade50,
+                  ),
+                ),
+                Row(
+                  children: [
+                    // Day
+                    Expanded(
+                      flex: 2,
+                      child: CupertinoPicker(
+                        scrollController: dayController,
+                        itemExtent: 40,
+                        looping: true,
+                        onSelectedItemChanged: (index) {
+                          selectedDay = index + 1;
+                        },
+                        children: List.generate(31, (i) {
+                          return Center(
+                            child: Text(
+                              '${i + 1}',
+                              style: const TextStyle(color: Colors.black87, fontSize: 16),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    // Month
+                    Expanded(
+                      flex: 3,
+                      child: CupertinoPicker(
+                        scrollController: monthController,
+                        itemExtent: 40,
+                        looping: true,
+                        onSelectedItemChanged: (index) {
+                          selectedMonthIndex = index;
+                        },
+                        children: thaiMonths.map((m) {
+                          return Center(
+                            child: Text(
+                              m,
+                              style: const TextStyle(color: Colors.black87, fontSize: 15),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    // Year
+                    Expanded(
+                      flex: 2,
+                      child: CupertinoPicker(
+                        scrollController: yearController,
+                        itemExtent: 40,
+                        onSelectedItemChanged: (index) {
+                          selectedYear = yearStart + index;
+                        },
+                        children: List.generate(11, (i) {
+                          return Center(
+                            child: Text(
+                              '${yearStart + i}',
+                              style: const TextStyle(color: Colors.black87, fontSize: 16),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          button: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: emasColor,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(context); // close step 1
+              _showThaiTimePickerSheet(
+                selectedDay: selectedDay,
+                selectedMonthIndex: selectedMonthIndex,
+                selectedYear: selectedYear,
+              );
+            },
+            child: const Text(
+              'ถัดไป',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Step 2: time wheel (hour / minute), commits the final date+time. [_showThaiTimePickerSheet]
+  Future<void> _showThaiTimePickerSheet({
+    required int selectedDay,
+    required int selectedMonthIndex,
+    required int selectedYear,
+  }) async {
+    final now = _selectedDateTime ?? DateTime.now();
+    int selectedHour = now.hour;
+    int selectedMinute = now.minute;
+
+    final hourController = FixedExtentScrollController(initialItem: selectedHour);
+    final minuteController = FixedExtentScrollController(initialItem: selectedMinute);
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return _buildPickerSheetShell(
+          title: 'เวลาที่แจ้งปัญหา',
+          child: SizedBox(
+            height: 200,
+            child: Stack(
+              children: [
+                Center(
+                  child: Container(
+                    height: 40,
+                    margin: const EdgeInsets.symmetric(horizontal: 60),
+                    color: Colors.pink.shade50,
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Hour
+                    Expanded(
+                      child: CupertinoPicker(
+                        scrollController: hourController,
+                        itemExtent: 40,
+                        looping: true,
+                        onSelectedItemChanged: (index) {
+                          selectedHour = index;
+                        },
+                        children: List.generate(24, (i) {
+                          return Center(
+                            child: Text(
+                              i.toString().padLeft(2, '0'),
+                              style: const TextStyle(color: Colors.black87, fontSize: 18),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    const Text(
+                      ':',
+                      style: TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    // Minute
+                    Expanded(
+                      child: CupertinoPicker(
+                        scrollController: minuteController,
+                        itemExtent: 40,
+                        looping: true,
+                        onSelectedItemChanged: (index) {
+                          selectedMinute = index;
+                        },
+                        children: List.generate(60, (i) {
+                          return Center(
+                            child: Text(
+                              i.toString().padLeft(2, '0'),
+                              style: const TextStyle(color: Colors.black87, fontSize: 18),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          button: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: emasColor,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final picked = DateTime(
+                selectedYear,
+                selectedMonthIndex + 1,
+                selectedDay,
+                selectedHour,
+                selectedMinute,
+              );
+              setState(() {
+                _selectedDateTime = picked;
+                final hh = selectedHour.toString().padLeft(2, '0');
+                final mm = selectedMinute.toString().padLeft(2, '0');
+                _dateTimeController.text =
+                    '$selectedDay ${thaiMonths[selectedMonthIndex]} $selectedYear เวลา $hh:$mm';
+              });
+              Navigator.pop(context); // close step 2
+            },
+            child: const Text(
+              'ยืนยัน',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// ============================== [Submit Logic] ==============================
   /// Validate + create the admin report [_submit]
   Future<void> _submit() async {
+    if (_dateTimeController.text.trim().isEmpty) {
+      _showSnackBar(
+        'กรุณากรอกวัน-เวลาที่แจ้งปัญหา', Colors.red.shade600, Icons.error_outline
+        );
+      return;
+    }
     if (_selectedBuilding == null || _floorController.text.trim().isEmpty) {
       _showSnackBar(
         'กรุณาเลือกอาคารและชั้น', Colors.red.shade600, Icons.error_outline
@@ -302,9 +602,8 @@ void _cycleMapMode() {
     setState(() => _isSaving = true);
 
     try {
-      /// NOTE: AdminService.createReport() ต้องรองรับพารามิเตอร์ `image` (File?)
-      /// และอัปโหลดขึ้น Firebase Storage แบบเดียวกับ ReportService.submitReport()
       await _adminService.createReport(
+        dateTime: _dateTimeController.text.trim(),
         building: _selectedBuilding!,
         floor: _floorController.text.trim(),
         room: _roomController.text.trim(),
@@ -378,13 +677,15 @@ void _cycleMapMode() {
                         const SizedBox(height: 14),
                         _buildAnimatedSection(1, _buildImageSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(2, _buildLocationSection()),
+                        _buildAnimatedSection(2, _buildReporterSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(3, _buildStatusSection()),
+                        _buildAnimatedSection(3, _buildLocationSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(4, _buildSeveritySection()),
+                        _buildAnimatedSection(4, _buildStatusSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(5, _buildDescriptionSection()),
+                        _buildAnimatedSection(5, _buildSeveritySection()),
+                        const SizedBox(height: 14),
+                        _buildAnimatedSection(6, _buildDescriptionSection()),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -689,6 +990,46 @@ void _cycleMapMode() {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// [ADMIN] Reporter info section: วัน-เวลาที่แจ้งปัญหา [_buildReporterSection]
+  Widget _buildReporterSection() {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CardHeader(icon: Icons.person_outline, title: 'ข้อมูลผู้แจ้ง'),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Date & Time Report "วัน-เวลาที่แจ้งปัญหา " — opens the Thai wheel picker (date step → time step)
+          TextField(
+            controller: _dateTimeController,
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'วัน-เวลาที่แจ้งปัญหา ',
+              labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              prefixIcon: const Icon(Icons.calendar_today, color: emasColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: emasColor, width: 2),
+              ),
+            ),
+            onTap: _showThaiDatePickerSheet,
+          ),
+
+          const SizedBox(height: 10),
+
+        ],
       ),
     );
   }

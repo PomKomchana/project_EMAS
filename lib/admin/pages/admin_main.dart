@@ -30,10 +30,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
   int _reportListTabIndex = 0;
   ReportScopeFilter _reportListScope = ReportScopeFilter.all;
 
-  /// Filter for the announcements feed (ทั้งหมด/ข่าวสาร/แจ้งปัญหา) [_announcementFilter]
-  FeedFilter _announcementFilter = FeedFilter.all;
-
-  /// Nav items — icon changes on select via activeIcon, label shows only when selected [_navItems]
+  /// Nav item metadata, used to build both destinations + track label [_navItems]
   static const _navItems = [
     BottomNavigationBarItem(
       icon: Icon(Icons.dashboard_outlined),
@@ -77,7 +74,7 @@ class _AdminMainPageState extends State<AdminMainPage> {
         );
       case 2:
       default:
-        return AdminAnnouncementsPage(filter: _announcementFilter);
+        return const AdminAnnouncementsPage();
     }
   }
 

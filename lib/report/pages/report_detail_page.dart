@@ -3,13 +3,18 @@ import 'package:flutter/material.dart';
 
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
+import '../../shared/utils/thai_date.dart';
 
 /// Detail view for a single report, opened from ReportListPage
 class ReportDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
   final String id;
 
-  const ReportDetailPage({super.key, required this.data, required this.id});
+  const ReportDetailPage({
+    super.key,
+    required this.data,
+    required this.id,
+  });
 
   /// ============================== [Build] ==============================
   @override
@@ -20,7 +25,7 @@ class ReportDetailPage extends StatelessWidget {
     final room = data['room'] ?? '-';
     final desc = data['description'] ?? '-';
     final status = data['status'] ?? ReportStatus.pending;
-    final date = data['date'] ?? '-';
+    final dateTime = data['dateTime'] ?? '-';
     final username = data['username'] ?? '-';
     final phone = data['phone'] ?? '-';
     final imageUrl = data['imageUrl'] as String?;
@@ -44,13 +49,15 @@ class ReportDetailPage extends StatelessWidget {
                 floor: floor,
                 room: room,
                 status: status,
-                date: date,
+                dateTime: dateTime,
                 severity: severity,
               ),
             ),
             const SizedBox(height: 12),
 
-            _buildGlassCard(child: _buildDescriptionSection(desc)),
+            _buildGlassCard(
+              child: _buildDescriptionSection(desc),
+            ),
             const SizedBox(height: 12),
 
             _buildGlassCard(
@@ -108,9 +115,9 @@ class ReportDetailPage extends StatelessWidget {
                 fit: BoxFit.cover,
               )
             : _buildNoImagePlaceholder(),
-      ),
-    );
-  }
+          ),
+        );
+      }
 
   /// Shown when there's no photo [_buildNoImagePlaceholder]
   Widget _buildNoImagePlaceholder() {
@@ -132,13 +139,13 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  /// Title + severity badge + status/date chips [_buildHeaderSection]
+  /// Title + severity badge + status/dateTime chips [_buildHeaderSection]
   Widget _buildHeaderSection({
     required String building,
     required String floor,
     required String room,
     required String status,
-    required String date,
+    required String dateTime,
     required SeverityInfo severity,
   }) {
     return Column(
@@ -170,8 +177,8 @@ class ReportDetailPage extends StatelessWidget {
             const SizedBox(width: 8),
             _buildInfoChip(
               Icons.calendar_today_outlined,
-              date,
-              Colors.grey.shade600,
+              shortenThaiDate(dateTime),
+              Colors.grey.shade600
             ),
           ],
         ),
@@ -344,7 +351,7 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  /// Outlined pill for the status/date chips [_buildInfoChip]
+  /// Outlined pill for the status/dateTime chips [_buildInfoChip]
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

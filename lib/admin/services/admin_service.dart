@@ -92,6 +92,7 @@ class AdminService {
   /// Create a report as admin (username set to 'Admin'). Uploads image
   /// first so imageUrl is set in the same write. [createReport]
   Future<void> createReport({
+    required String dateTime,
     required String building,
     required String floor,
     required String room,
@@ -105,6 +106,7 @@ class AdminService {
     final imageUrl = image != null ? await _uploadImage(image) : null;
 
     await _reportsRef.add({
+      'dateTime': dateTime,
       'building': building,
       'floor': floor,
       'room': room,

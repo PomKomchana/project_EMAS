@@ -7,6 +7,7 @@ import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
+import '../../shared/utils/thai_date.dart';
 
 /// Which reports to show — drives the ทั้งหมด/ผู้ใช้/แอดมิน sub-tabs. [ReportScopeFilter]
 enum ReportScopeFilter { all, user, admin }
@@ -326,12 +327,6 @@ class _FilteredList extends StatelessWidget {
     }).toList();
   }
 
-  String _formatDate(dynamic createdAt) {
-    if (createdAt is! Timestamp) return '-';
-    final d = createdAt.toDate();
-    return '${d.day}/${d.month}/${d.year}';
-  }
-
   /// "ใหม่" badge for reports made in the last 24 hours [_isRecent]
   bool _isRecent(dynamic createdAt) {
     if (createdAt is! Timestamp) return false;
@@ -419,7 +414,7 @@ class _FilteredList extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  /// One report card: thumbnail, severity badge, status chip + date. Tags
+  /// One report card: thumbnail, severity badge, status chip + dateTime. Tags
   /// admin-made reports with a small "Admin" pill. Pencil icon opens detail,
   /// trash icon deletes — no more whole-card tap. [_buildReportCard]
   Widget _buildReportCard(
@@ -434,7 +429,7 @@ class _FilteredList extends StatelessWidget {
     final desc = data['description'] ?? '-';
     final imageUrl = data['imageUrl'] as String?;
     final severity = getSeverityInfo(data['severity'] as String?);
-    final date = _formatDate(data['createdAt']);
+    final dateTime = data['dateTime'] ?? '-';
     final isRecent = _isRecent(data['createdAt']);
     final isAdminCreated = data['createdBy'] == 'admin';
 
@@ -498,7 +493,14 @@ class _FilteredList extends StatelessWidget {
                       const SizedBox(width: 8),
                       Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
                       const SizedBox(width: 4),
-                      Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      Expanded(
+                        child: Text(
+                          shortenThaiDate(dateTime),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                        ),
+                      ),
                     ],
                   ),
                 ],

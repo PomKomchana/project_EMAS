@@ -34,7 +34,7 @@ class ReportService {
   /// Submit new report to Firestore. Uploads image first (if provided) so imageUrl
   /// is written in the same add() call — avoids a partial doc with no image. [submitReport]
   Future<void> submitReport({
-    required String date,
+    required String dateTime,
     required String username,
     required String phone,
     required String building,
@@ -47,7 +47,7 @@ class ReportService {
     final imageUrl = image != null ? await _uploadImage(image) : null;
 
     await _reportsRef.add({
-      'date': date,
+      'dateTime': dateTime,
       'username': username,
       'phone': phone,
       'building': building,
