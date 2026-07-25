@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -25,7 +24,7 @@ class _NewsItem {
 }
 
 /// Announcements feed: realtime news list.
-/// News items open a bottom sheet with full content + optional image/link. [AnnouncementPage]
+/// News items open a full-page detail view with image/title/date/content/link. [AnnouncementPage]
 class AnnouncementPage extends StatefulWidget {
   final VoidCallback onMenuTap;
 
@@ -140,7 +139,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   }
 
   /// Opens an external/attached link in the browser [_openLink]
-  Future<void> _openLink(String url) async {
+  static Future<void> _openLink(String url) async {
     var normalized = url.trim();
     if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
       normalized = 'https://$normalized';
@@ -152,103 +151,16 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   }
 
   /// ============================== [Navigation Logic] ==============================
-  /// News items → bottom sheet with image (if any), content, and link (if any) [_openNewsDetail]
+  /// News items → เปิดหน้ารายละเอียดแบบเต็มจอ [_openNewsDetail]
   void _openNewsDetail(_NewsItem item) {
-    final date = item.createdAt != null ? _formatDate(item.createdAt) : null;
-    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
-    final hasLink = item.link != null && item.link!.isNotEmpty;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: hasImage ? 0.7 : 0.55,
-          minChildSize: 0.3,
-          maxChildSize: 0.92,
-          expand: false,
-          builder: (context, scrollController) {
-            return ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: ListView(
-                    controller: scrollController,
-                    padding: EdgeInsets.zero,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                      if (hasImage) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: AspectRatio(
-                              aspectRatio: 16 / 9,
-                              child: Image.network(
-                                item.imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey.shade200,
-                                  child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item.title,
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                            if (date != null) ...[
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_today_outlined, size: 12, color: Colors.grey.shade500),
-                                  const SizedBox(width: 4),
-                                  Text(date, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 16),
-                            Text(item.content,
-                                style: TextStyle(fontSize: 14, height: 1.6, color: Colors.grey.shade800)),
-                            if (hasLink) ...[
-                              const SizedBox(height: 20),
-                              _buildLinkButton(item.link!),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _NewsDetailPage(
+          item: item,
+          formatDate: _formatDate,
+          openLink: _openLink,
+        ),
+      ),
     );
   }
 
@@ -589,35 +501,256 @@ class _AnnouncementPageState extends State<AnnouncementPage>
       child: const Text('ใหม่', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
     );
   }
+}
 
-  /// Tappable link button shown inside the news detail sheet [_buildLinkButton]
-  Widget _buildLinkButton(String link) {
+/// [NEWS-DETAIL-PAGE] หน้ารายละเอียดข่าวแบบเต็มจอ พร้อมปุ่มย้อนกลับ
+/// ลำดับ: รูป -> ชื่อเรื่อง+วันที่ (บรรทัดเดียวกัน) -> รายละเอียด+ลิงก์ (บรรทัดเดียวกัน)
+class _NewsDetailPage extends StatelessWidget {
+  final _NewsItem item;
+  final String Function(DateTime?) formatDate;
+  final Future<void> Function(String) openLink;
+
+  const _NewsDetailPage({
+    required this.item,
+    required this.formatDate,
+    required this.openLink,
+  });
+
+  /// Opens the image at real/full size in a fullscreen zoomable viewer [_openFullImage]
+  void _openFullImage(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: _FullScreenImageViewer(imageUrl: imageUrl),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
+    final hasLink = item.link != null && item.link!.isNotEmpty;
+    final date = formatDate(item.createdAt);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2F2F7),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            elevation: 0,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black87,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: const Text(
+              'รายละเอียดประกาศ',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ------- รูป -------
+                if (hasImage)
+                  Stack(
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Image.network(
+                          item.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey.shade200,
+                            child: Icon(Icons.image_outlined,
+                                color: Colors.grey.shade400, size: 32),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 12,
+                        bottom: 12,
+                        child: GestureDetector(
+                          onTap: () => _openFullImage(context, item.imageUrl!),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.zoom_out_map_rounded,
+                                size: 18, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ------- ชื่อเรื่อง + วันที่ (บรรทัดเดียวกัน) -------
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today_outlined,
+                                    size: 12, color: Colors.grey.shade500),
+                                const SizedBox(width: 4),
+                                Text(
+                                  date,
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // ------- รายละเอียด + ลิงก์ (บรรทัดเดียวกัน) -------
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.content,
+                              style: TextStyle(
+                                fontSize: 14,
+                                height: 1.6,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                          if (hasLink) ...[
+                            const SizedBox(width: 12),
+                            _buildLinkChip(item.link!),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ปุ่มลิงก์แบบวงกลม แสดงข้าง ๆ รายละเอียด [_buildLinkChip]
+  Widget _buildLinkChip(String link) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: () => _openLink(link),
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => openLink(link),
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: emasColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: emasColor.withValues(alpha: 0.25)),
         ),
-        child: Row(
-          children: [
-            const Icon(Icons.link_rounded, size: 18, color: emasColor),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                link,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13.5, color: emasColor, fontWeight: FontWeight.w600),
+        child: const Icon(Icons.link_rounded, size: 18, color: emasColor),
+      ),
+    );
+  }
+}
+
+/// [FULLSCREEN-IMAGE-VIEWER] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
+/// ปิดได้ด้วยการแตะพื้นหลัง หรือกดปุ่มปิดมุมขวาบน
+class _FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const _FullScreenImageViewer({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              color: Colors.black,
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: InteractiveViewer(
+                  minScale: 1.0,
+                  maxScale: 5.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stack) => const Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ),
               ),
             ),
-            const Icon(Icons.open_in_new_rounded, size: 16, color: emasColor),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 40,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 22,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
