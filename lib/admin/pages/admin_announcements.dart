@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
+import 'admin_delete_confirm_dialog.dart';
 
 // Opens the news composer (create or edit). Returns true if saved. Public
 // so other pages (e.g. AdminMainPage's FAB) can open it too. [showNewsForm]
@@ -351,44 +352,26 @@ class AdminAnnouncementsPage extends StatelessWidget {
     showNewsForm(context, adminService: _adminService, doc: doc);
   }
 
-  void _deleteNews(BuildContext context, String docId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        icon: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-        ),
-        title: const Text('ยืนยันการลบ'),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('ยกเลิก'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () async {
-              await _adminService.deleteNews(docId);
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('ลบ', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+  Future<void> _deleteNews(BuildContext context, String docId) async {
+  final confirmed = await showDeleteConfirmDialog(
+    context,
+    title: 'ยืนยันการลบ',
+    message: 'คุณต้องการลบประกาศนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้',
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await _adminService.deleteNews(docId);
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
+    }
   }
-}
+ }
+} 
 
 /// ============================== [Feed Model] ==============================
 class _FeedItem {
@@ -522,6 +505,23 @@ class _NewsFormPageState extends State<_NewsFormPage> {
       _pickedImage = null;
       _imageRemoved = true;
     });
+  }
+
+  /// Opens the current preview image (new pick or existing network image) at
+  /// real/full size in a fullscreen zoomable viewer [_openFullImage]
+  void _openFullImage({File? file, String? url}) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: _FullScreenImageViewer(imageFile: file, imageUrl: url),
+          );
+        },
+      ),
+    );
   }
 
   /// ============================== [Save] ==============================
@@ -771,6 +771,17 @@ class _NewsFormPageState extends State<_NewsFormPage> {
           ),
         ),
         Positioned(
+          right: 10,
+          bottom: 10,
+          child: _buildImageActionButton(
+            Icons.zoom_out_map_rounded,
+            () => _openFullImage(
+              file: hasNewImage ? _pickedImage : null,
+              url: hasNewImage ? null : _originalImageUrl,
+            ),
+          ),
+        ),
+        Positioned(
           top: 8,
           right: 8,
           child: Row(
@@ -799,6 +810,94 @@ class _NewsFormPageState extends State<_NewsFormPage> {
           shape: BoxShape.circle,
         ),
         child: Icon(icon, size: 17, color: Colors.white),
+      ),
+    );
+  }
+}
+
+/// [FULLSCREEN-IMAGE-VIEWER] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
+/// รองรับทั้งรูปที่เพิ่งเลือก (File) และรูปเดิมที่อยู่บน network (String url)
+/// ปิดได้ด้วยการแตะพื้นหลัง หรือกดปุ่มปิดมุมขวาบน
+class _FullScreenImageViewer extends StatelessWidget {
+  final File? imageFile;
+  final String? imageUrl;
+
+  const _FullScreenImageViewer({this.imageFile, this.imageUrl});
+
+  Widget _buildImage() {
+    if (imageFile != null) {
+      return Image.file(imageFile!, fit: BoxFit.contain);
+    }
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stack) => const Icon(
+          Icons.broken_image_outlined,
+          size: 48,
+          color: Colors.white54,
+        ),
+      );
+    }
+    return const Icon(
+      Icons.broken_image_outlined,
+      size: 48,
+      color: Colors.white54,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              color: Colors.black,
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: InteractiveViewer(
+                  minScale: 1.0,
+                  maxScale: 5.0,
+                  child: _buildImage(),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 22,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -43,6 +43,23 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
     widget.onClose();
   }
 
+  /// [IMAGE-FULLSCREEN] เปิดรูปแบบเต็มจอ (ขนาดจริง, ซูมได้)
+  void _openFullImage(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return;
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: _FullScreenImageViewer(imageUrl: imageUrl),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
@@ -111,12 +128,25 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
 
                     const SizedBox(height: 16),
 
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: _buildDetailImage(widget.report['imageUrl']),
-                      ),
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: _buildDetailImage(widget.report['imageUrl']),
+                          ),
+                        ),
+                        if (widget.report['imageUrl'] != null &&
+                            (widget.report['imageUrl'] as String).isNotEmpty)
+                          Positioned(
+                            right: 10,
+                            bottom: 10,
+                            child: _expandImageButton(
+                              () => _openFullImage(widget.report['imageUrl']),
+                            ),
+                          ),
+                      ],
                     ),
 
                     const SizedBox(height: 18),
@@ -217,6 +247,25 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
           shape: BoxShape.circle,
         ),
         child: Icon(Icons.close_rounded, size: 18, color: Colors.grey.shade700),
+      ),
+    );
+  }
+
+  /// [IMAGE-EXPAND-BUTTON] ปุ่มขยายรูปมุมขวาล่างของรูปภาพ
+  Widget _expandImageButton(VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.45),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.zoom_out_map_rounded,
+          size: 18,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -372,6 +421,78 @@ class _ReportDetailSheetState extends State<ReportDetailSheet> {
                   style: TextStyle(color: color, fontSize: 14, height: 1.5),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// [FULLSCREEN-IMAGE-VIEWER] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
+/// ปิดได้ด้วยการแตะพื้นหลัง หรือกดปุ่มปิดมุมขวาบน
+class _FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const _FullScreenImageViewer({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              color: Colors.black,
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: InteractiveViewer(
+                  minScale: 1.0,
+                  maxScale: 5.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stack) => const Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 22,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],

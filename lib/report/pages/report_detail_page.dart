@@ -40,7 +40,7 @@ class ReportDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeroImage(imageUrl),
+            _buildHeroImage(context, imageUrl),
             const SizedBox(height: 16),
 
             _buildGlassCard(
@@ -101,23 +101,71 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  /// Hero photo, shares tag with the list page thumbnail [_buildHeroImage]
-  Widget _buildHeroImage(String? imageUrl) {
-    return Hero(
-      tag: 'img_$id',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: imageUrl != null
-            ? Image.network(
-                imageUrl,
-                height: 220,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              )
-            : _buildNoImagePlaceholder(),
+  /// Hero photo, shares tag with the list page thumbnail. Includes an expand
+  /// button (bottom-right) to view the image at full/real size. [_buildHeroImage]
+  Widget _buildHeroImage(BuildContext context, String? imageUrl) {
+    return Stack(
+      children: [
+        Hero(
+          tag: 'img_$id',
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: imageUrl != null
+                ? Image.network(
+                    imageUrl,
+                    height: 220,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : _buildNoImagePlaceholder(),
           ),
-        );
-      }
+        ),
+        if (imageUrl != null)
+          Positioned(
+            right: 10,
+            bottom: 10,
+            child: _expandImageButton(
+              () => _openFullImage(context, imageUrl),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Small circular button that opens the full-size image viewer [_expandImageButton]
+  Widget _expandImageButton(VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.45),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.zoom_out_map_rounded,
+          size: 18,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// Opens the image at real/full size in a fullscreen zoomable viewer [_openFullImage]
+  void _openFullImage(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: _FullScreenImageViewer(imageUrl: imageUrl),
+          );
+        },
+      ),
+    );
+  }
 
   /// Shown when there's no photo [_buildNoImagePlaceholder]
   Widget _buildNoImagePlaceholder() {
@@ -371,6 +419,78 @@ class ReportDetailPage extends StatelessWidget {
               color: color,
               fontSize: 12,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// [FULLSCREEN-IMAGE-VIEWER] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
+/// ปิดได้ด้วยการแตะพื้นหลัง หรือกดปุ่มปิดมุมขวาบน
+class _FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const _FullScreenImageViewer({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              color: Colors.black,
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: InteractiveViewer(
+                  minScale: 1.0,
+                  maxScale: 5.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stack) => const Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 22,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],

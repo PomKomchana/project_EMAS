@@ -151,6 +151,22 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     }
   }
 
+  /// Opens the image at real/full size in a fullscreen zoomable viewer [_openFullImage]
+  void _openFullImage(String imageUrl) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: _FullScreenImageViewer(imageUrl: imageUrl),
+          );
+        },
+      ),
+    );
+  }
+
   /// ============================== [Navigation Logic] ==============================
   /// News items → bottom sheet with image (if any), content, and link (if any) [_openNewsDetail]
   void _openNewsDetail(_NewsItem item) {
@@ -196,19 +212,30 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                       if (hasImage) ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: AspectRatio(
-                              aspectRatio: 16 / 9,
-                              child: Image.network(
-                                item.imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey.shade200,
-                                  child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: AspectRatio(
+                                  aspectRatio: 16 / 9,
+                                  child: Image.network(
+                                    item.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      color: Colors.grey.shade200,
+                                      child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              Positioned(
+                                right: 10,
+                                bottom: 10,
+                                child: _expandImageButton(
+                                  () => _openFullImage(item.imageUrl!),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -590,6 +617,25 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     );
   }
 
+  /// Small circular button that opens the full-size image viewer [_expandImageButton]
+  Widget _expandImageButton(VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.45),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.zoom_out_map_rounded,
+          size: 18,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
   /// Tappable link button shown inside the news detail sheet [_buildLinkButton]
   Widget _buildLinkButton(String link) {
     return InkWell(
@@ -618,6 +664,78 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             const Icon(Icons.open_in_new_rounded, size: 16, color: emasColor),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// [FULLSCREEN-IMAGE-VIEWER] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
+/// ปิดได้ด้วยการแตะพื้นหลัง หรือกดปุ่มปิดมุมขวาบน
+class _FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const _FullScreenImageViewer({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              color: Colors.black,
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: InteractiveViewer(
+                  minScale: 1.0,
+                  maxScale: 5.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stack) => const Icon(
+                      Icons.broken_image_outlined,
+                      size: 48,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 40,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 22,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
