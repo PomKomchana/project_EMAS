@@ -44,7 +44,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     with TickerProviderStateMixin {
 
   /// ============================== [Controllers & Services] ==============================
-  /// Text/map controllers [_floorController, _roomController, _descController, _mapController, _adminService, _imagePicker, _buildingTextController]
+  /// Text/map controllers [_floorController, _roomController, _descController, _mapController, _adminService, _imagePicker, _buildingTextController, _dateController]
   final _floorController = TextEditingController();
   final _roomController = TextEditingController();
   final _descController = TextEditingController();
@@ -52,6 +52,7 @@ class _AdminReportFormState extends State<AdminReportForm>
   final _adminService = AdminService();
   final _imagePicker = ImagePicker();
   final _buildingTextController = TextEditingController();
+  final _dateController = TextEditingController();
 
   /// Staggered entrance animation [_fadeController, _fadeList, _slideList]
   late final AnimationController _fadeController;
@@ -77,8 +78,8 @@ class _AdminReportFormState extends State<AdminReportForm>
   bool _isSaving = false;
   bool _isManualBuildingEntry = false;
 
-  /// Number of staggered sections: Map, Image, Location, Status, Severity, Description
-  static const _sectionCount = 6;
+  /// Number of staggered sections: Map, Image, Reporter Info, Location, Status, Severity, Description
+  static const _sectionCount = 7;
 
   /// ============================== [Life Cycle] ==============================
   @override
@@ -114,6 +115,7 @@ class _AdminReportFormState extends State<AdminReportForm>
     _floorController.dispose();
     _roomController.dispose();
     _descController.dispose();
+    _dateController.dispose();
     _mapController.dispose();
     _fadeController.dispose();
     _mapAnimController.dispose();
@@ -279,6 +281,12 @@ void _cycleMapMode() {
   /// ============================== [Submit Logic] ==============================
   /// Validate + create the admin report [_submit]
   Future<void> _submit() async {
+    if (_dateController.text.trim().isEmpty) {
+      _showSnackBar(
+        'กรุณากรอกวันที่แจ้งซ่อม', Colors.red.shade600, Icons.error_outline
+        );
+      return;
+    }
     if (_selectedBuilding == null || _floorController.text.trim().isEmpty) {
       _showSnackBar(
         'กรุณาเลือกอาคารและชั้น', Colors.red.shade600, Icons.error_outline
@@ -302,9 +310,8 @@ void _cycleMapMode() {
     setState(() => _isSaving = true);
 
     try {
-      /// NOTE: AdminService.createReport() ต้องรองรับพารามิเตอร์ `image` (File?)
-      /// และอัปโหลดขึ้น Firebase Storage แบบเดียวกับ ReportService.submitReport()
       await _adminService.createReport(
+        date: _dateController.text.trim(),
         building: _selectedBuilding!,
         floor: _floorController.text.trim(),
         room: _roomController.text.trim(),
@@ -378,13 +385,15 @@ void _cycleMapMode() {
                         const SizedBox(height: 14),
                         _buildAnimatedSection(1, _buildImageSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(2, _buildLocationSection()),
+                        _buildAnimatedSection(2, _buildReporterSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(3, _buildStatusSection()),
+                        _buildAnimatedSection(3, _buildLocationSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(4, _buildSeveritySection()),
+                        _buildAnimatedSection(4, _buildStatusSection()),
                         const SizedBox(height: 14),
-                        _buildAnimatedSection(5, _buildDescriptionSection()),
+                        _buildAnimatedSection(5, _buildSeveritySection()),
+                        const SizedBox(height: 14),
+                        _buildAnimatedSection(6, _buildDescriptionSection()),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -689,6 +698,59 @@ void _cycleMapMode() {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// [ADMIN] Reporter info section: วันที่แจ้งซ่อม [_buildReporterSection]
+  Widget _buildReporterSection() {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CardHeader(icon: Icons.person_outline, title: 'ข้อมูลผู้แจ้ง'),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Date Report "วันที่แจ้งซ่อม"
+          TextField(
+            controller: _dateController,
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'วันที่แจ้งซ่อม',
+              labelStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              prefixIcon: const Icon(Icons.calendar_today, color: emasColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: emasColor, width: 2),
+              ),
+            ),
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2025),
+                lastDate: DateTime(2035),
+              );
+
+              if (date != null) {
+                setState(() {
+                  _dateController.text = '${date.day}/${date.month}/${date.year}';
+                });
+              }
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+        ],
       ),
     );
   }
