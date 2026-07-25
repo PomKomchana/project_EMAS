@@ -419,7 +419,7 @@ class _FilteredList extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
-  /// One report card: thumbnail, severity badge, status chip + date. Tags
+  /// One report card: thumbnail, severity badge, status chip + dateTime. Tags
   /// admin-made reports with a small "Admin" pill. Pencil icon opens detail,
   /// trash icon deletes — no more whole-card tap. [_buildReportCard]
   Widget _buildReportCard(
@@ -434,7 +434,7 @@ class _FilteredList extends StatelessWidget {
     final desc = data['description'] ?? '-';
     final imageUrl = data['imageUrl'] as String?;
     final severity = getSeverityInfo(data['severity'] as String?);
-    final date = _formatDate(data['createdAt']);
+    final dateTime = _formatDate(data['createdAt']);
     final isRecent = _isRecent(data['createdAt']);
     final isAdminCreated = data['createdBy'] == 'admin';
 
@@ -498,7 +498,7 @@ class _FilteredList extends StatelessWidget {
                       const SizedBox(width: 8),
                       Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
                       const SizedBox(width: 4),
-                      Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      Text(dateTime, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                     ],
                   ),
                 ],
