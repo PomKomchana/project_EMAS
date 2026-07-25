@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
@@ -31,6 +32,19 @@ class ReportDetailPage extends StatelessWidget {
     final imageUrl = data['imageUrl'] as String?;
     final severityKey = data['severity'] as String?;
     final severity = getSeverityInfo(severityKey);
+    final location = data['lat'] != null
+        ? '${data['lat']}, ${data['lng']}'
+        : 'ไม่ได้ระบุ';
+
+    // Privacy guard — reporter details (location, name, phone) are only
+    // revealed to the person who submitted the report. Anyone else viewing
+    // (this page is user-facing, never the admin one) sees a locked
+    // placeholder instead [_isOwnReport]
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    final isOwnReport = currentUid != null && data['createdBy'] == currentUid;
+    // Reports submitted by an admin have no real reporter — location stays
+    // visible, and name/phone collapse into a single "Admin" indicator [_isAdmin]
+    final isAdmin = data['createdBy'] == 'admin';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
@@ -51,17 +65,30 @@ class ReportDetailPage extends StatelessWidget {
                 status: status,
                 dateTime: dateTime,
                 severity: severity,
+                isAdmin: isAdmin,
               ),
             ),
             const SizedBox(height: 12),
 
             _buildGlassCard(
-              child: _buildDescriptionSection(desc),
+              child: _buildReportInfoSection(
+                building: building,
+                floor: floor,
+                desc: desc,
+                location: location,
+                isOwnReport: isOwnReport,
+                isAdmin: isAdmin,
+              ),
             ),
             const SizedBox(height: 12),
 
             _buildGlassCard(
-              child: _buildReporterSection(username: username, phone: phone),
+              child: _buildReporterSection(
+                isOwnReport: isOwnReport,
+                isAdmin: isAdmin,
+                username: username,
+                phone: phone,
+              ),
             ),
             const SizedBox(height: 24),
           ],
@@ -115,9 +142,9 @@ class ReportDetailPage extends StatelessWidget {
                 fit: BoxFit.cover,
               )
             : _buildNoImagePlaceholder(),
-          ),
-        );
-      }
+      ),
+    );
+  }
 
   /// Shown when there's no photo [_buildNoImagePlaceholder]
   Widget _buildNoImagePlaceholder() {
@@ -139,7 +166,8 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  /// Title + severity badge + status/dateTime chips [_buildHeaderSection]
+  /// Title + severity badge + status/dateTime chips (+ Admin badge for
+  /// admin-submitted reports) [_buildHeaderSection]
   Widget _buildHeaderSection({
     required String building,
     required String floor,
@@ -147,6 +175,7 @@ class ReportDetailPage extends StatelessWidget {
     required String status,
     required String dateTime,
     required SeverityInfo severity,
+    required bool isAdmin,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +184,7 @@ class ReportDetailPage extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '$building · $floor · ห้อง $room',
+                '$building $floor ห้อง $room',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -163,7 +192,16 @@ class ReportDetailPage extends StatelessWidget {
                 ),
               ),
             ),
-            _buildSeverityBadge(severity),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildSeverityBadge(severity),
+                if (isAdmin) ...[
+                  const SizedBox(height: 6),
+                  _buildAdminBadge(),
+                ],
+              ],
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -183,6 +221,22 @@ class ReportDetailPage extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  /// Small "Admin" pill, same style as ReportListPage's badge for
+  /// admin-submitted reports [_buildAdminBadge]
+  Widget _buildAdminBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: emasColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'Admin',
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: emasColorDarker),
+      ),
     );
   }
 
@@ -245,27 +299,40 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 
-  /// "รายละเอียดปัญหา" card [_buildDescriptionSection]
-  Widget _buildDescriptionSection(String desc) {
+  /// "ข้อมูลรายงาน" card — building/floor/description/location rows,
+  /// mirrors AdminReportDetailPage's report-info card. ตำแหน่ง is always
+  /// visible for admin-submitted reports and for the viewer's own report;
+  /// otherwise it's locked (shows a lock icon + "Admin") [_buildReportInfoSection]
+  Widget _buildReportInfoSection({
+    required String building,
+    required String floor,
+    required String desc,
+    required String location,
+    required bool isOwnReport,
+    required bool isAdmin,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(Icons.edit_note_rounded, 'รายละเอียดปัญหา'),
-        const SizedBox(height: 10),
-        Text(
-          desc,
-          style: const TextStyle(
-            fontSize: 14,
-            height: 1.6,
-            color: Colors.black87,
-          ),
-        ),
+        _buildSectionHeader(Icons.description_rounded, 'ข้อมูลปัญหา'),
+        const SizedBox(height: 12),
+        _buildDetailRow(Icons.apartment_rounded, 'อาคาร', building),
+        _buildDetailRow(Icons.layers_rounded, 'ชั้น', floor),
+        _buildDetailRow(Icons.edit_note_rounded, 'รายละเอียดปัญหา', desc),
+        (isAdmin || isOwnReport)
+            ? _buildDetailRow(Icons.location_on_rounded, 'ตำแหน่ง', location)
+            : _buildLockedDetailRow(Icons.location_on_rounded, 'ตำแหน่ง'),
       ],
     );
   }
 
-  /// "ข้อมูลผู้แจ้ง" card [_buildReporterSection]
+  /// "ข้อมูลผู้แจ้ง" card — for admin-submitted reports, name/phone collapse
+  /// into a single combined "Admin" indicator; for other users' reports
+  /// they're locked (lock icon + "Admin"); for the viewer's own report the
+  /// real values show [_buildReporterSection]
   Widget _buildReporterSection({
+    required bool isOwnReport,
+    required bool isAdmin,
     required String username,
     required String phone,
   }) {
@@ -274,9 +341,104 @@ class ReportDetailPage extends StatelessWidget {
       children: [
         _buildSectionHeader(Icons.person_outline_rounded, 'ข้อมูลผู้แจ้ง'),
         const SizedBox(height: 10),
-        _buildInfoRow(Icons.person, 'ชื่อ', username),
-        const SizedBox(height: 6),
-        _buildInfoRow(Icons.phone, 'เบอร์', phone),
+        if (isAdmin)
+          _buildCombinedAdminBadge()
+        else if (isOwnReport) ...[
+          _buildInfoRow(Icons.person, 'ชื่อ', username),
+          const SizedBox(height: 6),
+          _buildInfoRow(Icons.phone, 'เบอร์', phone),
+        ] else ...[
+          _buildLockedInfoRow(Icons.person, 'ชื่อ'),
+          const SizedBox(height: 6),
+          _buildLockedInfoRow(Icons.phone, 'เบอร์'),
+        ],
+      ],
+    );
+  }
+
+  /// Combined name+phone placeholder for admin-submitted reports [_buildCombinedAdminBadge]
+  Widget _buildCombinedAdminBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: emasColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified_user_rounded, size: 14, color: emasColorDarker),
+          const SizedBox(width: 6),
+          Text(
+            'แจ้งโดย Admin',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: emasColorDarker,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Lock icon + "Admin" text, used as the value placeholder wherever a
+  /// row is hidden from non-owners (ตำแหน่ง/ชื่อ/เบอร์) [_buildLockedValue]
+  Widget _buildLockedValue() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.lock_rounded, size: 14, color: Colors.grey.shade500),
+        const SizedBox(width: 4),
+        Text(
+          'Admin',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Locked variant of [_buildDetailRow] — value replaced with lock+Admin [_buildLockedDetailRow]
+  Widget _buildLockedDetailRow(IconData icon, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: emasColor),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 78,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          _buildLockedValue(),
+        ],
+      ),
+    );
+  }
+
+  /// Locked variant of [_buildInfoRow] — value replaced with lock+Admin [_buildLockedInfoRow]
+  Widget _buildLockedInfoRow(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey.shade500),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+        ),
+        _buildLockedValue(),
       ],
     );
   }
@@ -330,6 +492,38 @@ class ReportDetailPage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// Icon + label (fixed width) + value row, used in "ข้อมูลรายงาน"
+  /// (matches AdminReportDetailPage's _info row layout) [_buildDetailRow]
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: emasColor),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 78,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
