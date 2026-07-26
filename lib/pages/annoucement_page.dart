@@ -537,7 +537,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
 }
 
 /// [NEWS-DETAIL-PAGE] หน้ารายละเอียดข่าวแบบเต็มจอ พร้อมปุ่มย้อนกลับ
-/// ลำดับ: รูป -> ชื่อเรื่อง+วันที่ (บรรทัดเดียวกัน) -> รายละเอียด+ลิงก์ (บรรทัดเดียวกัน)
+/// ลำดับ: รูป -> ชื่อเรื่อง+วันที่ (บรรทัดเดียวกัน) -> การ์ดรายละเอียด+ลิงก์ (จัดกึ่งกลางจอ)
 class _NewsDetailPage extends StatelessWidget {
   final _NewsItem item;
   final String Function(DateTime?) formatDate;
@@ -578,8 +578,8 @@ class _NewsDetailPage extends StatelessWidget {
           SliverAppBar(
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black87,
+            backgroundColor: emasColor,
+            foregroundColor: Colors.white,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
               onPressed: () => Navigator.of(context).pop(),
@@ -628,67 +628,142 @@ class _NewsDetailPage extends StatelessWidget {
                     ],
                   ),
 
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ------- ชื่อเรื่อง + วันที่ (บรรทัดเดียวกัน) -------
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                // ------- เนื้อหาจัดกึ่งกลางจอ -------
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 640),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: const TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                          // ------- ชื่อเรื่อง + วันที่ (บรรทัดเดียวกัน) -------
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  item.title,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                    height: 1.3,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 10),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.calendar_today_outlined,
+                                          size: 11, color: Colors.grey.shade600),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        date,
+                                        style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey.shade700),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 3),
-                            child: Row(
-                              children: [
-                                Icon(Icons.calendar_today_outlined,
-                                    size: 12, color: Colors.grey.shade500),
-                                const SizedBox(width: 4),
-                                Text(
-                                  date,
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey.shade500),
+
+                          const SizedBox(height: 20),
+
+                          // ------- การ์ดรายละเอียด + ลิงก์ -------
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // ------- รายละเอียด + ลิงก์ (บรรทัดเดียวกัน) -------
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.content,
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.6,
-                                color: Colors.grey.shade800,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.notes_rounded, size: 16, color: emasColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'รายละเอียด',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: emasColor,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Divider(color: Colors.grey.shade200, height: 20),
+                                Text(
+                                  item.content.isNotEmpty
+                                      ? item.content
+                                      : 'ไม่มีรายละเอียดเพิ่มเติม',
+                                  style: TextStyle(
+                                    fontSize: 14.5,
+                                    height: 1.7,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                                if (hasLink) ...[
+                                  const SizedBox(height: 18),
+                                  Divider(color: Colors.grey.shade200, height: 1),
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.attachment_rounded,
+                                          size: 14, color: Colors.grey.shade500),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'ลิงก์แนบ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildLinkText(item.link!),
+                                ],
+                              ],
                             ),
                           ),
-                          if (hasLink) ...[
-                            const SizedBox(width: 12),
-                            _buildLinkChip(item.link!),
+
+                          if (!hasLink) ...[
+                            const SizedBox(height: 24),
+                            Center(
+                              child: Icon(Icons.check_circle_outline_rounded,
+                                  size: 22, color: Colors.grey.shade300),
+                            ),
                           ],
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -699,19 +774,38 @@ class _NewsDetailPage extends StatelessWidget {
     );
   }
 
-  /// ปุ่มลิงก์แบบวงกลม แสดงข้าง ๆ รายละเอียด [_buildLinkChip]
-  Widget _buildLinkChip(String link) {
+  /// ลิงก์แสดงเป็นตัวอักษรเต็ม ๆ ขีดเส้นใต้ กดแล้วเปิดเบราว์เซอร์ [_buildLinkText]
+  Widget _buildLinkText(String link) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       onTap: () => openLink(link),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: emasColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: emasColor.withValues(alpha: 0.25)),
+          color: emasColor.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(Icons.link_rounded, size: 18, color: emasColor),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.link_rounded, size: 16, color: emasColor),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                link,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  color: emasColor,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                  decorationColor: emasColor,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.open_in_new_rounded, size: 14, color: emasColor),
+          ],
+        ),
       ),
     );
   }
