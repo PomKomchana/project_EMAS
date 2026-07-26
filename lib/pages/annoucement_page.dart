@@ -378,24 +378,37 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     );
   }
 
-  /// Editorial-style card: banner image on top, title/badge/content/date below [_buildNewsCardWithImage]
+  /// Editorial-style card: banner image on top with the date badge overlaid
+  /// on the image itself (bottom-left, dark pill) — matching the image
+  /// preview badge style on the admin news form. Title/content follow below,
+  /// and the link (when present) renders as its own full-width chip at the
+  /// bottom. [_buildNewsCardWithImage]
   Widget _buildNewsCardWithImage(_NewsItem item, bool isRecent, bool hasLink) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Image.network(
-              item.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: Colors.grey.shade200,
-                child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+        Stack(
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(
+                  item.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey.shade200,
+                    child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 32),
+                  ),
+                ),
               ),
             ),
-          ),
+            Positioned(
+              left: 10,
+              bottom: 10,
+              child: _buildDateBadgeOnImage(item.createdAt),
+            ),
+          ],
         ),
         Padding(
           padding: const EdgeInsets.all(14),
@@ -422,84 +435,80 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
               ],
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _buildDateBadge(item.createdAt),
-                  if (hasLink) ...[
-                    const Spacer(),
-                    Icon(Icons.link_rounded, size: 14, color: Colors.blue.shade400),
-                    const SizedBox(width: 3),
-                    Text('มีลิงก์แนบ',
-                        style: TextStyle(fontSize: 11, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
-                  ],
-                ],
-              ),
             ],
           ),
         ),
+        if (hasLink)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: _buildLinkChip(item.link!),
+          )
+        else
+          const SizedBox(height: 4),
       ],
     );
   }
 
-  /// Compact icon-row layout, used when the news item has no attached image [_buildNewsCardCompact]
+  /// Compact icon-row layout, used when the news item has no attached image.
+  /// Date badge sits alone on its own row, and the link (when present)
+  /// renders as its own full-width chip below the row — matching the
+  /// admin announcement card layout. [_buildNewsCardCompact]
   Widget _buildNewsCardCompact(_NewsItem item, bool isRecent, bool hasLink) {
-    return Padding(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: const Icon(Icons.campaign_rounded, color: emasColor, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(color: emasColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: const Icon(Icons.campaign_rounded, color: emasColor, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(item.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(item.title,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
+                        if (isRecent) ...[
+                          const SizedBox(width: 6),
+                          _buildNewBadge(),
+                        ],
+                      ],
                     ),
-                    if (isRecent) ...[
-                      const SizedBox(width: 6),
-                      _buildNewBadge(),
+                    if (item.content.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(item.content,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
                     ],
-                  ],
-                ),
-                if (item.content.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(item.content,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.3)),
-                ],
-                const SizedBox(height: 8),
-                Row(
-                  children: [
+                    const SizedBox(height: 6),
                     _buildDateBadge(item.createdAt),
-                    if (hasLink) ...[
-                      const Spacer(),
-                      Icon(Icons.link_rounded, size: 13, color: Colors.blue.shade400),
-                      const SizedBox(width: 3),
-                      Text('มีลิงก์แนบ',
-                          style: TextStyle(fontSize: 10.5, color: Colors.blue.shade400, fontWeight: FontWeight.w600)),
-                    ],
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
+            ],
           ),
-          const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
-        ],
-      ),
+        ),
+        if (hasLink)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: _buildLinkChip(item.link!),
+          ),
+      ],
     );
   }
 
@@ -523,6 +532,65 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Date pill badge overlaid on top of an image — dark semi-transparent
+  /// background with white text, matching the image preview badge style
+  /// used on the admin news form. [_buildDateBadgeOnImage]
+  Widget _buildDateBadgeOnImage(DateTime? createdAt) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.calendar_today_outlined, size: 11, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            _formatDate(createdAt),
+            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Link chip shown as its own full-width row below the card content —
+  /// matches the link container style used on the admin announcement
+  /// card. [_buildLinkChip]
+  Widget _buildLinkChip(String link) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => _openLink(link),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.blue.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.link_rounded, size: 16, color: Colors.blue),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                link,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -610,6 +678,11 @@ class _NewsDetailPage extends StatelessWidget {
                         ),
                       ),
                       Positioned(
+                        left: 12,
+                        bottom: 12,
+                        child: _buildDateBadgeOnImage(date, dark: true),
+                      ),
+                      Positioned(
                         right: 12,
                         bottom: 12,
                         child: GestureDetector(
@@ -637,12 +710,25 @@ class _NewsDetailPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // ------- ชื่อเรื่อง + วันที่ (บรรทัดเดียวกัน) -------
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
+                          // ------- ชื่อเรื่อง (วันที่ย้ายไปแสดงทับบนรูปแล้ว) -------
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
                                   item.title,
                                   style: const TextStyle(
                                     fontSize: 20,
@@ -651,37 +737,15 @@ class _NewsDetailPage extends StatelessWidget {
                                     height: 1.3,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.calendar_today_outlined,
-                                          size: 11, color: Colors.grey.shade600),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        date,
-                                        style: TextStyle(
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.grey.shade700),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                                if (!hasImage) ...[
+                                  const SizedBox(height: 8),
+                                  _buildDateBadgeOnImage(date, dark: false),
+                                ],
+                              ],
+                            ),
                           ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 14),
 
                           // ------- การ์ดรายละเอียด + ลิงก์ -------
                           Container(
@@ -706,7 +770,7 @@ class _NewsDetailPage extends StatelessWidget {
                                     Icon(Icons.notes_rounded, size: 16, color: emasColor),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'รายละเอียด',
+                                      'รายละเอียดประกาศ',
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
@@ -774,7 +838,38 @@ class _NewsDetailPage extends StatelessWidget {
     );
   }
 
-  /// ลิงก์แสดงเป็นตัวอักษรเต็ม ๆ ขีดเส้นใต้ กดแล้วเปิดเบราว์เซอร์ [_buildLinkText]
+  /// Date pill badge. When [dark] is true (default), it's styled to sit on
+  /// top of an image — dark semi-transparent background, white text. When
+  /// false (used only when there's no image to overlay), it falls back to
+  /// a light grey pill. [_buildDateBadgeOnImage]
+  Widget _buildDateBadgeOnImage(String date, {bool dark = true}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: dark ? Colors.black.withValues(alpha: 0.45) : Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.calendar_today_outlined,
+              size: 11, color: dark ? Colors.white : Colors.grey.shade600),
+          const SizedBox(width: 4),
+          Text(
+            date,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: dark ? Colors.white : Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ลิงก์แสดงเป็นชิปสี emasColor เต็มความกว้าง กดแล้วเปิดเบราว์เซอร์ —
+  /// โทนสีตรงกับธีมแอป (ชมพู/แดง) แทนสีน้ำเงินเดิม [_buildLinkText]
   Widget _buildLinkText(String link) {
     return InkWell(
       borderRadius: BorderRadius.circular(10),
@@ -782,7 +877,7 @@ class _NewsDetailPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: emasColor.withValues(alpha: 0.06),
+          color: emasColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
