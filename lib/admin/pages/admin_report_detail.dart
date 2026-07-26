@@ -38,10 +38,17 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   late String? _currentSeverity;
   bool _isSaving = false;
 
-  // เปลี่ยนรูปภาพ (admin only)
-  File? _newImage;
-  bool _imageRemoved = false;
-  bool _isUploadingImage = false;
+  // Snapshots of the original values, used to detect whether anything
+  // actually changed before requiring a password confirmation on save.
+  late String _originalStatus;
+  late String? _originalSeverity;
+  late String _originalNote;
+
+  // Image change (admin only) — staged locally, only written to Firestore
+  // when _saveStatus() runs, same pattern as _NewsFormPage.
+  File? _pickedImage; // newly picked image, not yet uploaded
+  bool _imageRemoved = false; // true if admin marked the existing photo for removal
+  String? _originalImageUrl; // snapshot of the photo already on the doc
 
   /// Status options for the picker: label, icon, color [_statusOptions]
   static const _statusOptions = [
@@ -57,6 +64,12 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     _currentStatus = widget.data['status'] ?? 'รอดำเนินการ';
     _currentSeverity = widget.data['severity'];
     _noteCtrl.text = widget.data['adminNote'] ?? '';
+    _originalImageUrl = widget.data['imageUrl'] as String?;
+
+    // Snapshot originals for change detection on save.
+    _originalStatus = _currentStatus;
+    _originalSeverity = _currentSeverity;
+    _originalNote = _noteCtrl.text;
   }
 
   @override
@@ -66,11 +79,33 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Report Actions Logic] ==============================
-  /// Save status, severity, and note [_saveStatus]
+  /// Returns true if status, severity, note, or the photo have been changed
+  /// from their original loaded values. [_hasChanges]
+  bool _hasChanges() {
+    final statusChanged = _currentStatus != _originalStatus;
+    final severityChanged = _currentSeverity != _originalSeverity;
+    final noteChanged = _noteCtrl.text.trim() != _originalNote.trim();
+    final imageChanged = _pickedImage != null || _imageRemoved;
+    return statusChanged || severityChanged || noteChanged || imageChanged;
+  }
+
+  /// Save status, severity, note, and (if changed) the photo. If anything
+  /// was changed, the admin's password is required first — same
+  /// confirmation used before deleting a whole report. [_saveStatus]
   Future<void> _saveStatus() async {
     if (_currentSeverity == null) {
       _showSnack('กรุณาเลือกระดับความรุนแรง', Colors.red.shade600);
       return;
+    }
+
+    // Require password confirmation whenever there is any change to save.
+    if (_hasChanges()) {
+      final confirmed = await showDeleteConfirmDialog(
+        context,
+        title: 'ยืนยันการบันทึกการเปลี่ยนแปลง',
+        message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการบันทึกการเปลี่ยนแปลงนี้',
+      );
+      if (!confirmed) return;
     }
 
     setState(() => _isSaving = true);
@@ -82,6 +117,15 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
         severity: _currentSeverity!,
         note: _noteCtrl.text.trim(),
       );
+
+      if (_pickedImage != null) {
+        await _adminService.updateReportImage(
+          reportId: widget.reportId,
+          image: _pickedImage!,
+        );
+      } else if (_imageRemoved) {
+        await _adminService.removeReportImage(widget.reportId);
+      }
 
       if (!mounted) return;
       _showSnack('อัพเดทสำเร็จ ✓', Colors.green.shade600);
@@ -142,7 +186,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
               title: const Text('เลือกจากคลังภาพ'),
               onTap: () {
                 Navigator.pop(ctx);
-                _pickAndUploadImage(ImageSource.gallery);
+                _pickImage(ImageSource.gallery);
               },
             ),
             ListTile(
@@ -150,7 +194,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
               title: const Text('ถ่ายรูป'),
               onTap: () {
                 Navigator.pop(ctx);
-                _pickAndUploadImage(ImageSource.camera);
+                _pickImage(ImageSource.camera);
               },
             ),
           ],
@@ -159,10 +203,9 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  /// Picks an image from the given source and uploads it, replaced for admin only [_pickAndUploadImage]
-  Future<void> _pickAndUploadImage(ImageSource source) async {
-    if (_isUploadingImage) return;
-
+  /// Picks an image from the given source and stages it locally. Not
+  /// uploaded until _saveStatus() runs. [_pickImage]
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: source,
@@ -171,44 +214,19 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
     if (picked == null) return;
 
-    final file = File(picked.path);
-    setState(() => _isUploadingImage = true);
-
-    try {
-      await _adminService.updateReportImage(
-        reportId: widget.reportId,
-        image: file,
-      );
-
-      if (!mounted) return;
-      setState(() => _newImage = file);
-      _showSnack('เปลี่ยนรูปภาพสำเร็จ ✓', Colors.green.shade600);
-    } catch (e) {
-      if (mounted) _showSnack('เปลี่ยนรูปภาพไม่ได้: $e', Colors.red.shade600);
-    } finally {
-      if (mounted) setState(() => _isUploadingImage = false);
-    }
+    setState(() {
+      _pickedImage = File(picked.path);
+      _imageRemoved = false; // a freshly picked image supersedes any "removed" state
+    });
   }
 
-  /// Clears the report's photo immediately for admin only [_removeImage]
-  Future<void> _removeImage() async {
-    if (_isUploadingImage) return;
-
-    setState(() => _isUploadingImage = true);
-    try {
-      await _adminService.removeReportImage(widget.reportId);
-
-      if (!mounted) return;
-      setState(() {
-        _newImage = null;
-        _imageRemoved = true;
-      });
-      _showSnack('ลบรูปภาพสำเร็จ ✓', Colors.green.shade600);
-    } catch (e) {
-      if (mounted) _showSnack('ลบรูปภาพไม่ได้: $e', Colors.red.shade600);
-    } finally {
-      if (mounted) setState(() => _isUploadingImage = false);
-    }
+  /// Marks the photo for removal locally. Not deleted from Firestore until
+  /// _saveStatus() runs (with password confirmation). [_removeImage]
+  void _removeImage() {
+    setState(() {
+      _pickedImage = null;
+      _imageRemoved = true;
+    });
   }
 
   /// ============================== [UI Helpers] ==============================
@@ -260,7 +278,6 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
-    final imageUrl = data['imageUrl'] as String?;
 
     final building = '${data['building'] ?? '-'}';
     final floor = '${data['floor'] ?? '-'}';
@@ -309,7 +326,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // รูปภาพ
-                _buildHeroImage(imageUrl),
+                _buildHeroImage(),
                 const SizedBox(height: 14),
 
                 // หัวข้อ + severity/status/date badge
@@ -448,11 +465,15 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Widgets] ==============================
-  /// image picker for admin only [_buildHeroImage]
-  Widget _buildHeroImage(String? imageUrl) {
-    final hasNewImage = _newImage != null;
-    final hasExistingImage = !hasNewImage && !_imageRemoved && imageUrl != null;
-    final hasAnyImage = hasNewImage || hasExistingImage;
+  /// Hero photo. Tag 'img_${reportId}' must match the tag used on the list
+  /// thumbnail for the hero animation to work. Shows the staged pick
+  /// (_pickedImage) if present, the original imageUrl otherwise (unless
+  /// staged for removal), or a placeholder. Edit/remove are staged only —
+  /// nothing is written to Firestore until _saveStatus() runs. Admin only. [_buildHeroImage]
+  Widget _buildHeroImage() {
+    final hasPickedImage = _pickedImage != null;
+    final hasExistingImage = !hasPickedImage && !_imageRemoved && _originalImageUrl != null;
+    final hasAnyImage = hasPickedImage || hasExistingImage;
 
     return Stack(
       children: [
@@ -460,16 +481,16 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
           tag: 'img_${widget.reportId}',
           child: ClipRRect(
             borderRadius: BorderRadius.circular(18),
-            child: hasNewImage
+            child: hasPickedImage
                 ? Image.file(
-                    _newImage!,
+                    _pickedImage!,
                     height: 220,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   )
                 : (hasExistingImage
                     ? Image.network(
-                        imageUrl!,
+                        _originalImageUrl!,
                         height: 220,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -477,18 +498,6 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                     : _buildNoImagePlaceholder()),
           ),
         ),
-        if (_isUploadingImage)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              ),
-            ),
-          ),
         if (hasAnyImage)
           Positioned(
             right: 10,
@@ -496,12 +505,12 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
             child: _imageActionButton(
               icon: Icons.zoom_out_map_rounded,
               onTap: () => _openFullImage(
-                file: hasNewImage ? _newImage : null,
-                imageUrl: hasNewImage ? null : imageUrl,
+                file: hasPickedImage ? _pickedImage : null,
+                imageUrl: hasPickedImage ? null : _originalImageUrl,
               ),
             ),
           ),
-        // Edit + remove buttons, top-right — admin only, this page only
+        // Edit + remove buttons, top-right — staged only, saved on _saveStatus()
         Positioned(
           top: 8,
           right: 8,
@@ -509,13 +518,13 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
             children: [
               _imageActionButton(
                 icon: Icons.edit_rounded,
-                onTap: _isUploadingImage ? () {} : _showImageSourceSheet,
+                onTap: _showImageSourceSheet,
               ),
               if (hasAnyImage) ...[
                 const SizedBox(width: 8),
                 _imageActionButton(
                   icon: Icons.close_rounded,
-                  onTap: _isUploadingImage ? () {} : _removeImage,
+                  onTap: _removeImage,
                 ),
               ],
             ],
