@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'admin_delete_confirm_dialog.dart' show showDeleteConfirmDialog;
 import '../services/admin_service.dart';
@@ -10,7 +12,7 @@ import '../../shared/utils/thai_date.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/buttons.dart';
 
-/// Report detail page — admin can edit status, severity, and note [AdminReportDetailPage]
+/// Report detail page — admin can edit status, severity, note, and photo [AdminReportDetailPage]
 class AdminReportDetailPage extends StatefulWidget {
   final String reportId;
   final Map<String, dynamic> data;
@@ -35,6 +37,11 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   late String _currentStatus;
   late String? _currentSeverity;
   bool _isSaving = false;
+
+  // เปลี่ยนรูปภาพ (admin only)
+  File? _newImage;
+  bool _imageRemoved = false;
+  bool _isUploadingImage = false;
 
   /// Status options for the picker: label, icon, color [_statusOptions]
   static const _statusOptions = [
@@ -69,8 +76,6 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     setState(() => _isSaving = true);
 
     try {
-      // TODO: add a severity param to AdminService.updateReportStatus()
-      // so it also writes the 'severity' field in Firestore
       await _adminService.updateReportStatus(
         reportId: widget.reportId,
         status: _currentStatus,
@@ -109,6 +114,103 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
+  /// Opens a bottom sheet to choose image source (gallery / camera) [_showImageSourceSheet]
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 18),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: emasColor),
+              title: const Text('เลือกจากคลังภาพ'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: emasColor),
+              title: const Text('ถ่ายรูป'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Picks an image from the given source and uploads it, replaced for admin only [_pickAndUploadImage]
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    if (_isUploadingImage) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 1600,
+    );
+    if (picked == null) return;
+
+    final file = File(picked.path);
+    setState(() => _isUploadingImage = true);
+
+    try {
+      await _adminService.updateReportImage(
+        reportId: widget.reportId,
+        image: file,
+      );
+
+      if (!mounted) return;
+      setState(() => _newImage = file);
+      _showSnack('เปลี่ยนรูปภาพสำเร็จ ✓', Colors.green.shade600);
+    } catch (e) {
+      if (mounted) _showSnack('เปลี่ยนรูปภาพไม่ได้: $e', Colors.red.shade600);
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
+  /// Clears the report's photo immediately for admin only [_removeImage]
+  Future<void> _removeImage() async {
+    if (_isUploadingImage) return;
+
+    setState(() => _isUploadingImage = true);
+    try {
+      await _adminService.removeReportImage(widget.reportId);
+
+      if (!mounted) return;
+      setState(() {
+        _newImage = null;
+        _imageRemoved = true;
+      });
+      _showSnack('ลบรูปภาพสำเร็จ ✓', Colors.green.shade600);
+    } catch (e) {
+      if (mounted) _showSnack('ลบรูปภาพไม่ได้: $e', Colors.red.shade600);
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
   /// ============================== [UI Helpers] ==============================
   /// Show a snackbar message [_showSnack]
   void _showSnack(String message, Color color) {
@@ -137,8 +239,9 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     }
   }
 
-  /// Opens the image at real/full size in a fullscreen zoomable viewer [_openFullImage]
-  void _openFullImage(String imageUrl) {
+  /// Opens the image at real/full size in a fullscreen zoomable viewer.
+  /// Accepts either a freshly-picked File or an existing network URL. [_openFullImage]
+  void _openFullImage({File? file, String? imageUrl}) {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
@@ -146,7 +249,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
         pageBuilder: (context, animation, secondaryAnimation) {
           return FadeTransition(
             opacity: animation,
-            child: _FullScreenImageViewer(imageUrl: imageUrl),
+            child: _FullScreenImageViewer(imageFile: file, imageUrl: imageUrl),
           );
         },
       ),
@@ -276,7 +379,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                 ),
                 const SizedBox(height: 14),
 
-                // ระดับความรุนแรง (ใหม่)
+                // ระดับความรุนแรง
                 GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,38 +448,86 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// ============================== [Widgets] ==============================
-  /// Hero photo. Tag 'img_${reportId}' must match the tag used on the list
-  /// thumbnail for the hero animation to work. Includes an expand button
-  /// (bottom-right) to view the image at full/real size. [_buildHeroImage]
+  /// image picker for admin only [_buildHeroImage]
   Widget _buildHeroImage(String? imageUrl) {
+    final hasNewImage = _newImage != null;
+    final hasExistingImage = !hasNewImage && !_imageRemoved && imageUrl != null;
+    final hasAnyImage = hasNewImage || hasExistingImage;
+
     return Stack(
       children: [
         Hero(
           tag: 'img_${widget.reportId}',
           child: ClipRRect(
             borderRadius: BorderRadius.circular(18),
-            child: imageUrl != null
-                ? Image.network(
-                    imageUrl,
+            child: hasNewImage
+                ? Image.file(
+                    _newImage!,
                     height: 220,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   )
-                : _buildNoImagePlaceholder(),
+                : (hasExistingImage
+                    ? Image.network(
+                        imageUrl!,
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : _buildNoImagePlaceholder()),
           ),
         ),
-        if (imageUrl != null)
+        if (_isUploadingImage)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+          ),
+        if (hasAnyImage)
           Positioned(
             right: 10,
             bottom: 10,
-            child: _expandImageButton(() => _openFullImage(imageUrl)),
+            child: _imageActionButton(
+              icon: Icons.zoom_out_map_rounded,
+              onTap: () => _openFullImage(
+                file: hasNewImage ? _newImage : null,
+                imageUrl: hasNewImage ? null : imageUrl,
+              ),
+            ),
           ),
+        // Edit + remove buttons, top-right — admin only, this page only
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Row(
+            children: [
+              _imageActionButton(
+                icon: Icons.edit_rounded,
+                onTap: _isUploadingImage ? () {} : _showImageSourceSheet,
+              ),
+              if (hasAnyImage) ...[
+                const SizedBox(width: 8),
+                _imageActionButton(
+                  icon: Icons.close_rounded,
+                  onTap: _isUploadingImage ? () {} : _removeImage,
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  /// Small circular button that opens the full-size image viewer [_expandImageButton]
-  Widget _expandImageButton(VoidCallback onTap) {
+  /// Small circular icon button used for both the expand and change-image
+  /// actions on the hero photo [_imageActionButton]
+  Widget _imageActionButton({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -385,11 +536,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
           color: Colors.black.withValues(alpha: 0.45),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.zoom_out_map_rounded,
-          size: 18,
-          color: Colors.white,
-        ),
+        child: Icon(icon, size: 18, color: Colors.white),
       ),
     );
   }
@@ -415,8 +562,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
   }
 
   /// Title row (building/floor/room + severity badge) plus a status/date
-  /// badge row — read-only display, mirrors ReportDetailPage's header
-  /// section [_buildTitleSection]
+  /// badge row [_buildTitleSection]
   Widget _buildTitleSection({
     required String building,
     required String floor,
@@ -463,7 +609,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  /// Severity dot + label badge (duplicate of ReportDetailPage's version) [_buildSeverityBadge]
+  /// Severity dot + label badge [_buildSeverityBadge]
   Widget _buildSeverityBadge(SeverityInfo severity) {
     final isHigh = severity.label == severityLevels['high']!.label;
     return Container(
@@ -535,8 +681,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  /// Icon + label + value row. Pass [valueColor] to tint the value text
-  /// (used for "รายละเอียดปัญหา" → emasColorDarker) [_info]
+  /// Icon + label + value row [_info]
   Widget _info(IconData icon, String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -671,11 +816,46 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
 }
 
 /// [FULLSCREEN-IMAGE-VIEWER] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
+/// รองรับทั้งรูปที่เพิ่งเลือก (File) และรูปเดิมที่อยู่บน network (String url)
 /// ปิดได้ด้วยการแตะพื้นหลัง หรือกดปุ่มปิดมุมขวาบน
 class _FullScreenImageViewer extends StatelessWidget {
-  final String imageUrl;
+  final File? imageFile;
+  final String? imageUrl;
 
-  const _FullScreenImageViewer({required this.imageUrl});
+  const _FullScreenImageViewer({this.imageFile, this.imageUrl});
+
+  Widget _buildImage() {
+    if (imageFile != null) {
+      return Image.file(imageFile!, fit: BoxFit.contain);
+    }
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stack) => const Icon(
+          Icons.broken_image_outlined,
+          size: 48,
+          color: Colors.white54,
+        ),
+      );
+    }
+    return const Icon(
+      Icons.broken_image_outlined,
+      size: 48,
+      color: Colors.white54,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -693,26 +873,7 @@ class _FullScreenImageViewer extends StatelessWidget {
                 child: InteractiveViewer(
                   minScale: 1.0,
                   maxScale: 5.0,
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return const SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stack) => const Icon(
-                      Icons.broken_image_outlined,
-                      size: 48,
-                      color: Colors.white54,
-                    ),
-                  ),
+                  child: _buildImage(),
                 ),
               ),
             ),

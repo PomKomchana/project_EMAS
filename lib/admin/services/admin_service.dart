@@ -142,6 +142,29 @@ class AdminService {
     return _reportsRef.doc(reportId).delete();
   }
 
+  /// Replace a report's photo [updateReportImage]
+  Future<String?> updateReportImage({
+    required String reportId,
+    required File image,
+  }) async {
+    final imageUrl = await _uploadImage(image);
+
+    await _reportsRef.doc(reportId).update({
+      'imageUrl': imageUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    return imageUrl;
+  }
+
+  /// Clears a report's photo (sets imageUrl to null) for admin only [removeReportImage]
+  Future<void> removeReportImage(String reportId) {
+    return _reportsRef.doc(reportId).update({
+      'imageUrl': null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// ============================== [News Reads] ==============================
   /// News, newest first [newsStream]
   Stream<QuerySnapshot> newsStream() {
@@ -149,7 +172,7 @@ class AdminService {
   }
 
   /// ============================== [News Writes] ==============================
-  /// Create a news post. Uploads image first, same reason as createReport. [addNews]
+  /// Create a news post. Uploads image first, same reason as createReport [addNews]
   Future<void> addNews({
     required String title,
     required String content,
@@ -169,7 +192,7 @@ class AdminService {
   }
 
   /// Update a news post. Pass `image` to replace the photo, `removeImage:
-  /// true` to clear it, or leave both alone to keep it as-is. [updateNews]
+  /// true` to clear it, or leave both alone to keep it as-is [updateNews]
   Future<void> updateNews({
     required String docId,
     required String title,
