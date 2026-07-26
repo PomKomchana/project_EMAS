@@ -570,7 +570,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.blue.withValues(alpha: 0.06),
+          color: Colors.blue.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -799,14 +799,14 @@ class _NewsDetailPage extends StatelessWidget {
                                   Row(
                                     children: [
                                       Icon(Icons.attachment_rounded,
-                                          size: 14, color: Colors.grey.shade500),
+                                          size: 14, color: Colors.grey.shade700),
                                       const SizedBox(width: 6),
                                       Text(
                                         'ลิงก์แนบ',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.grey.shade500,
+                                          color: Colors.grey.shade700,
                                         ),
                                       ),
                                     ],
@@ -868,8 +868,7 @@ class _NewsDetailPage extends StatelessWidget {
     );
   }
 
-  /// ลิงก์แสดงเป็นชิปสี emasColor เต็มความกว้าง กดแล้วเปิดเบราว์เซอร์ —
-  /// โทนสีตรงกับธีมแอป (ชมพู/แดง) แทนสีน้ำเงินเดิม [_buildLinkText]
+  /// ลิงก์แสดงเป็นชิปสีฟ้าเต็มความกว้าง กดแล้วเปิดเบราว์เซอร์ [_buildLinkText]
   Widget _buildLinkText(String link) {
     return InkWell(
       borderRadius: BorderRadius.circular(10),
@@ -877,28 +876,28 @@ class _NewsDetailPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: emasColor.withValues(alpha: 0.08),
+          color: Colors.blue.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.link_rounded, size: 16, color: emasColor),
+            const Icon(Icons.link_rounded, size: 16, color: Colors.blue),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 link,
                 style: const TextStyle(
                   fontSize: 13.5,
-                  color: emasColor,
+                  color: Colors.blue,
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
-                  decorationColor: emasColor,
+                  decorationColor: Colors.blue,
                 ),
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.open_in_new_rounded, size: 14, color: emasColor),
+            const Icon(Icons.open_in_new_rounded, size: 14, color: Colors.blue),
           ],
         ),
       ),
@@ -906,7 +905,7 @@ class _NewsDetailPage extends StatelessWidget {
   }
 }
 
-/// [FULLSCREEN-IMAGE-VIEWER] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
+/// [FullScreenImageViewer] แสดงรูปภาพขนาดจริงแบบเต็มจอ พร้อมซูม/ลากได้
 /// ปิดได้ด้วยการแตะพื้นหลัง หรือกดปุ่มปิดมุมขวาบน
 class _FullScreenImageViewer extends StatelessWidget {
   final String imageUrl;
