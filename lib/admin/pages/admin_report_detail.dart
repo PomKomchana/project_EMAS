@@ -6,6 +6,7 @@ import '../services/admin_service.dart';
 
 import '../../shared/constants/emas_colors.dart';
 import '../../shared/constants/report_constants.dart';
+import '../../shared/utils/thai_date.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../shared/widgets/buttons.dart';
 
@@ -122,6 +123,20 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
+  /// Icon for the status badge, matches _statusOptions [_statusIcon]
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case ReportStatus.pending:
+        return Icons.hourglass_empty_rounded;
+      case ReportStatus.inProgress:
+        return Icons.construction_rounded;
+      case ReportStatus.done:
+        return Icons.check_circle_rounded;
+      default:
+        return Icons.info_outline_rounded;
+    }
+  }
+
   /// Opens the image at real/full size in a fullscreen zoomable viewer [_openFullImage]
   void _openFullImage(String imageUrl) {
     Navigator.of(context).push(
@@ -144,26 +159,37 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     final data = widget.data;
     final imageUrl = data['imageUrl'] as String?;
 
+    final building = '${data['building'] ?? '-'}';
+    final floor = '${data['floor'] ?? '-'}';
+    final room = '${data['room'] ?? '-'}';
+    final desc = '${data['description'] ?? '-'}';
+    final status = data['status'] ?? ReportStatus.pending;
+    final dateTime = data['dateTime'] ?? '-';
+    final username = '${data['username'] ?? '-'}';
+    final phone = '${data['phone'] ?? '-'}';
+    final severityKey = data['severity'] as String?;
+    final severity = getSeverityInfo(severityKey);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
-            expandedHeight: 100,
             backgroundColor: emasColor,
             foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-              title: const Text('รายละเอียดการแจ้งซ่อม',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [emasColor, emasColorDarker],
-                  ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('รายละเอียดการแจ้งซ่อม',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [emasColor, emasColorDarker],
                 ),
               ),
             ),
@@ -183,23 +209,48 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                 _buildHeroImage(imageUrl),
                 const SizedBox(height: 14),
 
-                // ข้อมูลรายงาน
+                // หัวข้อ + severity/status/date badge
+                GlassCard(
+                  child: _buildTitleSection(
+                    building: building,
+                    floor: floor,
+                    room: room,
+                    status: status,
+                    dateTime: dateTime,
+                    severity: severity,
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // ข้อมูลปัญหา
                 GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CardHeader(icon: Icons.description_rounded, title: 'ข้อมูลรายงาน'),
+                      const CardHeader(icon: Icons.description_rounded, title: 'ข้อมูลปัญหา'),
                       const SizedBox(height: 12),
-                      _info(Icons.apartment_rounded, 'อาคาร', '${data['building'] ?? '-'}'),
-                      _info(Icons.layers_rounded, 'ชั้น', '${data['floor'] ?? '-'}'),
-                      _info(Icons.edit_note_rounded, 'รายละเอียดปัญหา', '${data['description'] ?? '-'}'),
+                      _info(Icons.apartment_rounded, 'อาคาร', building),
+                      _info(Icons.layers_rounded, 'ชั้น', floor),
                       _info(
-                        Icons.location_on_rounded,
-                        'ตำแหน่ง',
-                        data['lat'] != null
-                            ? '${data['lat']}, ${data['lng']}'
-                            : 'ไม่ได้ระบุ',
+                        Icons.edit_note_rounded,
+                        'รายละเอียดปัญหา',
+                        desc,
+                        valueColor: emasColorDarker,
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // ข้อมูลผู้แจ้ง
+                GlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const CardHeader(icon: Icons.person_outline_rounded, title: 'ข้อมูลผู้แจ้ง'),
+                      const SizedBox(height: 12),
+                      _info(Icons.person_rounded, 'ชื่อ', username),
+                      _info(Icons.phone_rounded, 'เบอร์', phone),
                     ],
                   ),
                 ),
@@ -363,8 +414,130 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     );
   }
 
-  /// Icon + label + value row [_info]
-  Widget _info(IconData icon, String label, String value) {
+  /// Title row (building/floor/room + severity badge) plus a status/date
+  /// badge row — read-only display, mirrors ReportDetailPage's header
+  /// section [_buildTitleSection]
+  Widget _buildTitleSection({
+    required String building,
+    required String floor,
+    required String room,
+    required String status,
+    required String dateTime,
+    required SeverityInfo severity,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$building $floor ห้อง $room',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            _buildSeverityBadge(severity),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildInfoChip(
+              _statusIcon(status),
+              status,
+              getStatusTextColor(status),
+            ),
+            const SizedBox(width: 8),
+            _buildInfoChip(
+              Icons.calendar_today_outlined,
+              shortenThaiDate(dateTime),
+              Colors.grey.shade600,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Severity dot + label badge (duplicate of ReportDetailPage's version) [_buildSeverityBadge]
+  Widget _buildSeverityBadge(SeverityInfo severity) {
+    final isHigh = severity.label == severityLevels['high']!.label;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: severity.color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: severity.color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          isHigh
+              ? Text(
+                  '!',
+                  style: TextStyle(
+                    color: severity.color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                )
+              : Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: severity.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+          const SizedBox(width: 5),
+          Text(
+            severity.label,
+            style: TextStyle(
+              color: severity.color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Outlined pill used for the status/dateTime badges [_buildInfoChip]
+  Widget _buildInfoChip(IconData icon, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Icon + label + value row. Pass [valueColor] to tint the value text
+  /// (used for "รายละเอียดปัญหา" → emasColorDarker) [_info]
+  Widget _info(IconData icon, String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -378,7 +551,14 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                 style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
           Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: valueColor ?? Colors.black87,
+              ),
+            ),
           ),
         ],
       ),

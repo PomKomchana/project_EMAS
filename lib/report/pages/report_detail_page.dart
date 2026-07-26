@@ -413,7 +413,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
         const SizedBox(height: 12),
         _buildDetailRow(Icons.apartment_rounded, 'อาคาร', building),
         _buildDetailRow(Icons.layers_rounded, 'ชั้น', floor),
-        _buildDetailRow(Icons.edit_note_rounded, 'รายละเอียดปัญหา', desc),
+        _buildDetailRow(Icons.edit_note_rounded, 'รายละเอียดปัญหา', desc, valueColor: emasColorDarker),
       ],
     );
   }
@@ -561,7 +561,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
 
   /// Icon + label (fixed width) + value row, used in "ข้อมูลรายงาน"
   /// (matches AdminReportDetailPage's _info row layout) [_buildDetailRow]
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -583,7 +583,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: valueColor ?? Colors.black87),
             ),
           ),
         ],
