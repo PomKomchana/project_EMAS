@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
+import '../../shared/utils/thai_date.dart';
 import 'admin_delete_confirm_dialog.dart';
 
 // Opens the news composer (create or edit). Returns true if saved. Public
@@ -97,9 +98,21 @@ class AdminAnnouncementsPage extends StatelessWidget {
   }
 
   /// ============================== [UI Helpers] ==============================
+  static const _thaiMonths = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+  ];
+
+  /// Builds a full Thai date string ("25 กรกฎาคม 2026 เวลา 12:27") from a
+  /// DateTime, then shortens it with shortenThaiDate — same display format
+  /// used on the report list. [_formatDate]
   String _formatDate(DateTime? time) {
     if (time == null) return '-';
-    return '${time.day}/${time.month}/${time.year}';
+    final month = _thaiMonths[time.month - 1];
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    final full = '${time.day} $month ${time.year} เวลา $hour:$minute';
+    return shortenThaiDate(full);
   }
 
   Future<void> _openLink(String url) async {
@@ -115,6 +128,38 @@ class AdminAnnouncementsPage extends StatelessWidget {
   }
 
   /// ============================== [Widgets] ==============================
+  /// Date pill badge, styled like the status/date chips on the report list
+  /// cards (outlined pill with icon), instead of a plain icon+text row. [_buildDateBadge]
+  Widget _buildDateBadge(DateTime? time) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade500.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade400.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 11,
+            color: Colors.grey.shade600,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _formatDate(time),
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -154,6 +199,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
+        border: const Border(left: BorderSide(color: emasColor, width: 4)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -211,23 +257,7 @@ class AdminAnnouncementsPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 11,
-                            color: Colors.grey.shade500,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(item.time),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildDateBadge(item.time),
                     ],
                   ),
                 ),

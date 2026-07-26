@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../shared/constants/emas_colors.dart';
+import '../shared/utils/thai_date.dart';
 
 /// One news item shown in the announcements list [_NewsItem]
 class _NewsItem {
@@ -129,9 +130,21 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     return diff.inHours < 24 && !diff.isNegative;
   }
 
+  static const _thaiMonths = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+  ];
+
+  /// Builds a full Thai date string ("25 กรกฎาคม 2026 เวลา 12:27") from a
+  /// DateTime, then shortens it with shortenThaiDate — same display format
+  /// used on the admin pages. [_formatDate]
   String _formatDate(DateTime? createdAt) {
     if (createdAt == null) return '-';
-    return '${createdAt.day}/${createdAt.month}/${createdAt.year}';
+    final month = _thaiMonths[createdAt.month - 1];
+    final hour = createdAt.hour.toString().padLeft(2, '0');
+    final minute = createdAt.minute.toString().padLeft(2, '0');
+    final full = '${createdAt.day} $month ${createdAt.year} เวลา $hour:$minute';
+    return shortenThaiDate(full);
   }
 
   Future<void> _handleRefresh() async {
@@ -412,9 +425,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
               const SizedBox(height: 10),
               Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
-                  const SizedBox(width: 4),
-                  Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  _buildDateBadge(item.createdAt),
                   if (hasLink) ...[
                     const Spacer(),
                     Icon(Icons.link_rounded, size: 14, color: Colors.blue.shade400),
@@ -472,9 +483,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade500),
-                    const SizedBox(width: 4),
-                    Text(_formatDate(item.createdAt), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    _buildDateBadge(item.createdAt),
                     if (hasLink) ...[
                       const Spacer(),
                       Icon(Icons.link_rounded, size: 13, color: Colors.blue.shade400),
@@ -489,6 +498,30 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           ),
           const SizedBox(width: 4),
           Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
+        ],
+      ),
+    );
+  }
+
+  /// Date pill badge, styled like the status/date chips on the admin pages,
+  /// instead of a plain icon+text row. [_buildDateBadge]
+  Widget _buildDateBadge(DateTime? createdAt) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade500.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade400.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey.shade600),
+          const SizedBox(width: 4),
+          Text(
+            _formatDate(createdAt),
+            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
+          ),
         ],
       ),
     );
