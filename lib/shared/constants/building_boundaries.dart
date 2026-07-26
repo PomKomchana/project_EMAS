@@ -502,6 +502,38 @@ const List<BuildingBoundary> campusBuildings = [
     ],
   ),
   BuildingBoundary(
+    buildingCode: '43',
+    buildingName: 'อาคารเรียนและปฏิบัติการวิชาพื้นฐาน',
+    polygon: [
+      LatLng(14.1044928, 100.9848662),
+      LatLng(14.1045529, 100.9843956),
+      LatLng(14.1042974, 100.9839583),
+      LatLng(14.1040858, 100.9840746),
+      LatLng(14.1040343, 100.9845778),
+      LatLng(14.1042681, 100.9850028),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '44',
+    buildingName: 'สนามฟุตซอล',
+    polygon: [
+      LatLng(14.1075633, 100.9841453),
+      LatLng(14.1072615, 100.9836368),
+      LatLng(14.1062242, 100.984194),
+      LatLng(14.1064897, 100.9847334),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '45',
+    buildingName: 'ลานชงโค',
+    polygon: [
+      LatLng(14.1057561, 100.9863682),
+      LatLng(14.1053954, 100.9857224),
+      LatLng(14.1049704, 100.9859612),
+      LatLng(14.1053303, 100.9859612),
+    ],
+  ),
+  BuildingBoundary(
     buildingCode: '46',
     buildingName: 'หอพักนิสิต 1',
     polygon: [
@@ -689,6 +721,196 @@ const List<BuildingBoundary> campusBuildings = [
       LatLng(14.1044744, 100.9880482),
       LatLng(14.1042389, 100.9881828),
       LatLng(14.1045756, 100.9887772),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '64',
+    buildingName: 'อาคารมีน้ำใจ (อาคารที่พักบุคลากร A)',
+    polygon: [
+      LatLng(14.0996538, 100.9888007),
+      LatLng(14.0994543, 100.9886312),
+      LatLng(14.0993451, 100.988758),
+      LatLng(14.0995398, 100.9889276),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '65',
+    buildingName: 'อาคารไมตรีตอบ (อาคารที่พักบุคลากร B)',
+    polygon: [
+      LatLng(14.0995069, 100.98891),
+      LatLng(14.0993357, 100.9887598),
+      LatLng(14.0992293, 100.9888903),
+      LatLng(14.0994029, 100.989036),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '66',
+    buildingName: 'อาคารมอบความดี (อาคารที่พักบุคลากร C)',
+    polygon: [
+      LatLng(14.099428, 100.9890705),
+      LatLng(14.0992787, 100.9889422),
+      LatLng(14.099199, 100.9890307),
+      LatLng(14.0993476, 100.9891632),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '67',
+    buildingName: 'อาคารศรีวิจิตร',
+    polygon: [
+      LatLng(14.0997758, 100.9895116),
+      LatLng(14.0995557, 100.9892337),
+      LatLng(14.0993462, 100.9894077),
+      LatLng(14.0995582, 100.9896907),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '68',
+    buildingName: 'อาคารจิตอารี', 
+    polygon: [
+      LatLng(14.0999733, 100.9898721),
+      LatLng(14.099708, 100.9896375),
+      LatLng(14.0995175, 100.9898545),
+      LatLng(14.0997882, 100.9900862),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '69',
+    buildingName: 'อาคารกัลยาณมิตร', 
+    polygon: [
+      LatLng(14.1005813, 100.9902723),
+      LatLng(14.1002135, 100.9899855),
+      LatLng(14.0999864, 100.9902874),
+      LatLng(14.1003312, 100.9905731),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '70',
+    buildingName: 'อาคารผลิตน้ำประปา', 
+    polygon: [
+      LatLng(14.0983028, 100.9843082),
+      LatLng(14.097862, 100.9836),
+      LatLng(14.0974374, 100.9839155),
+      LatLng(14.097917, 100.9845682),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '71',
+    buildingName: 'สถานีไฟฟ้าย่อย', 
+    polygon: [
+      LatLng(14.0983024, 100.9845515),
+      LatLng(14.0982489, 100.98447),
+      LatLng(14.0981443, 100.9845468),
+      LatLng(14.0981978, 100.9846295),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '72',
+    buildingName: 'บ่อเก็บน้ำดิบผลิตน้ำประปา', 
+    polygon: [
+      LatLng(14.1012644, 100.9845053),
+      LatLng(14.1000662, 100.982607),
+      LatLng(14.0981916, 100.9836895),
+      LatLng(14.0981978, 100.9856162),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '73',
+    buildingName: 'รอระบาย', 
+    polygon: [
+      LatLng(14.100946, 100.9880237),
+      LatLng(14.101435, 100.9874805),
+      LatLng(14.0998683, 100.985352),
+      LatLng(14.0991851, 100.9859281),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '75',
+    buildingName: 'สถานีตำรวจย่อย มศว องครักษ์', 
+    polygon: [
+      LatLng(14.1019309, 100.9883515),
+      LatLng(14.1016683, 100.988148),
+      LatLng(14.1014997, 100.9883974),
+      LatLng(14.101754, 100.9885978),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '76',
+    buildingName: 'อาคารสโมสร', 
+    polygon: [
+      LatLng(14.1026211, 100.9843683),
+      LatLng(14.102368, 100.9838782),
+      LatLng(14.1019476, 100.9840946),
+      LatLng(14.1021853, 100.9845867),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '77',
+    buildingName: 'โรงจอดรถบัส', 
+    polygon: [
+      LatLng(14.1019801, 100.9846658),
+      LatLng(14.1019082, 100.9845401),
+      LatLng(14.1017439, 100.9846417),
+      LatLng(14.1018168, 100.9847686),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '78',
+    buildingName: 'อาคารศูนย์วิศัย', 
+    polygon: [
+      LatLng(14.1021593, 100.9851576),
+      LatLng(14.1028458, 100.9849425),
+      LatLng(14.1029099, 100.985136),
+      LatLng(14.1022226, 100.9854136),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '79',
+    buildingName: 'ศาลากิจกรรม', 
+    polygon: [
+      LatLng(14.1039762, 100.9852067),
+      LatLng(14.1037445, 100.9847188),
+      LatLng(14.103268, 100.9849645),
+      LatLng(14.1034974, 100.9854563),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '80',
+    buildingName: 'อาคารสุขภาวะ', 
+    polygon: [
+      LatLng(14.1052801, 100.9855689),
+      LatLng(14.1048809, 100.9849706),
+      LatLng(14.104336, 100.9853589),
+      LatLng(14.1046803, 100.9859741),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '81',
+    buildingName: 'อสถาบันวิจัย พัฒนา และสาธิตการศึกษา', 
+    polygon: [
+      LatLng(14.1085543, 100.977543),
+      LatLng(14.1078318, 100.9761492),
+      LatLng(14.1016141, 100.9790434),
+      LatLng(14.1020825, 100.9802112),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '83',
+    buildingName: 'หอพักแพทย์ D', 
+    polygon: [
+      LatLng(14.1078487, 100.9868941),
+      LatLng(14.1076072, 100.9864416),
+      LatLng(14.1073793, 100.9865663),
+      LatLng(14.1076192, 100.9870222),
+    ],
+  ),
+  BuildingBoundary(
+    buildingCode: '84',
+    buildingName: 'หอพักแพทย์ E', 
+    polygon: [
+      LatLng(14.108054, 100.9867328),
+      LatLng(14.1078356, 100.9863327),
+      LatLng(14.1076751, 100.986425),
+      LatLng(14.1078783, 100.9868311),
     ],
   ),
 ];
