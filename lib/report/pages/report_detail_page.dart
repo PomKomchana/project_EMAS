@@ -152,29 +152,26 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
   /// ============================== [Widgets] ==============================
   /// App Bar with back button and title [_buildAppBar]
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(56),
-      child: Container(
+    return AppBar(
+      backgroundColor: emasColor,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: false,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: const Text(
+        'รายละเอียด',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+      ),
+      flexibleSpace: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [emasColor, emasColorDarker],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+            colors: [emasColor, emasColorDarker],
           ),
-        ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text(
-            'รายละเอียด',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          centerTitle: true,
         ),
       ),
     );

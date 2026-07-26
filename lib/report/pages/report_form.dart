@@ -568,7 +568,7 @@ void _cycleMapMode() {
   Future<void> _submitReport() async {
     if (_dateTimeController.text.trim().isEmpty) {
       _showSnackBar(
-        'กรุณากรอกวัน-เวลาที่แจ้งซ่อม', Colors.red.shade600, Icons.error_outline
+        'กรุณากรอกวัน-เวลาที่แจ้งปัญหา', Colors.red.shade600, Icons.error_outline
         );
       return;
     }
@@ -1032,7 +1032,7 @@ void _cycleMapMode() {
           const CardHeader(icon: Icons.person_outline, title: 'ข้อมูลผู้แจ้ง'),
           const SizedBox(height: 12),
 
-          // Date & Time Report "วัน-เวลาที่แจ้งซ่อม" — opens the 5-column Thai wheel picker
+          // Date & Time Report "วัน-เวลาที่แจ้งปัญหา" — opens the 5-column Thai wheel picker
           TextField(
             controller: _dateTimeController,
             readOnly: true,

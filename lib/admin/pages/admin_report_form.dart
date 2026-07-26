@@ -621,7 +621,7 @@ void _cycleMapMode() {
       /// to switch to the report list tab. [Navigator.pop(context, true)]
       Navigator.pop(context, true);
       _showSnackBar(
-        'เพิ่มรายการแจ้งซ่อมสำเร็จ', Colors.green.shade600, Icons.check_circle
+        'เพิ่มรายการแจ้งปัญหาสำเร็จ', Colors.green.shade600, Icons.check_circle
         );
     } catch (e) {
       _showSnackBar(
@@ -722,7 +722,7 @@ void _cycleMapMode() {
         children: [
           const Expanded(
             child: Text(
-              'เพิ่มรายการแจ้งซ่อม',
+              'เพิ่มรายการแจ้งปัญหา',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
           ),
@@ -1427,7 +1427,7 @@ Widget _buildBuildingModeToggle() {
                   Icon(Icons.save_rounded, size: 18),
                   SizedBox(width: 8),
                   Text(
-                    'บันทึกรายการแจ้งซ่อม',
+                    'บันทึกรายการแจ้งปัญหา',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ],

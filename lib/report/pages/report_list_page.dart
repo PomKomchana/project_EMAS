@@ -635,7 +635,7 @@ class _ReportListPageState extends State<ReportListPage>
           children: [
             Expanded(
               child: Text(
-                '$building · $floor · ห้อง $room',
+                '$building $floor ห้อง $room',
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
@@ -643,15 +643,23 @@ class _ReportListPageState extends State<ReportListPage>
                 ),
               ),
             ),
-            if (isAdmin) ...[
-              _buildAdminBadge(),
-              const SizedBox(width: 6),
-            ],
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _buildSeverityBadge(severity),
-                if (isRecent) ...[
+                if (isAdmin) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isRecent) ...[
+                        _buildNewBadge(),
+                        const SizedBox(width: 6),
+                      ],
+                      _buildAdminBadge(),
+                    ],
+                  ),
+                ] else if (isRecent) ...[
                   const SizedBox(height: 4),
                   _buildNewBadge(),
                 ],
@@ -694,7 +702,7 @@ class _ReportListPageState extends State<ReportListPage>
       ],
     );
   }
-
+  
   /// Static "Admin" badge for reports created by an admin (createdBy == 'admin') [_buildAdminBadge]
   Widget _buildAdminBadge() {
     return Container(

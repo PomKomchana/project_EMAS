@@ -162,7 +162,7 @@ class _AdminReportListPageState extends State<AdminReportListPage>
         onPressed: () => Navigator.pop(context),
       ),
       title: const Text(
-        'รายการแจ้งซ่อม',
+        'รายการแจ้งปัญหา',
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
       ),
       centerTitle: false,
@@ -463,14 +463,10 @@ class _FilteredList extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '$building · $floor · ห้อง $room',
+                          '$building $floor ห้อง $room',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),
-                      if (isAdminCreated) ...[
-                        const SizedBox(width: 6),
-                        _buildAdminBadge(),
-                      ],
                       const SizedBox(width: 6),
                       _buildSeverityBadge(severity),
                     ],
@@ -486,7 +482,14 @@ class _FilteredList extends StatelessWidget {
                   Row(
                     children: [
                       _buildStatusChip(status),
-                      if (isRecent) ...[
+                      if (isAdminCreated) ...[
+                        const SizedBox(width: 6),
+                        _buildAdminBadge(),
+                        if (isRecent) ...[
+                          const SizedBox(width: 6),
+                          _buildNewBadge(),
+                        ],
+                      ] else if (isRecent) ...[
                         const SizedBox(width: 6),
                         _buildNewBadge(),
                       ],
