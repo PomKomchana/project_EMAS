@@ -3,12 +3,18 @@ import 'package:flutter/material.dart';
 import '../services/admin_service.dart';
 import '../../shared/constants/emas_colors.dart';
 
-/// Dialog for news and reports. Admin must re-enter password before delete
-/// happens. Returns true only if the password was correct. [showDeleteConfirmDialog]
+/// Dialog for news and reports. Admin must re-enter password before the
+/// action happens. Returns true only if the password was correct.
+/// [confirmLabel]/[icon]/[isDanger] let callers reuse this for both
+/// destructive actions (delete, red) and non-destructive confirmations
+/// (save changes, emasColor). [showDeleteConfirmDialog]
 Future<bool> showDeleteConfirmDialog(
   BuildContext context, {
   required String title,
   required String message,
+  String confirmLabel = 'ยืนยันลบ',
+  IconData icon = Icons.delete_outline_rounded,
+  bool isDanger = true,
 }) async {
   final passwordCtrl = TextEditingController();
 
@@ -18,6 +24,9 @@ Future<bool> showDeleteConfirmDialog(
       title: title,
       message: message,
       passwordCtrl: passwordCtrl,
+      confirmLabel: confirmLabel,
+      icon: icon,
+      isDanger: isDanger,
     ),
   );
 
@@ -28,11 +37,17 @@ class _DeleteConfirmDialog extends StatefulWidget {
   final String title;
   final String message;
   final TextEditingController passwordCtrl;
+  final String confirmLabel;
+  final IconData icon;
+  final bool isDanger;
 
   const _DeleteConfirmDialog({
     required this.title,
     required this.message,
     required this.passwordCtrl,
+    required this.confirmLabel,
+    required this.icon,
+    required this.isDanger,
   });
 
   @override
@@ -56,7 +71,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
   }
 
   /// ============================== [Delete Confirm Logic] ==============================
-  /// Check password with Firebase before deleting [_confirm]
+  /// Check password with Firebase before confirming [_confirm]
   Future<void> _confirm() async {
     final password = widget.passwordCtrl.text;
     if (password.isEmpty) {
@@ -89,6 +104,10 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
   /// ============================== [Build] ==============================
   @override
   Widget build(BuildContext context) {
+    final accentColor = widget.isDanger ? const Color(0xFFE53935) : emasColor;
+    final accentBgColor =
+        widget.isDanger ? const Color(0xFFFFEBEE) : emasColor.withValues(alpha: 0.1);
+
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -105,12 +124,12 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFEBEE),
+                  color: accentBgColor,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: Color(0xFFE53935),
+                child: Icon(
+                  widget.icon,
+                  color: accentColor,
                   size: 28,
                 ),
               ),
@@ -154,8 +173,6 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
               onSubmitted: (_) => _confirm(),
               style: const TextStyle(fontSize: 14),
               decoration: InputDecoration(
-                //labelText: 'รหัสผ่านของคุณ',
-                //labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13.5),
                 errorText: _errorText,
                 filled: true,
                 fillColor: const Color(0xFFF7F7F8),
@@ -212,8 +229,8 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE53935),
-                      disabledBackgroundColor: const Color(0xFFE53935).withValues(alpha: 0.6),
+                      backgroundColor: accentColor,
+                      disabledBackgroundColor: accentColor.withValues(alpha: 0.6),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -228,17 +245,17 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
-                            'ยืนยันลบ',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                        : Text(
+                            widget.confirmLabel,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                           ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+          );
+        }
+      }

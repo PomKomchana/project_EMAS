@@ -648,7 +648,7 @@ class _AdminDashboard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isReport ? Icons.report_rounded : Icons.campaign_rounded,
+                    isReport ? _reportStatusIcon(item.status) : Icons.campaign_rounded,
                     size: 17,
                     color: borderColor,
                   ),
@@ -708,6 +708,21 @@ class _AdminDashboard extends StatelessWidget {
       case 'กำลังดำเนินการ': return Colors.blue;
       case 'เสร็จสิ้น': return Colors.green;
       default: return emasColor;
+    }
+  }
+
+  /// Icon per report status, matches _reportStatusColor. News always uses
+  /// campaign_rounded. [_reportStatusIcon]
+  IconData _reportStatusIcon(String? status) {
+    switch (status) {
+      case 'รอดำเนินการ':
+        return Icons.hourglass_empty_rounded;
+      case 'กำลังดำเนินการ':
+        return Icons.construction_rounded;
+      case 'เสร็จสิ้น':
+        return Icons.check_circle_rounded;
+      default:
+        return Icons.report_rounded;
     }
   }
 

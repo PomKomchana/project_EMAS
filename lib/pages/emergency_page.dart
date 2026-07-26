@@ -61,7 +61,7 @@ const _contacts = [
     icon: Icons.school_outlined,
     label: 'คณะวิศวกรรมศาสตร์',
     subtitle: 'มหาวิทยาลัยศรีนครินทรวิโรฒ',
-    number: '02649500027056',
+    number: '026495000,27056',
     color: emasColor,
   ),
 ];

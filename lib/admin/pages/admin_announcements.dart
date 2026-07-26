@@ -598,11 +598,16 @@ class _NewsFormPageState extends State<_NewsFormPage> {
 
   /// ============================== [Save] ==============================
   Future<void> _save() async {
-    if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
+    if (_isEdit && _hasChanges()) {
+      final confirmed = await showDeleteConfirmDialog(
         context,
-      ).showSnackBar(const SnackBar(content: Text('กรุณากรอกหัวข้อ')));
-      return;
+        title: 'ยืนยันการแก้ไข',
+        message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการบันทึกการเปลี่ยนแปลงนี้',
+        confirmLabel: 'ยืนยันการแก้ไข',
+        icon: Icons.construction_rounded,
+        isDanger: false,
+      );
+      if (!confirmed) return;
     }
 
     // When editing an existing announcement, require a password whenever

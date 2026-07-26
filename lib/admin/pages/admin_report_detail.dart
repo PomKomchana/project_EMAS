@@ -89,22 +89,19 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
     return statusChanged || severityChanged || noteChanged || imageChanged;
   }
 
-  /// Save status, severity, note, and (if changed) the photo. If anything
-  /// was changed, the admin's password is required first — same
-  /// confirmation used before deleting a whole report. [_saveStatus]
+  /// Save status, severity, note, and photo. [_saveStatus]
   Future<void> _saveStatus() async {
-    if (_currentSeverity == null) {
-      _showSnack('กรุณาเลือกระดับความรุนแรง', Colors.red.shade600);
-      return;
-    }
-
     // Require password confirmation whenever there is any change to save.
     if (_hasChanges()) {
       final confirmed = await showDeleteConfirmDialog(
         context,
         title: 'ยืนยันการบันทึกการเปลี่ยนแปลง',
         message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการบันทึกการเปลี่ยนแปลงนี้',
+        confirmLabel: 'ยืนยันการเปลี่ยนแปลง',
+        icon: Icons.construction_rounded,
+        isDanger: false,
       );
+
       if (!confirmed) return;
     }
 
@@ -128,15 +125,17 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
       }
 
       if (!mounted) return;
+
       _showSnack('อัพเดทสำเร็จ ✓', Colors.green.shade600);
       Navigator.pop(context);
     } catch (e) {
       _showSnack('เกิดข้อผิดพลาด: $e', Colors.red.shade600);
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
-
   /// Ask for password, then delete this report [_deleteReport]
   Future<void> _deleteReport() async {
     final confirmed = await showDeleteConfirmDialog(
