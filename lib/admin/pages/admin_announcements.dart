@@ -452,6 +452,10 @@ class _NewsFormPageState extends State<_NewsFormPage> {
   late String _originalContent;
   late String _originalLink;
 
+  // When editing, the announcement's original creation time — shown as a
+  // small date badge over the image preview.
+  DateTime? _createdAt;
+
   bool get _isEdit => widget.doc != null;
 
   @override
@@ -462,11 +466,14 @@ class _NewsFormPageState extends State<_NewsFormPage> {
     _contentCtrl = TextEditingController(text: data?['content'] ?? '');
     _linkCtrl = TextEditingController(text: data?['link'] ?? '');
     _originalImageUrl = data?['imageUrl'] as String?;
+    final ts = data?['createdAt'];
+    _createdAt = ts is Timestamp ? ts.toDate() : null;
 
     _originalTitle = _titleCtrl.text;
     _originalContent = _contentCtrl.text;
     _originalLink = _linkCtrl.text;
   }
+
 
   @override
   void dispose() {
@@ -545,6 +552,21 @@ class _NewsFormPageState extends State<_NewsFormPage> {
       _pickedImage = null;
       _imageRemoved = true;
     });
+  }
+
+  static const _thaiMonths = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+  ];
+
+  /// Builds a full Thai date string then shortens it with shortenThaiDate —
+  /// same display format used elsewhere in the app. [_formatDate]
+  String _formatDate(DateTime time) {
+    final month = _thaiMonths[time.month - 1];
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    final full = '${time.day} $month ${time.year} เวลา $hour:$minute';
+    return shortenThaiDate(full);
   }
 
   /// Opens the current preview image (new pick or existing network image) at
@@ -635,14 +657,27 @@ class _NewsFormPageState extends State<_NewsFormPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
-        foregroundColor: Colors.black87,
+        backgroundColor: emasColor,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           _isEdit ? 'แก้ไขประกาศ' : 'เพิ่มประกาศ',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        centerTitle: true,
+        centerTitle: false,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [emasColor, emasColorDarker],
+            ),
+          ),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -831,6 +866,12 @@ class _NewsFormPageState extends State<_NewsFormPage> {
                 : Image.network(_originalImageUrl!, fit: BoxFit.cover),
           ),
         ),
+        if (_isEdit && _createdAt != null)
+          Positioned(
+            left: 10,
+            bottom: 10,
+            child: _buildDateBadge(_createdAt!),
+          ),
         Positioned(
           right: 10,
           bottom: 10,
@@ -857,6 +898,30 @@ class _NewsFormPageState extends State<_NewsFormPage> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Date pill badge over the image preview, showing when this announcement
+  /// was originally created — same pill style used on the announcement
+  /// feed cards. [_buildDateBadge]
+  Widget _buildDateBadge(DateTime createdAt) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.calendar_today_outlined, size: 11, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            _formatDate(createdAt),
+            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 
