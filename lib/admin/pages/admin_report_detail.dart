@@ -451,7 +451,7 @@ class _AdminReportDetailPageState extends State<AdminReportDetailPage> {
                           children: [
                             Icon(Icons.save_rounded, size: 18),
                             SizedBox(width: 8),
-                            Text('บันทึก', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            Text('บันทึกการเปลี่ยนแปลง', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                           ],
                         ),
                 ),

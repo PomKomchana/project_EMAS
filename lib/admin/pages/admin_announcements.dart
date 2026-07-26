@@ -416,6 +416,12 @@ class _NewsFormPageState extends State<_NewsFormPage> {
       false; // true if the admin cleared the existing image without picking a new one
   bool _saving = false;
 
+  // Snapshots of the original text values, used (when editing) to detect
+  // whether anything actually changed before requiring a password.
+  late String _originalTitle;
+  late String _originalContent;
+  late String _originalLink;
+
   bool get _isEdit => widget.doc != null;
 
   @override
@@ -426,6 +432,10 @@ class _NewsFormPageState extends State<_NewsFormPage> {
     _contentCtrl = TextEditingController(text: data?['content'] ?? '');
     _linkCtrl = TextEditingController(text: data?['link'] ?? '');
     _originalImageUrl = data?['imageUrl'] as String?;
+
+    _originalTitle = _titleCtrl.text;
+    _originalContent = _contentCtrl.text;
+    _originalLink = _linkCtrl.text;
   }
 
   @override
@@ -524,6 +534,16 @@ class _NewsFormPageState extends State<_NewsFormPage> {
     );
   }
 
+  /// Returns true if title, content, link, or the image were changed from
+  /// their original loaded values. Only meaningful when editing. [_hasChanges]
+  bool _hasChanges() {
+    final titleChanged = _titleCtrl.text.trim() != _originalTitle.trim();
+    final contentChanged = _contentCtrl.text.trim() != _originalContent.trim();
+    final linkChanged = _linkCtrl.text.trim() != _originalLink.trim();
+    final imageChanged = _pickedImage != null || _imageRemoved;
+    return titleChanged || contentChanged || linkChanged || imageChanged;
+  }
+
   /// ============================== [Save] ==============================
   Future<void> _save() async {
     if (_titleCtrl.text.trim().isEmpty) {
@@ -531,6 +551,17 @@ class _NewsFormPageState extends State<_NewsFormPage> {
         context,
       ).showSnackBar(const SnackBar(content: Text('กรุณากรอกหัวข้อ')));
       return;
+    }
+
+    // When editing an existing announcement, require a password whenever
+    // there's an actual change to save (new announcements don't need this).
+    if (_isEdit && _hasChanges()) {
+      final confirmed = await showDeleteConfirmDialog(
+        context,
+        title: 'ยืนยันการบันทึกการเปลี่ยนแปลง',
+        message: 'กรุณากรอกรหัสผ่านเพื่อยืนยันการบันทึกการเปลี่ยนแปลงนี้',
+      );
+      if (!confirmed) return;
     }
 
     setState(() => _saving = true);
